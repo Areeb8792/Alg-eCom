@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { OrderService } from '../services/orderService.js';
 import { createOrderSchema } from '../validators/index.js';
+import { recordOrderCreated, recordOrderReplayed } from '../metrics/prometheus.js';
 import {
   IdempotencyConflictError,
   IdempotencyInProgressError,
@@ -19,10 +20,13 @@ export class OrderController {
       const result = await this.service.createOrder(validatedInput, idempotencyKey);
 
       if (result.isDuplicate) {
+        recordOrderReplayed();
         res.setHeader('X-Idempotent-Replayed', 'true');
         res.status(result.cachedStatusCode || 200).json(result.cachedBody);
         return;
       }
+
+      recordOrderCreated();
 
       res.status(201).json({
         data: {

@@ -1,10 +1,11 @@
 # ==============================================================================
 # Algions AI Labs — Production-Style Docker Compose Orchestration
+# Services: PostgreSQL, Product & Order API, Nginx TLS Proxy, Prometheus, Grafana
 # ==============================================================================
 name: algions-platform
 
 services:
-  # 1. Database Service (PostgreSQL 16)
+  # 1. Database Service (PostgreSQL 16 Alpine)
   postgres:
     image: postgres:16-alpine
     container_name: algions-postgres
@@ -17,13 +18,18 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - internal_network
-    # IMPORTANT: Port 5432 is strictly kept internal to prevent public exposure
+    # IMPORTANT: Port 5432 is strictly kept internal to prevent public internet exposure
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-algions_user} -d ${DB_NAME:-algions_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   # 2. Product and Order API Service (Node.js LTS / TypeScript)
   api:
@@ -48,7 +54,6 @@ services:
         condition: service_healthy
     networks:
       - internal_network
-    # Security hardening settings
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -59,6 +64,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   # 3. Web & Reverse Proxy Service (Nginx + React SPA)
   nginx:
@@ -86,6 +96,62 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # 4. Metrics Collection Service (Prometheus)
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: algions-prometheus
+    restart: unless-stopped
+    user: "nobody"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - internal_network
+    depends_on:
+      api:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # 5. Observability Visualization Service (Grafana)
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: algions-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-AlgionsGrafanaAdmin2024!}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - internal_network
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
 networks:
   internal_network:
@@ -95,3 +161,7 @@ networks:
 volumes:
   postgres_data:
     name: algions-postgres-storage
+  prometheus_data:
+    name: algions-prometheus-storage
+  grafana_data:
+    name: algions-grafana-storage

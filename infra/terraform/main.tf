@@ -143,3 +143,74 @@ resource "aws_instance" "app_server" {
     Name = "${var.app_name}-${var.environment}-server"
   }
 }
+
+# S3 Encrypted Backup Storage with Lifecycle Management
+resource "aws_s3_bucket" "backups" {
+  bucket        = "${var.app_name}-${var.environment}-backups"
+  force_destroy = false
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-backups"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "backups_encryption" {
+  bucket = aws_s3_bucket.backups.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "backups_public_block" {
+  bucket = aws_s3_bucket.backups.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "backups_lifecycle" {
+  bucket = aws_s3_bucket.backups.id
+
+  rule {
+    id     = "expire-old-backups-after-30-days"
+    status = "Enabled"
+
+    expiration {
+      days = 30
+    }
+  }
+}
+
+# Policy allowing EC2 instance to push database backups to S3
+resource "aws_iam_policy" "backup_s3_policy" {
+  name        = "${var.app_name}-${var.environment}-backup-s3-policy"
+  description = "Allows instance to upload database backups to S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          aws_s3_bucket.backups.arn,
+          "${aws_s3_bucket.backups.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "backup_policy_attach" {
+  role       = aws_iam_role.ec2_ssm_role.name
+  policy_arn = aws_iam_policy.backup_s3_policy.arn
+}

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../logging/logger.js';
+import { recordHttpRequest } from '../metrics/prometheus.js';
 
 declare global {
   namespace Express {
@@ -20,6 +21,7 @@ export function requestCorrelationMiddleware(req: Request, res: Response, next: 
 
   res.on('finish', () => {
     const durationMs = Date.now() - req.startTime;
+    recordHttpRequest(req.method, req.originalUrl.split('?')[0], res.statusCode, durationMs);
     const logData = {
       correlationId,
       method: req.method,

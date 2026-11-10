@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { HealthService } from '../services/healthService.js';
+import { generatePrometheusMetrics } from '../metrics/prometheus.js';
 
 export class HealthController {
   private service = new HealthService();
@@ -17,23 +18,7 @@ export class HealthController {
 
   metrics = async (_req: Request, res: Response): Promise<void> => {
     const { isReady } = await this.service.getReadiness();
-    const memory = process.memoryUsage();
-    const uptime = process.uptime();
-
-    const output = [
-      '# HELP process_uptime_seconds Total application process uptime in seconds',
-      '# TYPE process_uptime_seconds gauge',
-      `process_uptime_seconds ${uptime}`,
-      '',
-      '# HELP process_resident_memory_bytes Resident memory size in bytes',
-      '# TYPE process_resident_memory_bytes gauge',
-      `process_resident_memory_bytes ${memory.rss}`,
-      '',
-      '# HELP database_up Database connection health status (1 for connected, 0 for disconnected)',
-      '# TYPE database_up gauge',
-      `database_up ${isReady ? 1 : 0}`,
-      ''
-    ].join('\n');
+    const output = generatePrometheusMetrics(isReady);
 
     res.setHeader('Content-Type', 'text/plain; version=0.0.4');
     res.status(200).send(output);

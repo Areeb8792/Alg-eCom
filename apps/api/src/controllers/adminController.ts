@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AdminService } from '../services/adminService.js';
 import { adminLoginSchema, updateProductSchema, stockAdjustmentSchema } from '../validators/index.js';
+import { recordStockAdjustment } from '../metrics/prometheus.js';
 
 export class AdminController {
   private service = new AdminService();
@@ -79,6 +80,8 @@ export class AdminController {
         });
         return;
       }
+
+      recordStockAdjustment();
 
       res.status(200).json({
         data: updated

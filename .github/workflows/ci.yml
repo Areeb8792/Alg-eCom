@@ -11,12 +11,14 @@ permissions:
 
 jobs:
   static-checks-and-tests:
-    name: Code Quality & Automated Tests
+    name: Code Quality, Tests & Security Scan
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js Runtime LTS
         uses: actions/setup-node@v4
@@ -26,6 +28,12 @@ jobs:
 
       - name: Install Monorepo Dependencies
         run: npm ci
+
+      - name: Run Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Verify TypeScript Type Integrity
         run: npm run typecheck
@@ -55,3 +63,19 @@ jobs:
       - name: Verify Web Multi-Stage Docker Build
         run: |
           docker build -t algions-web:test -f apps/web/Dockerfile apps/web
+
+      - name: Run Trivy Container Vulnerability Scan (API)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: 'algions-api:test'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy Container Vulnerability Scan (Web)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: 'algions-web:test'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'

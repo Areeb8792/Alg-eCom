@@ -1,0 +1,23 @@
+# ==============================================================================
+# Algions Platform — Gitleaks Automated Secret Scanning Configuration
+# ==============================================================================
+title = "Algions Secret Detection Policy"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlists for test fixtures and documentation examples"
+paths = [
+  '''apps/api/tests/.*''',
+  '''e2e/.*''',
+  '''infra/terraform/terraform\.tfvars\.example''',
+  '''\.env\.example''',
+  '''docs/.*'''
+]
+regexes = [
+  '''AdminSecretPassword123!''',
+  '''change_me_in_production''',
+  '''super_secret_jwt_signing_key_replace_with_strong_random_secret_in_prod''',
+  '''AlgionsGrafanaAdmin2024!'''
+]

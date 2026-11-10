@@ -17,3 +17,8 @@ output "ssm_connect_command" {
   description = "AWS CLI command to start secure shell session via SSM (No port 22 required)"
   value       = "aws ssm start-session --target ${aws_instance.app_server.id} --region ${var.aws_region}"
 }
+
+output "backup_s3_bucket" {
+  description = "Encrypted S3 bucket for automated off-site database backups"
+  value       = aws_s3_bucket.backups.bucket
+}
