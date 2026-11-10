@@ -1,23 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Order } from '../types/index.js';
 import { fetchOrder } from '../services/api.js';
 import { CheckCircle2, ShieldCheck, Search, ArrowLeft, PackageCheck } from 'lucide-react';
 
-interface OrderConfirmationPageProps {
-  order: Order | null;
+interface LocationState {
+  order?: Order;
   isReplayed?: boolean;
-  onBackToCatalog: () => void;
 }
 
-export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
-  order: initialOrder,
-  isReplayed = false,
-  onBackToCatalog
-}) => {
-  const [currentOrder, setCurrentOrder] = useState<Order | null>(initialOrder);
-  const [lookupQuery, setLookupQuery] = useState('');
+export const OrderConfirmationPage: React.FC = () => {
+  const { orderId } = useParams<{ orderId?: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const locationState = location.state as LocationState | null;
+
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(locationState?.order || null);
+  const [isReplayed, setIsReplayed] = useState<boolean>(locationState?.isReplayed || false);
+  const [lookupQuery, setLookupQuery] = useState(orderId || '');
   const [loading, setLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (orderId && !currentOrder) {
+      setLoading(true);
+      setLookupError(null);
+      fetchOrder(orderId)
+        .then((found) => {
+          setCurrentOrder(found);
+        })
+        .catch((err) => {
+          setLookupError(err instanceof Error ? err.message : 'Order not found');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [orderId]);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +48,8 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
     try {
       const found = await fetchOrder(lookupQuery.trim());
       setCurrentOrder(found);
+      setIsReplayed(false);
+      navigate(`/orders/${found.id}`);
     } catch (err: unknown) {
       setLookupError(err instanceof Error ? err.message : 'Order not found');
     } finally {
@@ -38,12 +59,12 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-8 lg:px-16 max-w-4xl mx-auto space-y-12">
-      <button
-        onClick={onBackToCatalog}
-        className="flex items-center gap-2 text-xs font-bold uppercase space-grotesk hover:line-through"
+      <Link
+        to="/"
+        className="inline-flex items-center gap-2 text-xs font-bold uppercase space-grotesk hover:line-through"
       >
         <ArrowLeft className="w-4 h-4" /> RETURN TO CATALOG
-      </button>
+      </Link>
 
       {/* Order Lookup Search Bar */}
       <div className="bg-zinc-900 text-white p-6 border border-zinc-800 space-y-3">
@@ -77,10 +98,10 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
               <div className="flex items-center gap-2 text-emerald-600 mb-2">
                 <CheckCircle2 className="w-5 h-5" />
                 <span className="space-grotesk text-xs font-bold tracking-widest uppercase">
-                  ORDER CONFIRMED & COMMITTED TO DATABASE
+                  ORDER CONFIRMED &amp; COMMITTED TO DATABASE
                 </span>
               </div>
-              <h1 className="anton-heading text-4xl lg:text-5xl">{currentOrder.order_reference}</h1>
+              <h1 className="anton-heading text-4xl lg:text-5xl text-ink">{currentOrder.order_reference}</h1>
               <p className="space-grotesk text-xs text-zinc-500 mt-1">
                 Placed on {new Date(currentOrder.created_at).toLocaleString()}
               </p>
@@ -104,7 +125,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
               <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">
                 RECIPIENT CLIENT
               </span>
-              <p className="font-bold text-sm">{currentOrder.customer_name}</p>
+              <p className="font-bold text-sm text-ink">{currentOrder.customer_name}</p>
               <p className="text-zinc-600">{currentOrder.customer_email}</p>
             </div>
             <div>
@@ -117,18 +138,18 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 
           {/* Itemized Snapshots */}
           <div>
-            <h3 className="anton-heading text-2xl mb-4">PURCHASED PIECES (HISTORIC SNAPSHOT)</h3>
+            <h3 className="anton-heading text-2xl mb-4 text-ink">PURCHASED PIECES (HISTORIC SNAPSHOT)</h3>
             <div className="border border-zinc-200 divide-y divide-zinc-200">
               {currentOrder.items?.map((item) => (
                 <div key={item.id} className="p-4 flex justify-between items-center text-xs space-grotesk">
                   <div>
-                    <h4 className="font-bold uppercase">{item.product_name_snapshot}</h4>
+                    <h4 className="font-bold uppercase text-ink">{item.product_name_snapshot}</h4>
                     <span className="text-zinc-500 text-[10px]">
                       SKU: {item.sku_snapshot} • QTY: {item.quantity}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold">
+                    <span className="font-bold text-ink">
                       ${((item.unit_price_cents_snapshot * item.quantity) / 100).toFixed(2)} USD
                     </span>
                     <span className="block text-[10px] text-zinc-500">
@@ -142,7 +163,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 
           {/* Total */}
           <div className="border-t border-zinc-200 pt-6 flex justify-between items-baseline text-sm space-grotesk font-bold">
-            <span className="uppercase">TOTAL AMOUNT SETTLED</span>
+            <span className="uppercase text-ink">TOTAL AMOUNT SETTLED</span>
             <span className="text-2xl text-accentRed">
               ${(currentOrder.subtotal_cents / 100).toFixed(2)} {currentOrder.currency}
             </span>
@@ -151,7 +172,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
       ) : (
         <div className="bg-white border border-zinc-300 p-12 text-center sharp-shadow space-y-4">
           <PackageCheck className="w-12 h-12 text-zinc-400 mx-auto" />
-          <h2 className="anton-heading text-3xl">TRACK YOUR ORDER</h2>
+          <h2 className="anton-heading text-3xl text-ink">TRACK YOUR ORDER</h2>
           <p className="space-grotesk text-xs text-zinc-600 max-w-sm mx-auto">
             Enter an order reference number or UUID above to inspect the transactional snapshot and current fulfillment status.
           </p>

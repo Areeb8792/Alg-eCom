@@ -51,6 +51,7 @@ export const IN_MEMORY_PRODUCTS: Product[] = [
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440004',
+    sku: 'HW-TR-004',
     slug: 'tailored-silhouette',
     name: 'Tailored Silhouette Trousers',
     description: 'High-waisted relaxed trouser cut from breathable organic linen weave with sharp front pleats.',
@@ -80,6 +81,7 @@ export const IN_MEMORY_PRODUCTS: Product[] = [
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440006',
+    sku: 'HW-FC-006',
     slug: 'technical-field-coat',
     name: 'Technical Field Coat',
     description: 'Water-repellent matte nylon shell with modular magnetic utility pockets and storm flap.',

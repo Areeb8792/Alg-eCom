@@ -73,18 +73,19 @@ export class ProductRepository {
     }
   }
 
-  async findById(id: string, client?: PoolClient): Promise<Product | null> {
+  async findById(idOrSlug: string, client?: PoolClient): Promise<Product | null> {
     try {
-      const sql = `
-        SELECT id, sku, slug, name, description, category, price_cents, currency, stock, is_active, image_url, created_at, updated_at
-        FROM products
-        WHERE id = $1;
-      `;
-      const res = client ? await client.query<Product>(sql, [id]) : await query<Product>(sql, [id]);
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+      const sql = isUUID
+        ? `SELECT id, sku, slug, name, description, category, price_cents, currency, stock, is_active, image_url, created_at, updated_at
+           FROM products WHERE id = $1;`
+        : `SELECT id, sku, slug, name, description, category, price_cents, currency, stock, is_active, image_url, created_at, updated_at
+           FROM products WHERE slug = $1;`;
+      const res = client ? await client.query<Product>(sql, [idOrSlug]) : await query<Product>(sql, [idOrSlug]);
       return res.rows[0] || null;
     } catch (err) {
       if (config.NODE_ENV !== 'test') {
-        const found = IN_MEMORY_PRODUCTS.find((p) => p.id === id);
+        const found = IN_MEMORY_PRODUCTS.find((p) => p.id === idOrSlug || p.slug === idOrSlug);
         return found || null;
       }
       throw err;

@@ -180,8 +180,17 @@ export class OrderRepository {
     try {
       await client.query('BEGIN');
 
-      // 1. Idempotency handling
+      // 1. Idempotency handling with atomic reservation
       if (params.idempotencyKey && params.requestHash) {
+        // Atomic reservation: insert if not exists
+        await client.query(
+          `INSERT INTO idempotency_keys (key, request_hash, status)
+           VALUES ($1, $2, 'IN_PROGRESS')
+           ON CONFLICT (key) DO NOTHING;`,
+          [params.idempotencyKey, params.requestHash]
+        );
+
+        // Lock row for safe transactional inspection
         const idempRes = await client.query<IdempotencyRecord>(
           `SELECT key, request_hash, status, order_id, response_code, response_body, created_at, updated_at
            FROM idempotency_keys
@@ -200,13 +209,6 @@ export class OrderRepository {
             );
           }
 
-          if (existing.status === 'IN_PROGRESS') {
-            await client.query('ROLLBACK');
-            throw new IdempotencyInProgressError(
-              `A request with Idempotency-Key "${params.idempotencyKey}" is currently being processed.`
-            );
-          }
-
           if (existing.status === 'RESOLVED' && existing.order_id) {
             await client.query('COMMIT');
             const cachedOrder = await this.findById(existing.order_id);
@@ -217,12 +219,6 @@ export class OrderRepository {
               cachedBody: existing.response_body
             };
           }
-        } else {
-          await client.query(
-            `INSERT INTO idempotency_keys (key, request_hash, status)
-             VALUES ($1, $2, 'IN_PROGRESS');`,
-            [params.idempotencyKey, params.requestHash]
-          );
         }
       }
 

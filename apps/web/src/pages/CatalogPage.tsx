@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Product } from '../types/index.js';
 import { ProductCard } from '../components/ProductCard.js';
 import { Search } from 'lucide-react';
@@ -7,26 +8,46 @@ interface CatalogPageProps {
   products: Product[];
   loading: boolean;
   error: string | null;
-  onSelectProduct: (product: Product) => void;
   onQuickAdd: (product: Product) => void;
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  onSelectProduct?: (product: Product) => void;
 }
 
 export const CatalogPage: React.FC<CatalogPageProps> = ({
   products,
   loading,
   error,
-  onSelectProduct,
   onQuickAdd,
   selectedCategory,
   onSelectCategory,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  onSelectProduct
 }) => {
+  const { categorySlug } = useParams<{ categorySlug?: string }>();
+  const navigate = useNavigate();
   const categories = ['ALL', 'OUTERWEAR', 'TOPS', 'TAILORING', 'ACCESSORIES'];
+
+  useEffect(() => {
+    if (categorySlug) {
+      const match = categories.find((c) => c.toLowerCase() === categorySlug.toLowerCase());
+      if (match && match !== selectedCategory) {
+        onSelectCategory(match);
+      }
+    }
+  }, [categorySlug]);
+
+  const handleCategoryClick = (cat: string) => {
+    onSelectCategory(cat);
+    if (cat === 'ALL') {
+      navigate('/');
+    } else {
+      navigate(`/collections/${cat.toLowerCase()}`);
+    }
+  };
 
   return (
     <div className="min-h-screen relative flex flex-col">
@@ -92,7 +113,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => onSelectCategory(cat)}
+                  onClick={() => handleCategoryClick(cat)}
                   className={`text-[11px] font-bold uppercase space-grotesk px-3 py-1.5 transition-all ${
                     selectedCategory === cat
                       ? 'bg-white text-ink'
@@ -119,65 +140,59 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
           </div>
         )}
 
-        {/* Horizontal Carousel */}
+        {/* Products Horizontal Scroll / Grid */}
         {!loading && !error && (
-          <div className="flex overflow-x-auto gap-8 px-8 lg:px-16 pb-8 hide-scrollbar snap-x">
+          <div className="px-8 lg:px-16">
             {products.length === 0 ? (
-              <div className="text-zinc-500 text-sm space-grotesk py-8">
-                No pieces found matching the current search criteria.
+              <div className="py-12 text-zinc-500 space-grotesk text-sm">
+                No pieces found matching the current archive query.
               </div>
             ) : (
-              products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onSelect={onSelectProduct}
-                  onQuickAdd={onQuickAdd}
-                />
-              ))
+              <div className="flex gap-8 overflow-x-auto pb-8 pt-4 no-scrollbar snap-x">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onQuickAdd={onQuickAdd}
+                    onSelect={onSelectProduct}
+                  />
+                ))}
+              </div>
             )}
           </div>
         )}
       </section>
 
-      {/* Featured Collections Section */}
-      <section id="collections" className="grid grid-cols-12 gap-0 border-t border-zinc-300">
-        <div className="col-span-12 lg:col-span-4 bg-white p-8 lg:p-16 lg:sticky lg:top-0 h-fit border-b lg:border-b-0 lg:border-r border-zinc-200">
-          <h2 className="anton-heading text-5xl lg:text-6xl mb-6">FEATURED COLLECTIONS</h2>
-          <div className="border-l-4 border-ink pl-6 space-y-4">
-            <p className="space-grotesk text-xs uppercase font-bold tracking-widest text-accentRed">
-              NEW: SPRING/SUMMER 2025 EDITORIAL
-            </p>
-            <p className="space-grotesk text-sm leading-relaxed opacity-70">
-              Explore our carefully curated seasonal collections. Each piece is selected for its architectural silhouette, quality craftsmanship, and timeless appeal.
-            </p>
-          </div>
+      {/* Brand Ethos Section */}
+      <section className="py-24 px-8 lg:px-16 grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-ink">
+        <div className="space-y-4">
+          <span className="space-grotesk text-[10px] tracking-[0.3em] uppercase text-zinc-500 block">
+            01 / ARCHITECTURE
+          </span>
+          <h3 className="anton-heading text-2xl">TRANSACTIONAL STOCK LOCKING</h3>
+          <p className="space-grotesk text-xs leading-relaxed text-zinc-700">
+            Every inventory deduction executes in an isolated atomic PostgreSQL transaction with <code className="bg-zinc-200 px-1 py-0.5 font-mono text-[11px]">WHERE stock &gt;= requested</code> guards to prevent double-allocation under race conditions.
+          </p>
         </div>
 
-        <div className="col-span-12 lg:col-span-8">
-          <div className="grid grid-cols-1 md:grid-cols-2">
-            <div className="aspect-square grayscale-hover overflow-hidden border-b border-zinc-200">
-              <img
-                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1000&auto=format&fit=crop"
-                alt="Collection Editorial 1"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="aspect-square grayscale-hover overflow-hidden border-l border-b border-zinc-200">
-              <img
-                src="https://images.unsplash.com/photo-1445205170230-053b830c6050?q=80&w=1000&auto=format&fit=crop"
-                alt="Collection Editorial 2"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="col-span-1 md:col-span-2 aspect-video grayscale-hover overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2000&auto=format&fit=crop"
-                alt="Collection Editorial 3"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
+        <div className="space-y-4">
+          <span className="space-grotesk text-[10px] tracking-[0.3em] uppercase text-zinc-500 block">
+            02 / RELIABILITY
+          </span>
+          <h3 className="anton-heading text-2xl">IDEMPOTENT ORDER CREATION</h3>
+          <p className="space-grotesk text-xs leading-relaxed text-zinc-700">
+            Network retries and multiple submissions are safely intercepted by an atomic database table keyed on client UUIDs, guaranteeing financial safety and preventing duplicate charges.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <span className="space-grotesk text-[10px] tracking-[0.3em] uppercase text-zinc-500 block">
+            03 / OBSERVABILITY
+          </span>
+          <h3 className="anton-heading text-2xl">AUDITABLE OPERATIONS</h3>
+          <p className="space-grotesk text-xs leading-relaxed text-zinc-700">
+            Administrative adjustments, health checks, readiness probes and audit logs are recorded with structured JSON logs, Pino redaction, and sub-millisecond response latency.
+          </p>
         </div>
       </section>
     </div>

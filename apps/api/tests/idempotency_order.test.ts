@@ -158,6 +158,9 @@ describe('Order Creation, Idempotency, and Pricing Integrity', () => {
     // Mock BEGIN
     fakeClient.query.mockResolvedValueOnce({ rows: [] });
 
+    // Mock atomic reservation INSERT INTO idempotency_keys ON CONFLICT DO NOTHING
+    fakeClient.query.mockResolvedValueOnce({ rows: [] });
+
     // Mock SELECT FROM idempotency_keys FOR UPDATE returning existing RESOLVED record
     const crypto = await import('crypto');
     const hash = crypto.createHash('sha256').update(JSON.stringify(orderPayload)).digest('hex');
@@ -229,6 +232,9 @@ describe('Order Creation, Idempotency, and Pricing Integrity', () => {
     vi.spyOn(pool, 'connect').mockResolvedValue(fakeClient as any);
 
     // Mock BEGIN
+    fakeClient.query.mockResolvedValueOnce({ rows: [] });
+
+    // Mock atomic reservation INSERT INTO idempotency_keys ON CONFLICT DO NOTHING
     fakeClient.query.mockResolvedValueOnce({ rows: [] });
 
     // Mock SELECT FROM idempotency_keys FOR UPDATE returning existing record with DIFFERENT hash

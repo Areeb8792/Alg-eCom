@@ -9,6 +9,7 @@
   "scripts": {
     "build": "npm run build --workspace=@algions/api && npm run build --workspace=@algions/web",
     "test": "npm run test --workspace=@algions/api",
+    "test:e2e": "playwright test",
     "lint": "npm run lint --workspace=@algions/api && npm run lint --workspace=@algions/web",
     "typecheck": "npm run typecheck --workspace=@algions/api && npm run typecheck --workspace=@algions/web",
     "start:api": "npm run start --workspace=@algions/api",
@@ -25,5 +26,9 @@
     "postgresql"
   ],
   "author": "Algions AI Labs Assessment Candidate",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "playwright": "^1.65.0"
+  }
 }

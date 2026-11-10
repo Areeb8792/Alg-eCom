@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Product, AuditEvent } from '../types/index.js';
-import { adminLogin, adjustStock, updateProduct, fetchAuditEvents } from '../services/api.js';
-import { Lock, ShieldAlert, CheckCircle, RefreshCw, SlidersHorizontal, ArrowLeft } from 'lucide-react';
+import { adminLogin, adjustStock, updateProduct, fetchAuditEvents, fetchProducts } from '../services/api.js';
+import { Lock, ShieldAlert, CheckCircle, RefreshCw, SlidersHorizontal, ArrowLeft, Database, Shield } from 'lucide-react';
 
 interface AdminPageProps {
-  products: Product[];
-  onRefreshCatalog: () => void;
-  onBackToCatalog: () => void;
+  products?: Product[];
+  onRefreshCatalog?: () => void;
 }
 
-export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog, onBackToCatalog }) => {
-  const [token, setToken] = useState<string | null>(null);
+export const AdminPage: React.FC<AdminPageProps> = ({
+  products: initialProducts,
+  onRefreshCatalog
+}) => {
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('hw_admin_token');
+    } catch {
+      return null;
+    }
+  });
   const [username, setUsername] = useState('admin@algions.com');
   const [password, setPassword] = useState('AdminSecretPassword123!');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -23,6 +33,40 @@ export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog
   const [adjustmentReason, setAdjustmentReason] = useState<string>('Standard warehouse inventory restock');
   const [adjustMessage, setAdjustMessage] = useState<string | null>(null);
   const [adjustError, setAdjustError] = useState<string | null>(null);
+
+  const loadProductsInternal = async () => {
+    try {
+      const res = await fetchProducts();
+      setProducts(res.products);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (!initialProducts || initialProducts.length === 0) {
+      loadProductsInternal();
+    } else {
+      setProducts(initialProducts);
+    }
+  }, [initialProducts]);
+
+  useEffect(() => {
+    if (token) {
+      try {
+        localStorage.setItem('hw_admin_token', token);
+      } catch {
+        // ignore
+      }
+      loadAudits(token);
+    } else {
+      try {
+        localStorage.removeItem('hw_admin_token');
+      } catch {
+        // ignore
+      }
+    }
+  }, [token]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +102,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog
     try {
       await adjustStock(selectedProductId, stockAdjustment, adjustmentReason, token);
       setAdjustMessage(`Stock successfully adjusted by ${stockAdjustment > 0 ? '+' : ''}${stockAdjustment}`);
-      onRefreshCatalog();
+      if (onRefreshCatalog) onRefreshCatalog();
+      loadProductsInternal();
       loadAudits(token);
     } catch (err: unknown) {
       setAdjustError(err instanceof Error ? err.message : 'Adjustment failed');
@@ -69,7 +114,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog
     if (!token) return;
     try {
       await updateProduct(product.id, { is_active: !product.is_active }, token);
-      onRefreshCatalog();
+      if (onRefreshCatalog) onRefreshCatalog();
+      loadProductsInternal();
       loadAudits(token);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Failed to toggle status');
@@ -85,15 +131,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog
   return (
     <div className="min-h-screen pt-32 pb-24 px-8 lg:px-16 max-w-6xl mx-auto space-y-12">
       <div className="flex items-center justify-between">
-        <button
-          onClick={onBackToCatalog}
-          className="flex items-center gap-2 text-xs font-bold uppercase space-grotesk hover:line-through"
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase space-grotesk hover:line-through"
         >
           <ArrowLeft className="w-4 h-4" /> RETURN TO CATALOG
-        </button>
+        </Link>
 
-        <span className="text-xs space-grotesk bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 font-bold">
-          RESTRICTED OPERATIONAL ENVIRONMENT
+        <span className="text-xs space-grotesk bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 font-bold flex items-center gap-1.5">
+          <Shield className="w-3.5 h-3.5" /> RESTRICTED OPERATIONAL ENVIRONMENT
         </span>
       </div>
 
@@ -156,10 +202,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog
           {/* Header Controls */}
           <div className="bg-ink text-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-widest uppercase">
+              <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-widest uppercase block">
                 AUTHENTICATED AS {username} (ROLE: ADMIN)
               </span>
-              <h1 className="anton-heading text-3xl">INVENTORY & AUDIT CONTROL</h1>
+              <h1 className="anton-heading text-3xl">INVENTORY &amp; AUDIT CONTROL</h1>
             </div>
 
             <div className="flex gap-3">
@@ -250,7 +296,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog
                   type="submit"
                   className="w-full bg-ink text-white py-3 text-xs font-bold uppercase tracking-widest sharp-shadow hover:bg-zinc-800"
                 >
-                  COMMIT STOCK ADJUSTMENT & RECORD AUDIT
+                  COMMIT STOCK ADJUSTMENT &amp; RECORD AUDIT
                 </button>
               </form>
             </div>
@@ -258,21 +304,22 @@ export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog
             {/* Product Status Toggle List */}
             <div className="lg:col-span-7 bg-white border border-zinc-300 p-8 sharp-shadow space-y-4">
               <h2 className="anton-heading text-2xl border-b border-zinc-200 pb-4">CATALOG ARCHIVE STATUS</h2>
-              <div className="divide-y divide-zinc-200 text-xs space-grotesk max-h-72 overflow-y-auto">
+              <div className="divide-y divide-zinc-200 max-h-[380px] overflow-y-auto pr-2">
                 {products.map((p) => (
-                  <div key={p.id} className="py-3 flex justify-between items-center">
+                  <div key={p.id} className="py-3 flex items-center justify-between text-xs space-grotesk">
                     <div>
                       <span className="font-bold uppercase block">{p.name}</span>
-                      <span className="text-[10px] text-zinc-500">
-                        SKU: {p.sku} • Stock: {p.stock} • ${(p.price_cents / 100).toFixed(2)}
+                      <span className="text-zinc-500 text-[10px]">
+                        SKU: {p.sku} | Stock: <b className="text-ink">{p.stock}</b> | Price: ${(p.price_cents / 100).toFixed(2)}
                       </span>
                     </div>
+
                     <button
                       onClick={() => handleToggleActive(p)}
-                      className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
                         p.is_active
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200'
-                          : 'bg-zinc-200 text-zinc-600 hover:bg-zinc-300'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-zinc-200 text-zinc-600 border border-zinc-400'
                       }`}
                     >
                       {p.is_active ? 'ACTIVE' : 'INACTIVE'}
@@ -283,46 +330,51 @@ export const AdminPage: React.FC<AdminPageProps> = ({ products, onRefreshCatalog
             </div>
           </div>
 
-          {/* Audit Events Stream */}
+          {/* Audit Trail Table */}
           <div className="bg-white border border-zinc-300 p-8 sharp-shadow space-y-4">
-            <h2 className="anton-heading text-3xl">IMMUTABLE AUDIT TRAIL (SECTION 3.6)</h2>
-            <p className="text-xs space-grotesk text-zinc-600">
-              Every administrative action, restock, and catalog update writes a cryptographically linked event to the PostgreSQL <code className="font-mono text-ink">audit_events</code> table.
-            </p>
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-4">
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                <h2 className="anton-heading text-2xl">POSTGRESQL AUDIT TRAIL LOGS</h2>
+              </div>
+              <span className="text-xs font-mono text-zinc-500">
+                {auditEvents.length} Recorded Operational Events
+              </span>
+            </div>
 
-            <div className="border border-zinc-300 overflow-x-auto">
-              <table className="w-full text-left text-xs space-grotesk divide-y divide-zinc-200">
-                <thead className="bg-zinc-100 uppercase text-[10px] font-bold tracking-widest text-zinc-600">
-                  <tr>
-                    <th className="p-3">TIMESTAMP</th>
-                    <th className="p-3">ACTOR</th>
-                    <th className="p-3">ACTION</th>
-                    <th className="p-3">RESOURCE</th>
-                    <th className="p-3">AFTER STATE SNAPSHOT</th>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs space-grotesk">
+                <thead>
+                  <tr className="border-b border-zinc-300 text-zinc-500 text-[10px] uppercase tracking-wider">
+                    <th className="py-2 px-3">TIMESTAMP</th>
+                    <th className="py-2 px-3">ACTION</th>
+                    <th className="py-2 px-3">ENTITY</th>
+                    <th className="py-2 px-3">ACTOR</th>
+                    <th className="py-2 px-3">DETAILS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 font-mono text-[11px]">
+                <tbody className="divide-y divide-zinc-100 font-mono text-[11px]">
                   {auditEvents.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-6 text-center text-zinc-500 font-space text-xs">
-                        No audit events recorded yet.
+                      <td colSpan={5} className="py-6 text-center text-zinc-400 font-sans">
+                        No audit events recorded yet. Perform an inventory adjustment above to generate one.
                       </td>
                     </tr>
                   ) : (
-                    auditEvents.map((ev) => (
-                      <tr key={ev.id} className="hover:bg-zinc-50">
-                        <td className="p-3 text-zinc-500 whitespace-nowrap">
-                          {new Date(ev.created_at).toLocaleTimeString()}
+                    auditEvents.map((evt) => (
+                      <tr key={evt.id} className="hover:bg-zinc-50">
+                        <td className="py-2 px-3 text-zinc-500">
+                          {new Date(evt.created_at).toLocaleTimeString()}
                         </td>
-                        <td className="p-3 font-bold text-ink whitespace-nowrap">{ev.actor_username}</td>
-                        <td className="p-3 whitespace-nowrap">
-                          <span className="bg-zinc-100 px-2 py-0.5 rounded text-[10px] font-bold">
-                            {ev.action}
-                          </span>
+                        <td className="py-2 px-3">
+                          <span className="bg-zinc-200 px-1.5 py-0.5 font-bold">{evt.action}</span>
                         </td>
-                        <td className="p-3 text-zinc-600 whitespace-nowrap">{ev.resource_type}</td>
-                        <td className="p-3 text-zinc-700 max-w-xs truncate">
-                          {JSON.stringify(ev.after_state)}
+                        <td className="py-2 px-3 text-zinc-600">
+                          {evt.resource_type}:{evt.resource_id.slice(0, 8)}...
+                        </td>
+                        <td className="py-2 px-3 text-zinc-700">{evt.actor_username || 'System'}</td>
+                        <td className="py-2 px-3 text-zinc-500 truncate max-w-xs">
+                          {JSON.stringify(evt.after_state)}
                         </td>
                       </tr>
                     ))

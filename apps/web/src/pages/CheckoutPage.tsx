@@ -1,16 +1,8 @@
 import React, { useState } from 'react';
-import { CartItem, Order } from '../types/index.js';
+import { Link, useNavigate } from 'react-router-dom';
 import { createOrder } from '../services/api.js';
-import { Trash2, ShieldCheck, RefreshCw, AlertCircle, ArrowLeft } from 'lucide-react';
-
-interface CheckoutPageProps {
-  cart: CartItem[];
-  onUpdateQuantity: (productId: string, quantity: number) => void;
-  onRemoveItem: (productId: string) => void;
-  onClearCart: () => void;
-  onOrderCompleted: (order: Order, isReplayed: boolean) => void;
-  onBackToCatalog: () => void;
-}
+import { useCart } from '../context/CartContext.js';
+import { Trash2, ShieldCheck, RefreshCw, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 
 function generateUUID(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -23,21 +15,16 @@ function generateUUID(): string {
   });
 }
 
-export const CheckoutPage: React.FC<CheckoutPageProps> = ({
-  cart,
-  onUpdateQuantity,
-  onRemoveItem,
-  onClearCart,
-  onOrderCompleted,
-  onBackToCatalog
-}) => {
+export const CheckoutPage: React.FC = () => {
+  const { cart, updateQuantity, removeFromCart, clearCart, subtotalCents } = useCart();
+  const navigate = useNavigate();
+
   const [customerEmail, setCustomerEmail] = useState('client@heavyweight.nyc');
   const [customerName, setCustomerName] = useState('Alexander Vance');
   const [idempotencyKey, setIdempotencyKey] = useState(generateUUID());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const subtotalCents = cart.reduce((sum, item) => sum + item.product.price_cents * item.quantity, 0);
   const formattedSubtotal = `$${(subtotalCents / 100).toFixed(2)}`;
 
   const handleSubmitOrder = async (overrideKey?: string) => {
@@ -60,8 +47,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       };
 
       const result = await createOrder(payload, keyToUse);
-      onClearCart();
-      onOrderCompleted(result.order, result.isReplayed);
+      clearCart();
+      navigate(`/orders/${result.order.id}`, {
+        state: { order: result.order, isReplayed: result.isReplayed }
+      });
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Checkout failed');
     } finally {
@@ -72,36 +61,36 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   if (cart.length === 0) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-8 text-center pt-32">
-        <h2 className="anton-heading text-6xl mb-4">YOUR BAG IS EMPTY</h2>
+        <h2 className="anton-heading text-6xl mb-4 text-ink">YOUR BAG IS EMPTY</h2>
         <p className="space-grotesk text-sm text-zinc-600 mb-8 max-w-sm">
           No luxury pieces currently selected. Browse the essentials collection to reserve pieces.
         </p>
-        <button
-          onClick={onBackToCatalog}
+        <Link
+          to="/"
           className="bg-ink text-white px-8 py-3 text-xs font-bold uppercase tracking-widest space-grotesk sharp-shadow hover:bg-zinc-800"
         >
           RETURN TO ESSENTIALS
-        </button>
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-8 lg:px-16 max-w-6xl mx-auto">
-      <button
-        onClick={onBackToCatalog}
-        className="flex items-center gap-2 text-xs font-bold uppercase space-grotesk mb-8 hover:line-through"
+      <Link
+        to="/bag"
+        className="inline-flex items-center gap-2 text-xs font-bold uppercase space-grotesk mb-8 hover:line-through"
       >
-        <ArrowLeft className="w-4 h-4" /> BACK TO CATALOG
-      </button>
+        <ArrowLeft className="w-4 h-4" /> BACK TO SHOPPING BAG
+      </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* Left: Cart Items & Client Form */}
         <div className="lg:col-span-7 space-y-8">
           <div>
-            <h1 className="anton-heading text-5xl mb-2">SHOPPING BAG</h1>
+            <h1 className="anton-heading text-5xl mb-2 text-ink">CHECKOUT</h1>
             <p className="space-grotesk text-xs text-zinc-600 uppercase tracking-wider">
-              {cart.length} DISTINCT {cart.length === 1 ? 'ITEM' : 'ITEMS'} RESERVED
+              {cart.length} DISTINCT {cart.length === 1 ? 'ITEM' : 'ITEMS'} IN ALLOCATION RESERVATION
             </p>
           </div>
 
@@ -119,7 +108,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     <div className="flex justify-between items-start">
                       <h3 className="space-grotesk font-bold uppercase text-sm">{item.product.name}</h3>
                       <button
-                        onClick={() => onRemoveItem(item.product.id)}
+                        onClick={() => removeFromCart(item.product.id)}
                         className="text-zinc-400 hover:text-accentRed transition-colors"
                         title="Remove piece"
                       >
@@ -129,7 +118,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     <span className="text-[10px] space-grotesk text-zinc-500 uppercase tracking-widest">
                       SKU: {item.product.sku}
                     </span>
-                    <div className="text-xs font-bold space-grotesk mt-1">
+                    <div className="text-xs font-bold space-grotesk mt-1 text-ink">
                       ${(item.product.price_cents / 100).toFixed(2)} USD
                     </div>
                   </div>
@@ -137,21 +126,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className="flex items-center justify-between text-xs space-grotesk">
                     <div className="flex items-center border border-zinc-400 bg-white">
                       <button
-                        onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1)}
-                        className="px-2.5 py-0.5 hover:bg-zinc-200"
+                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        className="px-2.5 py-0.5 hover:bg-zinc-200 font-bold"
                       >
                         -
                       </button>
                       <span className="px-3 py-0.5 font-bold">{item.quantity}</span>
                       <button
-                        onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                         disabled={item.quantity >= item.product.stock}
-                        className="px-2.5 py-0.5 hover:bg-zinc-200 disabled:opacity-30"
+                        className="px-2.5 py-0.5 hover:bg-zinc-200 disabled:opacity-30 font-bold"
                       >
                         +
                       </button>
                     </div>
-                    <span className="font-bold">
+                    <span className="font-bold text-ink">
                       ${((item.product.price_cents * item.quantity) / 100).toFixed(2)}
                     </span>
                   </div>
@@ -162,7 +151,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
           {/* Customer Information Form */}
           <div className="bg-white p-8 border border-zinc-300 sharp-shadow space-y-4">
-            <h3 className="anton-heading text-2xl">CLIENT INFORMATION</h3>
+            <h3 className="anton-heading text-2xl text-ink">CLIENT INFORMATION</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs space-grotesk">
               <div>
                 <label className="block text-[10px] uppercase font-bold tracking-widest text-zinc-600 mb-1">
@@ -189,6 +178,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 />
               </div>
             </div>
+
+            <div className="pt-2">
+              <label className="block text-[10px] uppercase font-bold tracking-widest text-zinc-600 mb-1">
+                DELIVERY ADDRESS
+              </label>
+              <input
+                type="text"
+                defaultValue="740 Park Avenue, Penthouse B, New York, NY 10021"
+                className="w-full border border-zinc-400 p-2.5 outline-none focus:border-ink text-xs space-grotesk"
+              />
+            </div>
           </div>
         </div>
 
@@ -198,46 +198,57 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           <div className="bg-zinc-900 text-white p-6 border border-zinc-800 space-y-3 font-mono text-xs">
             <div className="flex items-center justify-between text-zinc-400">
               <span className="flex items-center gap-1.5 font-bold text-amber-400 text-[11px]">
-                <ShieldCheck className="w-4 h-4" /> IDEMPOTENCY KEY (SECTION 3.3)
+                <ShieldCheck className="w-4 h-4" /> IDEMPOTENCY INSPECTOR
               </span>
               <button
+                type="button"
                 onClick={() => setIdempotencyKey(generateUUID())}
-                className="hover:text-white flex items-center gap-1 text-[10px]"
-                title="Regenerate unique key"
+                className="flex items-center gap-1 text-[10px] text-zinc-300 hover:text-white underline"
+                title="Generate fresh UUID"
               >
-                <RefreshCw className="w-3 h-3" /> REFRESH
+                <RefreshCw className="w-3 h-3" /> RE-GENERATE
               </button>
             </div>
-            <div className="bg-black/60 p-2.5 rounded border border-zinc-800 break-all select-all text-emerald-400 text-[11px]">
-              {idempotencyKey}
+
+            <div>
+              <span className="text-[10px] text-zinc-500 uppercase block mb-1">
+                Active Header: Idempotency-Key
+              </span>
+              <input
+                type="text"
+                value={idempotencyKey}
+                onChange={(e) => setIdempotencyKey(e.target.value)}
+                className="w-full bg-black/60 border border-zinc-700 px-3 py-1.5 text-[11px] text-emerald-400 font-mono outline-none focus:border-emerald-500"
+              />
             </div>
-            <p className="text-[10px] text-zinc-400 leading-normal">
-              This UUID is attached as the <code className="text-zinc-200">Idempotency-Key</code> header. Repeating checkout with this exact key returns the original cached order and prevents duplicate billing or stock deduction.
+
+            <p className="text-[10px] text-zinc-400 leading-relaxed font-sans">
+              Protects against double-charging on duplicate clicks or network retry timeouts. The server caches this key inside PostgreSQL and returns the original order without re-deducting stock.
             </p>
           </div>
 
-          {/* Financial Breakdown */}
+          {/* Summary Box */}
           <div className="bg-white p-8 border border-zinc-300 sharp-shadow space-y-6">
-            <h3 className="anton-heading text-3xl">SUMMARY</h3>
+            <h3 className="anton-heading text-2xl text-ink">ORDER SUMMARY</h3>
 
-            <div className="space-y-3 text-xs space-grotesk border-b border-zinc-200 pb-4">
-              <div className="flex justify-between text-zinc-600">
-                <span>SUBTOTAL</span>
-                <span>{formattedSubtotal} USD</span>
+            <div className="space-y-3 text-xs space-grotesk border-b border-zinc-300 pb-6">
+              <div className="flex justify-between">
+                <span className="text-zinc-500 uppercase">SUBTOTAL</span>
+                <span className="font-bold">{formattedSubtotal} USD</span>
               </div>
-              <div className="flex justify-between text-zinc-600">
-                <span>COMPLIMENTARY SHIPPING</span>
-                <span>$0.00 USD</span>
+              <div className="flex justify-between">
+                <span className="text-zinc-500 uppercase">INSURED EXPRESS SHIPPING</span>
+                <span className="font-bold text-emerald-700 uppercase">COMPLIMENTARY</span>
               </div>
-              <div className="flex justify-between text-zinc-600">
-                <span>DUTIES & TAXES INCLUDED</span>
-                <span>$0.00 USD</span>
+              <div className="flex justify-between">
+                <span className="text-zinc-500 uppercase">IMPORT DUTIES &amp; HANDLING</span>
+                <span className="text-zinc-400">INCLUDED</span>
               </div>
             </div>
 
             <div className="flex justify-between items-baseline text-sm space-grotesk font-bold">
-              <span>TOTAL (SERVER CALCULATED)</span>
-              <span className="text-xl text-accentRed">{formattedSubtotal} USD</span>
+              <span className="uppercase">TOTAL SETTLEMENT</span>
+              <span className="text-2xl text-accentRed">{formattedSubtotal} USD</span>
             </div>
 
             {errorMessage && (
@@ -250,18 +261,26 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <button
               onClick={() => handleSubmitOrder()}
               disabled={isSubmitting}
-              className="w-full bg-ink text-white py-4 text-xs font-bold uppercase tracking-widest space-grotesk sharp-shadow hover:bg-zinc-800 transition-all disabled:opacity-50"
+              className="w-full bg-ink text-white py-4 text-xs font-bold uppercase tracking-widest space-grotesk sharp-shadow hover:bg-zinc-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isSubmitting ? 'PROCESSING TRANSACTION...' : `PLACE ORDER — ${formattedSubtotal}`}
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" /> EXECUTING TRANSACTION...
+                </>
+              ) : (
+                <>
+                  CONFIRM &amp; PAY {formattedSubtotal} <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
 
             <button
               type="button"
               onClick={() => handleSubmitOrder(idempotencyKey)}
               disabled={isSubmitting}
-              className="w-full bg-zinc-200 text-ink py-2 text-[10px] font-bold uppercase tracking-wider space-grotesk hover:bg-zinc-300 transition-colors"
+              className="w-full bg-zinc-100 text-zinc-700 border border-zinc-300 py-2.5 text-[10px] font-bold uppercase tracking-wider space-grotesk hover:bg-zinc-200 transition-colors"
             >
-              TEST IDEMPOTENCY (RE-SEND EXACT SAME KEY)
+              SIMULATE DUPLICATE SUBMISSION (REPLAY TEST)
             </button>
           </div>
         </div>
