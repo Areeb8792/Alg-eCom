@@ -36,6 +36,18 @@ jobs:
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
         run: npm test
 
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Background Development Servers for E2E
+        run: |
+          npm run dev:api &
+          npm run dev:web &
+          sleep 5
+
+      - name: Execute End-to-End Browser Test Suite
+        run: npm run test:e2e
+
       - name: Verify API Multi-Stage Docker Build
         run: |
           docker build -t algions-api:test -f apps/api/Dockerfile apps/api

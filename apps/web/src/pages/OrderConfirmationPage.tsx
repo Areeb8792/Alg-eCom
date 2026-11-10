@@ -18,6 +18,7 @@ export const OrderConfirmationPage: React.FC = () => {
   const [currentOrder, setCurrentOrder] = useState<Order | null>(locationState?.order || null);
   const [isReplayed, setIsReplayed] = useState<boolean>(locationState?.isReplayed || false);
   const [lookupQuery, setLookupQuery] = useState(orderId || '');
+  const [verifyEmail, setVerifyEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
 
@@ -46,7 +47,8 @@ export const OrderConfirmationPage: React.FC = () => {
     setLookupError(null);
 
     try {
-      const found = await fetchOrder(lookupQuery.trim());
+      const emailQuery = verifyEmail.trim() ? `?email=${encodeURIComponent(verifyEmail.trim())}` : '';
+      const found = await fetchOrder(`${lookupQuery.trim()}${emailQuery}`);
       setCurrentOrder(found);
       setIsReplayed(false);
       navigate(`/orders/${found.id}`);
@@ -67,24 +69,49 @@ export const OrderConfirmationPage: React.FC = () => {
       </Link>
 
       {/* Order Lookup Search Bar */}
-      <div className="bg-zinc-900 text-white p-6 border border-zinc-800 space-y-3">
-        <h4 className="space-grotesk text-xs uppercase font-bold tracking-widest text-zinc-400">
-          TRACK AN EXISTING ORDER (API: GET /api/v1/orders/:id)
-        </h4>
-        <form onSubmit={handleLookup} className="flex gap-2">
-          <input
-            type="text"
-            placeholder="ENTER ORDER REFERENCE (e.g. HW-2024-XXXX) OR UUID..."
-            value={lookupQuery}
-            onChange={(e) => setLookupQuery(e.target.value)}
-            className="flex-1 bg-black/60 border border-zinc-700 text-xs px-4 py-2.5 font-mono text-white outline-none focus:border-white"
-          />
+      <div className="bg-zinc-900 text-white p-6 border border-zinc-800 space-y-4">
+        <div>
+          <h4 className="space-grotesk text-xs uppercase font-bold tracking-widest text-zinc-300">
+            SECURE ORDER VERIFICATION &amp; TRACKING
+          </h4>
+          <p className="text-[11px] text-zinc-400 space-grotesk mt-0.5">
+            Cryptographically keyed order tracker with client privacy protection.
+          </p>
+        </div>
+        <form onSubmit={handleLookup} className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] uppercase font-bold tracking-widest text-zinc-400 mb-1 space-grotesk">
+                ORDER REFERENCE OR UUID
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. HW-2026-F4C9B1A2"
+                value={lookupQuery}
+                onChange={(e) => setLookupQuery(e.target.value)}
+                className="w-full bg-black/60 border border-zinc-700 text-xs px-4 py-2.5 font-mono text-white outline-none focus:border-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase font-bold tracking-widest text-zinc-400 mb-1 space-grotesk">
+                CLIENT EMAIL (VERIFIES IDENTITY)
+              </label>
+              <input
+                type="email"
+                placeholder="client@luxuryfashion.com"
+                value={verifyEmail}
+                onChange={(e) => setVerifyEmail(e.target.value)}
+                className="w-full bg-black/60 border border-zinc-700 text-xs px-4 py-2.5 text-white outline-none focus:border-white space-grotesk"
+              />
+            </div>
+          </div>
           <button
             type="submit"
             disabled={loading}
-            className="bg-white text-ink px-6 py-2.5 text-xs font-bold uppercase tracking-widest space-grotesk hover:bg-zinc-200 flex items-center gap-2"
+            className="w-full sm:w-auto bg-white text-ink px-8 py-2.5 text-xs font-bold uppercase tracking-widest space-grotesk hover:bg-zinc-200 flex items-center justify-center gap-2"
           >
-            <Search className="w-4 h-4" /> {loading ? 'FINDING...' : 'TRACK'}
+            <Search className="w-4 h-4" /> {loading ? 'VERIFYING...' : 'TRACK & VERIFY'}
           </button>
         </form>
         {lookupError && <p className="text-accentRed text-xs space-grotesk">{lookupError}</p>}
@@ -127,6 +154,11 @@ export const OrderConfirmationPage: React.FC = () => {
               </span>
               <p className="font-bold text-sm text-ink">{currentOrder.customer_name}</p>
               <p className="text-zinc-600">{currentOrder.customer_email}</p>
+              {currentOrder.is_privacy_masked && (
+                <span className="inline-block mt-2 text-[10px] text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 font-mono">
+                  🔒 PRIVACY PROTECTED: SENSITIVE DETAILS MASKED
+                </span>
+              )}
             </div>
             <div>
               <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">

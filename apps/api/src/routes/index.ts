@@ -4,6 +4,7 @@ import { ProductController } from '../controllers/productController.js';
 import { OrderController } from '../controllers/orderController.js';
 import { AdminController } from '../controllers/adminController.js';
 import { requireAdminAuth } from '../middleware/auth.js';
+import { orderLookupLimiter } from '../middleware/rateLimiter.js';
 
 export const apiRouter = Router();
 
@@ -23,7 +24,7 @@ apiRouter.get('/products/:id', productController.getById);
 
 // Orders / Checkout
 apiRouter.post('/orders', orderController.create);
-apiRouter.get('/orders/:id', orderController.getById);
+apiRouter.get('/orders/:id', orderLookupLimiter, orderController.getById);
 
 // Admin Operations
 apiRouter.post('/admin/auth/login', adminController.login);

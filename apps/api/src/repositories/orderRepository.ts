@@ -265,9 +265,10 @@ export class OrderRepository {
         });
       }
 
-      // 3. Create the order
-      const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const orderRef = `HW-${new Date().getFullYear()}-${randomSuffix}`;
+      // 3. Create the order with high-entropy cryptographic reference
+      const randomSuffix = crypto.randomBytes(4).toString('hex').toUpperCase();
+      const currentYear = new Date().getFullYear();
+      const orderRef = `HW-${currentYear}-${randomSuffix}`;
 
       const orderInsertRes = await client.query<Order>(
         `INSERT INTO orders (order_reference, customer_email, customer_name, status, subtotal_cents, currency)
@@ -394,7 +395,9 @@ export class OrderRepository {
     }
 
     const orderId = crypto.randomUUID();
-    const orderRef = `HW-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const randomSuffix = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const currentYear = new Date().getFullYear();
+    const orderRef = `HW-${currentYear}-${randomSuffix}`;
 
     const createdOrder: Order = {
       id: orderId,

@@ -40,6 +40,7 @@ export interface Order {
   subtotal_cents: number;
   currency: string;
   items?: OrderItem[];
+  is_privacy_masked?: boolean;
   created_at: string;
   updated_at: string;
 }

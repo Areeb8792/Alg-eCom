@@ -80,6 +80,7 @@ export class OrderController {
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
+      const verifyEmail = (req.query.email as string || '').toLowerCase().trim();
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
       const order = isUUID
@@ -96,8 +97,29 @@ export class OrderController {
         return;
       }
 
+      // Check privacy: If client provides matching email or has admin header, reveal full PII
+      const hasEmailMatch = verifyEmail && order.customer_email.toLowerCase() === verifyEmail;
+      const authHeader = req.headers.authorization;
+      const isAdmin = authHeader && authHeader.startsWith('Bearer ');
+
+      if (hasEmailMatch || isAdmin) {
+        res.status(200).json({ data: order });
+        return;
+      }
+
+      // Mask PII for public unverified lookup to protect customer privacy
+      const maskedEmail = order.customer_email.replace(/^(.)(.*)(@.*)$/, (_, first, middle, domain) => {
+        return `${first}${'*'.repeat(Math.min(middle.length, 4))}${domain}`;
+      });
+      const maskedName = order.customer_name.split(' ').map((n) => `${n[0]}***`).join(' ');
+
       res.status(200).json({
-        data: order
+        data: {
+          ...order,
+          customer_email: maskedEmail,
+          customer_name: maskedName,
+          is_privacy_masked: true
+        }
       });
     } catch (error) {
       next(error);

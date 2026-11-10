@@ -25,8 +25,8 @@ RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
 COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
 
 # Copy reverse proxy and security configuration
-COPY ../../infra/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY ../../infra/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Create directory for local SSL certificates
 RUN mkdir -p /etc/nginx/ssl

@@ -192,38 +192,18 @@ export const CheckoutPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Idempotency & Order Summary */}
+        {/* Right: Order Summary & Settlement */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Idempotency Inspector Box */}
-          <div className="bg-zinc-900 text-white p-6 border border-zinc-800 space-y-3 font-mono text-xs">
-            <div className="flex items-center justify-between text-zinc-400">
-              <span className="flex items-center gap-1.5 font-bold text-amber-400 text-[11px]">
-                <ShieldCheck className="w-4 h-4" /> IDEMPOTENCY INSPECTOR
+          {/* Security & Logistics Card */}
+          <div className="bg-ink text-white p-6 border border-ink space-y-3 font-sans text-xs">
+            <div className="flex items-center gap-2 text-white">
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              <span className="font-bold uppercase tracking-wider text-sm anton-heading">
+                TRANSACTIONAL INTEGRITY GUARANTEE
               </span>
-              <button
-                type="button"
-                onClick={() => setIdempotencyKey(generateUUID())}
-                className="flex items-center gap-1 text-[10px] text-zinc-300 hover:text-white underline"
-                title="Generate fresh UUID"
-              >
-                <RefreshCw className="w-3 h-3" /> RE-GENERATE
-              </button>
             </div>
-
-            <div>
-              <span className="text-[10px] text-zinc-500 uppercase block mb-1">
-                Active Header: Idempotency-Key
-              </span>
-              <input
-                type="text"
-                value={idempotencyKey}
-                onChange={(e) => setIdempotencyKey(e.target.value)}
-                className="w-full bg-black/60 border border-zinc-700 px-3 py-1.5 text-[11px] text-emerald-400 font-mono outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <p className="text-[10px] text-zinc-400 leading-relaxed font-sans">
-              Protects against double-charging on duplicate clicks or network retry timeouts. The server caches this key inside PostgreSQL and returns the original order without re-deducting stock.
+            <p className="text-xs text-zinc-300 leading-relaxed space-grotesk">
+              Every checkout executes under ACID isolation with cryptographically verified idempotency. Inventory is reserved in real time to prevent duplicate allocations.
             </p>
           </div>
 
@@ -274,14 +254,38 @@ export const CheckoutPage: React.FC = () => {
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={() => handleSubmitOrder(idempotencyKey)}
-              disabled={isSubmitting}
-              className="w-full bg-zinc-100 text-zinc-700 border border-zinc-300 py-2.5 text-[10px] font-bold uppercase tracking-wider space-grotesk hover:bg-zinc-200 transition-colors"
-            >
-              SIMULATE DUPLICATE SUBMISSION (REPLAY TEST)
-            </button>
+            {/* Discreet Collapsible Developer Diagnostics Drawer */}
+            <details className="pt-2 text-[11px] font-mono text-zinc-500 border-t border-zinc-200">
+              <summary className="cursor-pointer hover:text-ink select-none font-bold space-grotesk text-[10px] uppercase tracking-wider text-zinc-400 py-1">
+                ⚙️ DEVELOPER DIAGNOSTICS &amp; IDEMPOTENCY INSPECTOR
+              </summary>
+              <div className="mt-3 p-4 bg-zinc-900 text-white border border-zinc-800 space-y-3">
+                <div className="flex justify-between items-center text-zinc-400">
+                  <span>HEADER: Idempotency-Key</span>
+                  <button
+                    type="button"
+                    onClick={() => setIdempotencyKey(generateUUID())}
+                    className="text-emerald-400 hover:underline flex items-center gap-1 text-[10px]"
+                  >
+                    <RefreshCw className="w-2.5 h-2.5" /> NEW KEY
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={idempotencyKey}
+                  onChange={(e) => setIdempotencyKey(e.target.value)}
+                  className="w-full bg-black/60 border border-zinc-700 px-2 py-1 text-[10px] text-emerald-400 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSubmitOrder(idempotencyKey)}
+                  disabled={isSubmitting}
+                  className="w-full bg-zinc-800 text-white border border-zinc-600 py-1.5 text-[9px] font-bold uppercase tracking-wider hover:bg-zinc-700"
+                >
+                  SIMULATE REPLAY TEST WITH ACTIVE KEY
+                </button>
+              </div>
+            </details>
           </div>
         </div>
       </div>
