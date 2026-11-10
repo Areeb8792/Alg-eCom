@@ -34,11 +34,9 @@ Supply Chain Security:
 [3] Live Image Reference Audit:
 --------------------------------------------------------------------------------
 - Production compose override: docker-compose.prod.yml
-- Declared image tags: ghcr.io/sayyeds/algions-api:08733bd, ghcr.io/sayyeds/algions-web:08733bd
-- Live Pull Test: docker pull ghcr.io/sayyeds/algions-api:08733bd
-  Result: Error response from daemon: error from registry: denied
-- Finding: The image tag 08733bd was a candidate commit reference and does NOT exist publicly on GHCR. Remote release workflow has not yet been triggered because no remote GitHub origin is attached to this workstation.
-- Acceptance Status: Gate 21 is marked BLOCKED from remote publication until candidate pushes to a remote GitHub repository. Local Compose uses reproducible local build tags (algions-api:local, algions-web:local).
+- Target GHCR image repository: ghcr.io/areeb8792/alg-ecom/api and ghcr.io/areeb8792/alg-ecom/web
+- Remote origin: https://github.com/Areeb8792/Alg-eCom.git
+- Acceptance Status: Gate 21 is activated by pushing the release tag v1.0.0 to origin.
 
 [4] Required User Commands to Trigger Remote Publication:
 --------------------------------------------------------------------------------

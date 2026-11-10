@@ -1,7 +1,7 @@
 # Algions AI Labs — Cloud Deployment & CI/CD E-Commerce Platform
 ### DevOps & Cloud Engineering Shortlisting Assessment
 
-[![CI Pipeline](https://github.com/sayyeds/algions-ecommerce-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/sayyeds/algions-ecommerce-platform/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/Areeb8792/Alg-eCom/actions/workflows/ci.yml/badge.svg)](https://github.com/Areeb8792/Alg-eCom/actions/workflows/ci.yml)
 [![Tests Passing](https://img.shields.io/badge/backend%20tests-25%20passed-brightgreen.svg)](docs/TEST_PLAN.md)
 [![E2E Tests](https://img.shields.io/badge/playwright%20e2e-8%20passed-brightgreen.svg)](docs/TEST_PLAN.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
@@ -93,7 +93,7 @@ For complete architectural specifications and diagrams, see [docs/ARCHITECTURE.m
 
 ### 4.2 Clone & Install
 ```bash
-git clone https://github.com/sayyeds/algions-ecommerce-platform.git
+git clone https://github.com/Areeb8792/Alg-eCom.git
 cd algions-ecommerce-platform
 
 # Install monorepo dependencies

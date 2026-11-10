@@ -184,7 +184,7 @@ algions-prometheus   prom/prometheus:v3.13.5  "/bin/prometheus --c…"   prometh
 ## 6. GitHub Container Registry (GHCR) Separation
 
 - **Local Development**: `docker-compose.yml` uses local image identifiers (`algions-api:local` and `algions-web:local`) with `pull_policy: build`, ensuring reproducible local builds without requiring external registry authentication.
-- **Production / Release**: `docker-compose.prod.yml` defines image overrides targeting `ghcr.io/sayyeds/algions-api:<SHA>` and `ghcr.io/sayyeds/algions-web:<SHA>` with `pull_policy: if_not_present`.
+- **Production / Release**: `docker-compose.prod.yml` defines image overrides targeting `ghcr.io/areeb8792/alg-ecom/api:${IMAGE_TAG:-v1.0.0}` and `ghcr.io/areeb8792/alg-ecom/web:${IMAGE_TAG:-v1.0.0}` with `pull_policy: if_not_present`.
 - **Release CI/CD Workflow**: `.github/workflows/release.yml` is configured with `context: .` to build and publish multi-arch container images with provenance and SBOM when release tags (`v*.*.*`) are pushed. Remote publication is pending git remote configuration.
 
 ---
