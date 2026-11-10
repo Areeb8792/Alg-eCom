@@ -1,81 +1,97 @@
 ================================================================================
 Algions AI Labs — CI/CD Pipeline & GHCR Image Release Status
 ================================================================================
-Timestamp: 2026-11-10T19:22:00+05:30
+Timestamp: 2026-11-10T20:10:00+05:30
 Repository: https://github.com/Areeb8792/Alg-eCom.git
-Commit SHA: 226802312dd1d1262db5cfa7e58752df0794f89e
-Branch: main (Default remote branch)
-Release Tag: v1.0.0
+Default Branch: main
+Release Source Commit: 226802312dd1d1262db5cfa7e58752df0794f89e (Tag: v1.0.0)
+Security Hardening Commit: 464b7dd2d8fdd0c531e9a48d8dd9b02ba749105a (Tag: v1.0.1)
 
 [1] Continuous Integration Pipeline (.github/workflows/ci.yml):
 --------------------------------------------------------------------------------
-Workflow Name: Continuous Integration (CI)
-Run ID: 42825887712
-Run URL: https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712
-Status: completed
-Conclusion: success
-Execution Duration: 3m 9s
-Completed Steps (19/19):
-  1. Set up job: SUCCESS
-  2. Disable Pre-installed Host PostgreSQL Service: SUCCESS
-  3. Start Isolated PostgreSQL 16 Container: SUCCESS
-  4. Checkout Source Code: SUCCESS
-  5. Setup Node.js Runtime LTS (Node 24): SUCCESS
-  6. Install Monorepo Dependencies (npm ci): SUCCESS
-  7. Run Gitleaks Secret Scanner (.gitleaks.toml): SUCCESS (0 leaks detected)
-  8. Verify TypeScript Type Integrity (tsc --noEmit): SUCCESS (0 type errors)
-  9. Run ESLint & Static Analysis: SUCCESS (0 lint errors)
- 10. Initialize Database Schema & Seed: SUCCESS
- 11. Execute Automated Test Suite (Unit, Idempotency, Concurrency): SUCCESS (25/25 tests passed)
- 12. Install Playwright Browsers: SUCCESS
- 13. Start Background Development Servers for E2E: SUCCESS
- 14. Execute End-to-End Browser Test Suite: SUCCESS (8/8 journeys passed)
- 15. Verify API Multi-Stage Docker Build: SUCCESS
- 16. Verify Web Multi-Stage Docker Build: SUCCESS
- 17. Run Trivy Container Vulnerability Scan (API): SUCCESS (0 critical vulnerabilities)
- 18. Run Trivy Container Vulnerability Scan (Web): SUCCESS (0 critical vulnerabilities)
- 19. Stop PostgreSQL Container: SUCCESS
+1. Initial CI Verification Run:
+   - Run ID: 42825887712
+   - Run URL: https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712
+   - Commit: 2268023
+   - Status: completed | Conclusion: success (19/19 steps passed)
+
+2. Security-Hardened CI Verification Run:
+   - Run ID: 42832007351
+   - Run URL: https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351
+   - Commit: 464b7dd
+   - Status: completed | Conclusion: success (19/19 steps passed)
+   - Completed Steps:
+     1. Set up job: SUCCESS
+     2. Disable Pre-installed Host PostgreSQL Service: SUCCESS
+     3. Start Isolated PostgreSQL 16 Container: SUCCESS (Password authentication enforced, trust method removed)
+     4. Checkout Source Code: SUCCESS (fetch-depth: 0)
+     5. Setup Node.js Runtime LTS (Node 24): SUCCESS
+     6. Install Monorepo Dependencies (npm ci): SUCCESS
+     7. Run Gitleaks Secret Scanner (.gitleaks.toml): SUCCESS (0 secrets detected)
+     8. Verify TypeScript Type Integrity (tsc --noEmit): SUCCESS (0 type errors)
+     9. Run ESLint & Static Analysis: SUCCESS (0 lint errors)
+    10. Initialize Database Schema & Seed: SUCCESS (Strict password auth via PGPASSWORD)
+    11. Execute Automated Test Suite (Unit, Idempotency, Concurrency, Security Governance): SUCCESS (36/36 tests passed)
+    12. Install Playwright Browsers: SUCCESS
+    13. Start Background Development Servers for E2E: SUCCESS
+    14. Execute End-to-End Browser Test Suite: SUCCESS (8/8 browser journeys passed)
+    15. Verify API Multi-Stage Docker Build: SUCCESS
+    16. Verify Web Multi-Stage Docker Build: SUCCESS
+    17. Run Trivy Container Vulnerability Scan (API): SUCCESS (Policy: Fail on fixable CRITICAL; 0 criticals detected)
+    18. Run Trivy Container Vulnerability Scan (Web): SUCCESS (Policy: Fail on fixable CRITICAL; 0 criticals detected)
+    19. Stop PostgreSQL Container: SUCCESS
 
 [2] Container Release & GHCR Publication (.github/workflows/release.yml):
 --------------------------------------------------------------------------------
-Workflow Name: Continuous Delivery & Container Release (CD)
-Run ID: 42826623060
-Run URL: https://github.com/Areeb8792/Alg-eCom/actions/runs/42826623060
-Trigger: Push tag refs/tags/v1.0.0
-Status: completed
-Conclusion: success
-Execution Duration: 10m 31s
-Completed Steps (21/21):
-  1. Set up job: SUCCESS
-  2. Checkout Source Code: SUCCESS
-  3. Set up QEMU (Multi-platform emulation): SUCCESS
-  4. Set up Docker Buildx: SUCCESS
-  5. Log in to GitHub Container Registry (ghcr.io): SUCCESS
-  6. Extract Metadata (Tags & Labels) for API: SUCCESS
-  7. Build and Push API Container Image (linux/amd64, linux/arm64): SUCCESS
-  8. Extract Metadata for Web: SUCCESS
-  9. Build and Push Web Container Image (linux/amd64, linux/arm64): SUCCESS
- 10. Emit Release Artifact Evidence: SUCCESS
+1. Release v1.0.0 (Initial Baseline):
+   - Run ID: 42826623060
+   - Run URL: https://github.com/Areeb8792/Alg-eCom/actions/runs/42826623060
+   - Status: completed | Conclusion: success
+
+2. Release v1.0.1 (Security Hardening Patch):
+   - Run ID: 42832961461
+   - Run URL: https://github.com/Areeb8792/Alg-eCom/actions/runs/42832961461
+   - Trigger: Push tag refs/tags/v1.0.1
+   - Status: completed | Conclusion: success
+   - Completed Steps (10 workflow steps in YAML, 21 lifecycle steps in Actions runner log):
+     1. Set up job: SUCCESS
+     2. Checkout Source Code: SUCCESS
+     3. Set up QEMU (Multi-platform emulation): SUCCESS
+     4. Set up Docker Buildx: SUCCESS
+     5. Log in to GitHub Container Registry (ghcr.io): SUCCESS
+     6. Extract Metadata (Tags & Labels) for API: SUCCESS
+     7. Build and Push API Container Image (linux/amd64, linux/arm64): SUCCESS
+     8. Extract Metadata for Web: SUCCESS
+     9. Build and Push Web Container Image (linux/amd64, linux/arm64): SUCCESS
+    10. Emit Release Artifact Evidence: SUCCESS
 
 [3] Published Artifact Manifests & Remote Pull Verification:
 --------------------------------------------------------------------------------
-1. API Service Container:
-   - Target Image: ghcr.io/areeb8792/alg-ecom/api:v1.0.0
-   - Manifest Digest: sha256:690179ebd62dd38939f2aa3a8d43f30a83a9ec495f2ccbde807e9d446ddaaed8
-   - Supported Architectures: linux/amd64, linux/arm64
-   - Supply Chain Attestations: SBOM (SPDX JSON), Provenance (mode=max, SLSA-compatible)
-   - Local Pull Status: VERIFIED (Status: Downloaded newer image for ghcr.io/areeb8792/alg-ecom/api:v1.0.0)
+1. API Service Container (v1.0.1):
+   - Target Image: ghcr.io/areeb8792/alg-ecom/api:v1.0.1
+   - OCI Index Manifest Digest: sha256:2756fd6919ffe79b233a5adbce6cd604575b58ba934aa71924ef5c76a8a6a60e
+   - Platform Manifests:
+     * linux/amd64: sha256:a78bea4e0496041c1266ed3867538b53d0eb598af70f80a7c0cc2514f1abd86f
+     * linux/arm64: sha256:4d24fa871e9b5b1eb9344c1e9fd500f3dcff64181662ca2934b79135986b4b36
+   - Supply Chain Attestations: BuildKit-generated SBOM (SPDX format) and provenance attestations (mode=max, SLSA-compatible)
+   - Local Pull Status: VERIFIED (Status: Downloaded newer image for ghcr.io/areeb8792/alg-ecom/api:v1.0.1)
 
-2. Web Frontend Container:
-   - Target Image: ghcr.io/areeb8792/alg-ecom/web:v1.0.0
-   - Manifest Digest: sha256:839bfbe73441832b12323ea551ecc9664ee886db7d978b8d8e38feb91de8d1c2
-   - Supported Architectures: linux/amd64, linux/arm64
-   - Supply Chain Attestations: SBOM (SPDX JSON), Provenance (mode=max, SLSA-compatible)
-   - Local Pull Status: VERIFIED (Status: Downloaded newer image for ghcr.io/areeb8792/alg-ecom/web:v1.0.0)
+2. Web Frontend Container (v1.0.1):
+   - Target Image: ghcr.io/areeb8792/alg-ecom/web:v1.0.1
+   - OCI Index Manifest Digest: sha256:6243ed7ed11a1aec85fadb4474fe80f8d6daca6ad6cfc2556911460035da5ffb
+   - Platform Manifests:
+     * linux/amd64: sha256:ca0923b7fc9a3dc3c7c5211668334e4fbed3dc4aec4c793d47a88edd1ee11c8e
+     * linux/arm64: sha256:aebd2cdc1613a88c25fd00cf10013e135db11e0aa75e841691036375b0909b00
+   - Supply Chain Attestations: BuildKit-generated SBOM (SPDX format) and provenance attestations (mode=max, SLSA-compatible)
+   - Local Pull Status: VERIFIED (Status: Downloaded newer image for ghcr.io/areeb8792/alg-ecom/web:v1.0.1)
+
+3. Baseline Release v1.0.0 Containers (Preserved as Immutable Artifacts):
+   - API: ghcr.io/areeb8792/alg-ecom/api:v1.0.0 (Digest: sha256:690179ebd62dd38939f2aa3a8d43f30a83a9ec495f2ccbde807e9d446ddaaed8)
+   - Web: ghcr.io/areeb8792/alg-ecom/web:v1.0.0 (Digest: sha256:839bfbe73441832b12323ea551ecc9664ee886db7d978b8d8e38feb91de8d1c2)
 
 [4] Gate 21 Final Audit Conclusion:
 --------------------------------------------------------------------------------
 All conditions for Gate 21 (Container Release Workflow & GHCR Publishing) are satisfied
 with genuine, live remote execution evidence.
-Status: VERIFIED (32 of 32 Gates now VERIFIED: 100% Closure).
+Status: VERIFIED (32 of 32 Gates VERIFIED: 100% Closure).
 ================================================================================

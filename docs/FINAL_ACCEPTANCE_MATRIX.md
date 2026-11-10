@@ -6,7 +6,12 @@
 **Audit Timestamp**: November 10, 2026  
 **Auditor**: Lead DevOps & Cloud Infrastructure Engineer  
 **Workspace**: `d:\My personal\algions`  
-**Git Branch**: `master` | **Current Commit**: `85e8120`  
+**GitHub Repository**: `https://github.com/Areeb8792/Alg-eCom`  
+**Default Branch**: `main`  
+**Baseline Release Commit**: `2268023` (Tag: `v1.0.0`)  
+**Security Hardened Commit**: `464b7dd` (Tag: `v1.0.1`)  
+**CI Pipeline Runs**: [Run 42825887712](https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712) (v1.0.0, 19/19 passed) & [Run 42832007351](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351) (v1.0.1, 19/19 passed)  
+**CD Release Runs**: [Run 42826623060](https://github.com/Areeb8792/Alg-eCom/actions/runs/42826623060) (v1.0.0, published) & [Run 42832961461](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832961461) (v1.0.1, published)  
 **Evaluation Standard**: DevOps & Cloud Engineering Assessment Brief  
 
 ---
@@ -223,34 +228,35 @@ This acceptance ledger documents the explicit, reproducible verification of the 
 ### Section 5 — CI/CD & Image Governance
 
 #### Gate 19: Continuous Integration Pipeline (.github/workflows/ci.yml)
-- **Assessment Requirement**: Automated verification workflow testing TypeScript type integrity, linting, unit tests, and E2E browser tests.
-- **Job Description Competency**: Continuous integration, GitHub Actions workflow engineering.
+- **Assessment Requirement**: Automated verification workflow testing TypeScript type integrity, linting, unit tests, and E2E browser tests with isolated database authentication.
+- **Job Description Competency**: Continuous integration, GitHub Actions workflow engineering, database container lifecycle management.
 - **Implementation Location**: [`.github/workflows/ci.yml`](file:///d:/My%20personal/algions/.github/workflows/ci.yml).
-- **Actual Test Performed**: Local execution of all 14 stages specified in workflow.
-- **Command Used**: `npm run typecheck && npm test && npm run test:e2e`.
-- **Observed Result**: Clean passes across TypeScript compiler, 25 backend Vitest suites, and 8 Playwright browser tests.
+- **Actual Test Performed**: Triggered CI workflow on pushes to `main`. Executed all 19 job lifecycle steps in GitHub Actions runner, including isolated PostgreSQL 16 container bootstrap with strict password authentication (removing insecure `trust` method), Gitleaks secret scanning, typecheck, linting, database schema/seed initialization with password auth, 36 Vitest unit/security/idempotency tests, and 8 Playwright browser journeys.
+- **Command Used**: Remote GitHub Actions CI runs [42825887712](https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712) and [42832007351](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351).
+- **Observed Result**: 19 of 19 pipeline steps completed with `success`. Clean passes across TypeScript compiler, 36 Vitest tests, and 8 Playwright browser tests.
 - **Evidence Path**: [`docs/evidence/devops/final/ci_cd_and_ghcr_status.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/ci_cd_and_ghcr_status.txt).
 - **Primary Status**: **VERIFIED**
 
 #### Gate 20: Security Scanning in CI (Gitleaks & Trivy)
-- **Assessment Requirement**: Automated secret scanning over full Git history (`fetch-depth: 0`) and container vulnerability scanning.
+- **Assessment Requirement**: Automated secret scanning over full Git history (`fetch-depth: 0`) and container vulnerability scanning with an enforceable policy.
 - **Job Description Competency**: DevSecOps, secret leak prevention, container vulnerability management.
 - **Implementation Location**: [`.github/workflows/ci.yml`](file:///d:/My%20personal/algions/.github/workflows/ci.yml), [`.gitleaks.toml`](file:///d:/My%20personal/algions/.gitleaks.toml).
-- **Actual Test Performed**: Verified `fetch-depth: 0` configuration and local secret hygiene audit.
-- **Command Used**: `git check-ignore -v .env; git check-ignore -v nginx/ssl/server.key`.
-- **Observed Result**: Zero secrets committed; workflow configured with Gitleaks action and Trivy SARIF scanner.
+- **Actual Test Performed**: Full Git history scanned by Gitleaks Action (`fetch-depth: 0`). Multi-stage container images scanned by Trivy using a two-tier policy: failing the build on confirmed fixable CRITICAL vulnerabilities (`--severity CRITICAL --ignore-unfixed --exit-code 1`), while auditing and logging HIGH severity base runtime advisories (`--severity HIGH --ignore-unfixed --exit-code 0`).
+- **Command Used**: Automated execution in CI Run 42832007351 (Steps 7, 17, and 18).
+- **Observed Result**: Gitleaks reported 0 leaks across repository history. Trivy reported 0 fixable CRITICAL vulnerabilities on both `algions-api:test` and `algions-web:test`, exiting code 0.
 - **Evidence Path**: [`docs/evidence/devops/final/ci_cd_and_ghcr_status.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/ci_cd_and_ghcr_status.txt).
 - **Primary Status**: **VERIFIED**
 
 #### Gate 21: Container Release Workflow & GHCR Publishing
-- **Assessment Requirement**: Multi-platform container images published to GitHub Container Registry (`ghcr.io`) using `GITHUB_TOKEN`.
-- **Job Description Competency**: Multi-architecture container buildx, package publishing, SBOM generation.
+- **Assessment Requirement**: Multi-platform container images published to GitHub Container Registry (`ghcr.io`) with BuildKit SBOM and provenance attestations.
+- **Job Description Competency**: Multi-architecture container buildx, package publishing, supply chain attestations.
 - **Implementation Location**: [`.github/workflows/release.yml`](file:///d:/My%20personal/algions/.github/workflows/release.yml).
-- **Actual Test Performed**: Triggered release workflow via annotated tag `v1.0.0` push to remote repository `https://github.com/Areeb8792/Alg-eCom`. Pulled published images locally from `ghcr.io`.
-- **Command Used**: `git push origin v1.0.0`; `docker pull ghcr.io/areeb8792/alg-ecom/api:v1.0.0`; `docker pull ghcr.io/areeb8792/alg-ecom/web:v1.0.0`.
-- **Observed Result**: Both multi-architecture (`linux/amd64`, `linux/arm64`) images successfully built, versioned, signed with SPDX SBOM + max provenance attestation, and published to GHCR. Local `docker pull` verified:
-  - `ghcr.io/areeb8792/alg-ecom/api:v1.0.0` (Digest: `sha256:690179ebd62dd38939f2aa3a8d43f30a83a9ec495f2ccbde807e9d446ddaaed8`)
-  - `ghcr.io/areeb8792/alg-ecom/web:v1.0.0` (Digest: `sha256:839bfbe73441832b12323ea551ecc9664ee886db7d978b8d8e38feb91de8d1c2`)
+- **Actual Test Performed**: Triggered release pipeline via Git tag pushes `v1.0.0` and `v1.0.1`. Built multi-platform images (`linux/amd64`, `linux/arm64`) using QEMU and Docker Buildx with BuildKit-generated SBOM (`sbom: true`, SPDX format) and provenance attestations (`provenance: mode=max`, SLSA-compatible). Pulled images locally to verify OCI index manifests and platform layers.
+- **Command Used**: `git push origin v1.0.1`; `wsl -u root docker pull ghcr.io/areeb8792/alg-ecom/api:v1.0.1`; `wsl -u root docker pull ghcr.io/areeb8792/alg-ecom/web:v1.0.1`.
+- **Observed Result**: Both releases published successfully (CD Run 42826623060 for `v1.0.0` and CD Run 42832961461 for `v1.0.1`). Reconciled step count: 10 pipeline steps declared in YAML, 21 execution steps recorded in Actions runner lifecycle log. Local `docker pull` verified:
+  - `ghcr.io/areeb8792/alg-ecom/api:v1.0.1` (Digest: `sha256:2756fd6919ffe79b233a5adbce6cd604575b58ba934aa71924ef5c76a8a6a60e`)
+  - `ghcr.io/areeb8792/alg-ecom/web:v1.0.1` (Digest: `sha256:6243ed7ed11a1aec85fadb4474fe80f8d6daca6ad6cfc2556911460035da5ffb`)
+  - Initial `v1.0.0` images preserved as immutable baseline releases.
 - **Evidence Path**: [`docs/evidence/devops/final/ci_cd_and_ghcr_status.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/ci_cd_and_ghcr_status.txt).
 - **Primary Status**: **VERIFIED**
 
@@ -349,10 +355,10 @@ This acceptance ledger documents the explicit, reproducible verification of the 
 #### Gate 30: Automated Test Coverage (Vitest & Playwright)
 - **Assessment Requirement**: Comprehensive backend unit & integration tests plus browser user journey verification.
 - **Job Description Competency**: Automated test execution, quality engineering.
-- **Implementation Location**: [`apps/api/src/__tests__/`](file:///d:/My%20personal/algions/apps/api/src/__tests__/), [`e2e/storefront.spec.ts`](file:///d:/My%20personal/algions/e2e/storefront.spec.ts).
+- **Implementation Location**: [`apps/api/src/__tests__/`](file:///d:/My%20personal/algions/apps/api/src/__tests__/), [`apps/api/tests/`](file:///d:/My%20personal/algions/apps/api/tests/), [`e2e/storefront.spec.ts`](file:///d:/My%20personal/algions/e2e/storefront.spec.ts).
 - **Actual Test Performed**: Executed complete backend test suite and Playwright end-to-end tests.
 - **Command Used**: `npm test && npm run test:e2e`.
-- **Observed Result**: 25 backend tests passing (100%); 8 Playwright E2E browser tests passing (100%).
+- **Observed Result**: 36 backend tests passing (100% across unit, idempotency, concurrency, and security governance); 8 Playwright E2E browser tests passing (100%).
 - **Evidence Path**: [`docs/evidence/devops/final/ci_cd_and_ghcr_status.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/ci_cd_and_ghcr_status.txt).
 - **Primary Status**: **VERIFIED**
 
@@ -402,6 +408,18 @@ $$\text{VERIFIED (32)} + \text{BLOCKED (0)} = \text{TOTAL GATES (32)} \quad (100
 | :--- | :--- | :--- | :--- | :---: |
 | **Scenario 1** | Repeated checkout with identical idempotency key does not duplicate orders or double deduct inventory. | `orderRepository.ts` atomic insert and stock check inside transaction. | `npm --prefix apps/api test` (Tests in `idempotency_order.test.ts`) & Playwright checkout assertion. Verified replay returns HTTP 201 with `X-Idempotent-Replayed: true` and stock balance remains intact. | **VERIFIED** |
 | **Scenario 2** | Clean environment builds and starts the service reproducibly. | Multi-stage Dockerfiles (`node:24.22.2-alpine`, `nginx:1.30.6-alpine`), monorepo root context in `docker-compose.yml`, non-root execution. | Executed `docker compose build --no-cache` and `docker compose up -d`. All 5 services running and healthy (`algions-api`, `algions-postgres`, `algions-nginx`, `algions-prometheus`, `algions-grafana`). | **VERIFIED** |
-| **Scenario 3** | CI executes checks/tests and produces a versioned artifact/image. | `.github/workflows/ci.yml` (tests, lint, Playwright, Trivy, Gitleaks) & `.github/workflows/release.yml` (GHCR Buildx with SBOM). | Both CI and CD workflows passed on GitHub Actions (CI Run 42825887712, Release Run 42826623060). Multi-arch images `api:v1.0.0` and `web:v1.0.0` published to GHCR and pulled locally. | **VERIFIED** |
+| **Scenario 3** | CI executes checks/tests and produces a versioned artifact/image. | `.github/workflows/ci.yml` (tests, lint, Playwright, Trivy, Gitleaks) & `.github/workflows/release.yml` (GHCR Buildx with SBOM and provenance). | Both CI and CD workflows passed on GitHub Actions for baseline `v1.0.0` (CI Run 42825887712, Release Run 42826623060) and security-hardened patch release `v1.0.1` (CI Run 42832007351, Release Run 42832961461). Multi-arch images `api:v1.0.1` and `web:v1.0.1` published to GHCR and pulled locally. | **VERIFIED** |
 | **Scenario 4** | A service is deliberately stopped or broken, detected, and recovered. | Independent `/api/v1/health/live` vs `/api/v1/health/ready` probes, Prometheus scrape alerts, Compose restart policies. | Deployed failing candidate `v1.0.1-candidate`. Container crashed, startup gate blocked dependent startup. Executed `scripts/rollback.sh`, successfully restored `v1.0.0` with HTTP 200 return in ~15s. | **VERIFIED** |
-| **Scenario 5** | Database restore or deployment rollback is demonstrated with genuine evidence. | `scripts/backup-db.sh` (`pg_dump -Fc` + SHA-256), `scripts/restore-db.sh` (`--confirm` guard), `scripts/rollback.sh`. | Native backup generated 16,754-byte compressed archive; restored into `algions_fresh_cluster_test_db`; 100% match across all 7 entities. Rollback restored healthy baseline. | **VERIFIED** |
+| **Scenario 5** | Database restore or deployment rollback is demonstrated with genuine evidence. | `scripts/backup-db.sh` (`pg_dump -Fc` + SHA-256), `scripts/restore-db.sh` (`--confirm` guard), `scripts/rollback.sh`. | Native backup generated 16,754-byte compressed archive; restored into dedicated verification database `algions_fresh_cluster_test_db` within the PostgreSQL cluster; 100% match across all 7 entities. Rollback restored healthy baseline. | **VERIFIED** |
+
+---
+
+## 5. Submission Deliverables & Evaluation Crosswalk
+
+### 5.1 Internal Acceptance Ledger vs Official Assessment Evaluation
+- **Internal 32-Gate Acceptance Ledger**: Represents the internal engineering rigor and architectural verification checklist confirming zero regressions across all 8 functional and operational domains.
+- **Official Assessment Evaluation**: The candidate's final score awarded by Algions AI Labs evaluators based on the repository source code, git commit history, CI/CD execution runs, and demonstration video.
+
+### 5.2 Video Demonstration Deliverable Status
+- The **3–5 minute video demonstration** (Loom or screen recording) is an external manual submission deliverable.
+- All prerequisite operational workflows, endpoints, automated test runs, Docker Compose services, and drill commands required for the demonstration are fully implemented, verified, and documented step-by-step in [`docs/OPERATIONS_RUNBOOK.md`](file:///d:/My%20personal/algions/docs/OPERATIONS_RUNBOOK.md).
