@@ -14,6 +14,33 @@ jobs:
     name: Code Quality, Tests & Security Scan
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: algions_user
+          POSTGRES_PASSWORD: algions_password
+          POSTGRES_DB: algions_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: algions_user
+      DB_PASSWORD: algions_password
+      DB_NAME: algions_db
+      DATABASE_URL: postgresql://algions_user:algions_password@localhost:5432/algions_db
+      JWT_SECRET: super_secure_ci_jwt_secret_at_least_32_characters_long
+      PORT: 4000
+      HOST: 0.0.0.0
+      NODE_ENV: test
+
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
@@ -41,6 +68,11 @@ jobs:
       - name: Run ESLint & Static Analysis
         run: npm run lint
 
+      - name: Initialize Database Schema & Seed
+        run: |
+          npm run db:migrate --workspace=@algions/api
+          npm run db:seed --workspace=@algions/api
+
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
         run: npm test
 
@@ -51,21 +83,21 @@ jobs:
         run: |
           npm run dev:api &
           npm run dev:web &
-          sleep 5
+          npx wait-on http://localhost:3000 http://localhost:4000/api/v1/health/live --timeout 30000
 
       - name: Execute End-to-End Browser Test Suite
         run: npm run test:e2e
 
       - name: Verify API Multi-Stage Docker Build
         run: |
-          docker build -t algions-api:test -f apps/api/Dockerfile apps/api
+          docker build -t algions-api:test -f apps/api/Dockerfile .
 
       - name: Verify Web Multi-Stage Docker Build
         run: |
-          docker build -t algions-web:test -f apps/web/Dockerfile apps/web
+          docker build -t algions-web:test -f apps/web/Dockerfile .
 
       - name: Run Trivy Container Vulnerability Scan (API)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: 'algions-api:test'
           format: 'table'
@@ -73,7 +105,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Run Trivy Container Vulnerability Scan (Web)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: 'algions-web:test'
           format: 'table'
