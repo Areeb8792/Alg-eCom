@@ -40,6 +40,7 @@ jobs:
             -e POSTGRES_USER=algions_user \
             -e POSTGRES_PASSWORD=algions_password \
             -e POSTGRES_DB=algions_db \
+            -e POSTGRES_HOST_AUTH_METHOD=trust \
             postgres:16-alpine
 
           for i in $(seq 1 30); do
@@ -78,16 +79,11 @@ jobs:
         run: npm run lint
 
       - name: Initialize Database Schema & Seed
-        env:
-          DATABASE_URL: postgresql://algions_user:algions_password@127.0.0.1:5432/algions_db
-          DB_HOST: 127.0.0.1
-          DB_PORT: '5432'
-          DB_USER: algions_user
-          DB_PASSWORD: algions_password
-          DB_NAME: algions_db
         run: |
-          docker exec -i algions-ci-postgres psql -U algions_user -d algions_db < apps/api/src/database/schema.sql
-          npm run db:seed --workspace=@algions/api
+          echo "=== Applying schema via psql ==="
+          docker exec -i algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/schema.sql
+          echo "=== Seeding database via tsx ==="
+          npx tsx apps/api/src/database/seed.ts
 
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
         run: npm test
