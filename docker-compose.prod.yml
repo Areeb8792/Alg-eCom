@@ -1,0 +1,14 @@
+# ==============================================================================
+# Algions AI Labs — Production / GHCR Release Compose Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ==============================================================================
+name: algions-platform
+
+services:
+  api:
+    image: ${API_IMAGE:-ghcr.io/sayyeds/algions-api:08733bd}
+    pull_policy: if_not_present
+
+  nginx:
+    image: ${WEB_IMAGE:-ghcr.io/sayyeds/algions-web:08733bd}
+    pull_policy: if_not_present

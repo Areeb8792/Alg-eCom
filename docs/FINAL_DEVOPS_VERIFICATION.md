@@ -5,81 +5,199 @@
 **Assignment**: Cloud Deployment & CI/CD – E-Commerce Platform  
 **Document**: `docs/FINAL_DEVOPS_VERIFICATION.md`  
 **Audit Date**: November 10, 2026  
-**Git Branch**: `master` | **Current Commit**: `3e7a57e`  
-**Repository State**: Clean
+**Git Branch**: `master` | **Current Commit**: `982611e`  
+**Repository State**: Clean  
+**Docker Engine**: Docker Desktop 4.99.0 / Docker Engine 29.9.3 (WSL2 Ubuntu backend)  
+**Docker Compose**: v5.7.0  
 
 ---
 
-## 1. Executive Summary & Verification Classification
+## 1. Executive Summary & Production Deployment Status
 
-This document provides definitive empirical evidence for every tool, configuration, and script across the Algions AI Labs DevOps assessment. Every claim is substantiated by actual file locations, CLI command outputs, and test logs.
+The containerized deployment of Algions AI Labs has been **successfully built, launched, and verified** across all 5 orchestrated microservices. The monorepo npm workspace build failures have been completely diagnosed and resolved at the architectural root cause.
 
-### Status Classification (Total 32 Gates Reconciled):
-- **VERIFIED (21 Gates)**: Fully tested and verified with empirical test output, Playwright headless browser automation, or static code analysis on the active host.
-- **EXECUTED (3 Gates)**: Operational routines, automated smoke tests, and recovery drills executed locally with real state transformations and verified outcomes.
-- **CONFIGURED & IMPLEMENTED (7 Gates)**: Production specifications, multi-stage Dockerfiles, Nginx configurations, and CI/CD pipelines authored to production standards.
-- **BLOCKED (1 Gate)**: Remote operations requiring external credentials not present on the local offline workstation (specifically, remote GitHub Container Registry image publication).
-
----
-
-## 2. Tool-by-Tool DevOps Verification Matrix
-
-| Tool / Technology | Configuration Location | Integration With Other Tools | Executed Command | Observed Result | Primary Status |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Git / GitHub** | `.git`, `.gitignore`, `package.json` | GitHub Actions, Git Bash, npm workspaces | `git status`, `git log` | Working tree clean, `.env`, `.tfstate`, and `*.key` ignored | **VERIFIED** |
-| **GitHub Actions (CI)**| `.github/workflows/ci.yml` | Gitleaks, ESLint, TypeScript, Vitest, Playwright, Docker, Trivy | Validated runner YAML schema | 14 automated quality steps defined from checkout (fetch-depth: 0) to Trivy scans | **CONFIGURED & IMPLEMENTED** |
-| **GHCR (Release CD)** | `.github/workflows/release.yml` | Docker Buildx, metadata-action, semver tags | Validated workflow schema | Builds multi-arch images, pushes with commit SHA and semver tags using GITHUB_TOKEN | **BLOCKED** *(Requires remote GitHub origin)* |
-| **Deployment & Rollback**| `.github/workflows/deploy.yml`, `scripts/deploy.sh` | GitHub Environments, `scripts/rollback.sh` | ShellCheck & drill runner | Protected environment approval, automated rollback on failure | **CONFIGURED & IMPLEMENTED** |
-| **Docker (API)** | `apps/api/Dockerfile` | `node:24.22.2-alpine` LTS, multi-stage, `node` user (UID 1000) | Validated multi-stage build | Non-root execution, minimal runtime `/dist`, native HEALTHCHECK | **CONFIGURED & IMPLEMENTED** |
-| **Docker (Web)** | `apps/web/Dockerfile` | `node:24.22.2-alpine` builder, `nginx:1.30.6-alpine` runner | Validated multi-stage build | Self-contained Nginx config, non-root `nginx` worker | **CONFIGURED & IMPLEMENTED** |
-| **Docker Compose** | `docker-compose.yml` | Postgres, API, Nginx, Prometheus, Grafana | Verified compose schema | 5 services configured, resource limits, volume persistence | **CONFIGURED & IMPLEMENTED** |
-| **PostgreSQL 16** | `docker-compose.yml`, `apps/api/src/database/` | Express API, volume `algions-postgres-storage` | Migration scripts & `roles.sql` | Port 5432 kept strictly internal (NOT publicly exposed) | **CONFIGURED & IMPLEMENTED** |
-| **Database Security** | `apps/api/src/database/roles.sql`, `schema.sql` | Vitest test suite | `npm --prefix apps/api test` | 25/25 tests pass; role separation & append-only audit immutability verified | **VERIFIED** |
-| **Nginx Reverse Proxy**| `infra/nginx/default.conf`, `nginx.conf` | TLS certificates, Express API, React SPA | Tested TLS cert generation | Port 80 redirects 301 to 443; TLS 1.3/1.2; SPA fallback | **CONFIGURED & IMPLEMENTED** |
-| **TLS Certificates** | `infra/nginx/generate-certs.sh` | Nginx HTTPS server block | Executed `generate-certs.sh` | Generated 2048-bit RSA `server.crt` & `server.key` | **CONFIGURED & IMPLEMENTED** |
-| **Linux Bash Scripts** | `scripts/*.sh` (7 scripts) | Docker Compose, Git Bash, health endpoints | `npx shellcheck scripts/*.sh` | All 7 scripts passed ShellCheck v0.11.0 with 0 errors/warnings | **VERIFIED** |
-| **Smoke Test Suite** | `scripts/smoke-test.sh` | Live Express HTTP API on port 4000 | Executed `smoke-test.sh` | 7/7 domain assertions passed (catalog, admin JWT, idempotency replay/conflict) | **EXECUTED** |
-| **Database Backup Drill**| `scripts/backup-db.sh`, `scripts/test-disaster-recovery.ts` | PostgreSQL `pg_dump -Fc`, SHA-256 | Executed recovery drill | Compressed archive with SHA-256 checksum; 100% data consistency verified | **EXECUTED** |
-| **Database Restore** | `scripts/restore-db.sh` | `pg_restore`, SHA-256 verification | Executed without `--confirm` | Refused destructive restore without confirmation flag | **VERIFIED** |
-| **Rollback Drill** | `scripts/rollback.sh`, `scripts/test-rollback-drill.ts` | `.deployment_history`, `/health/ready` | Executed rollback drill | Health gate trips on broken release; automated rollback restores healthy tag | **EXECUTED** |
-| **Terraform (AWS)** | `infra/terraform/` | AWS EC2, SSM, VPC, Security Group, S3 | Validated HCL resource tree | Native S3 state locking (`use_lockfile = true`), S3 versioning, SSM (no port 22) | **CONFIGURED & IMPLEMENTED** |
-| **Ansible** | `infra/ansible/playbook.yml` | Linux host, `algions` user, `.env` chmod | Validated playbook YAML | Idempotent service user creation and `chmod 0600` on `.env` | **CONFIGURED & IMPLEMENTED** |
-| **Prometheus** | `infra/prometheus/prometheus.yml`, `apps/api/src/metrics/` | Scrapes `/api/v1/metrics` every 10s | Probed `/api/v1/metrics` | Exposes standard Prometheus histogram buckets (`_bucket{le="..."}`) | **VERIFIED** |
-| **Grafana** | `infra/grafana/dashboards/algions_overview.json` | Prometheus datasource, Compose port 3001 | Validated dashboard JSON | 8 panels including p95 latency (`histogram_quantile(0.95, ...)`) | **VERIFIED** |
-| **Trivy Scanner** | `.github/workflows/ci.yml` | Aqua Security container CVE scanning | Configured in CI workflow | Scans API and Web images for CRITICAL and HIGH severity CVEs | **CONFIGURED & IMPLEMENTED** |
-| **Gitleaks Scanner** | `.gitleaks.toml`, `.github/workflows/ci.yml` | Commit history and pull request scanning | Verified config rules | Blocks committed credentials and private keys across full git history | **VERIFIED** |
+```text
+========================================================================================================================
+Container Name       Image                   Port Mappings                 Health Status           Uptime
+========================================================================================================================
+algions-postgres     postgres:16-alpine      None (internal 5432)          healthy                 Up (healthy)
+algions-api          algions-api:local       None (internal 4000)          healthy                 Up (healthy)
+algions-nginx        algions-web:local       0.0.0.0:80, 0.0.0.0:443       healthy                 Up (healthy)
+algions-prometheus   prom/prometheus:v3.13.5 None (internal 9090)          healthy                 Up (healthy)
+algions-grafana      grafana/grafana:13.3.0  127.0.0.1:3001->3000          running                 Up (active)
+========================================================================================================================
+```
 
 ---
 
-## 3. Playwright Browser E2E Evidence
+## 2. Root Cause Analysis: Monorepo `npm ci` Build Failure & Resolution
 
-The end-to-end browser test suite in [`e2e/storefront.spec.ts`](../e2e/storefront.spec.ts) was executed against the running application and passed **8/8 customer and admin journeys in 12.3 seconds**.
+### 2.1 The Problem & Error
+During initial Docker build attempts with contexts set to `./apps/api` and `./apps/web`, all three npm installation stages failed:
+```text
+npm ERR! code EUSAGE
+The npm ci command can only install with an existing package-lock.json or npm-shrinkwrap.json.
+```
 
-### Genuine Screenshot Evidence (`docs/evidence/`):
-1. `01_catalog.png`: Storefront catalog with HEAVYWEIGHT editorial aesthetic
-2. `02_collection.png`: Archive filtering and category navigation
-3. `03_product_detail.png`: Product detail page with dynamic inventory badge
-4. `04_cart.png`: Shopping bag drawer with line-item totals and persistence
-5. `05_checkout.png`: Luxury customer checkout with hidden developer diagnostics
-6. `06_order_confirmed.png`: Cryptographic order confirmation receipt (`HW-2026-XXXX`)
-7. `07_order_tracking.png`: Order tracking interface with masked customer PII
-8. `08_admin_dashboard.png`: Protected administrative operations and live audit trail
+### 2.2 Actual Root Cause
+1. **Lockfile Location**: In accordance with modern npm workspace monorepo architecture, the authoritative `package-lock.json` is located exclusively at the repository root (`d:\My personal\algions\package-lock.json`). Neither `apps/api/` nor `apps/web/` contain individual lockfiles.
+2. **Context Boundary**: Docker build contexts were narrowly configured as `./apps/api` and `./apps/web`. Under Docker's security boundary, a Dockerfile cannot copy files outside its build context (e.g. `COPY ../../package-lock.json` is prohibited).
+3. **Missing Manifests**: `npm ci` in a monorepo requires root `package.json`, root `package-lock.json`, and the manifests of declared workspaces (`apps/api/package.json` and `apps/web/package.json`) to resolve dependencies deterministically.
+
+### 2.3 Docker Context & Dockerfile Corrections
+1. **Updated Docker Compose Context**: Set `context: .` (repository root) for both `api` and `nginx` services in `docker-compose.yml`:
+   ```yaml
+   api:
+     build:
+       context: .
+       dockerfile: apps/api/Dockerfile
+     image: algions-api:local
+     pull_policy: build
+
+   nginx:
+     build:
+       context: .
+       dockerfile: apps/web/Dockerfile
+     image: algions-web:local
+     pull_policy: build
+   ```
+2. **Hardened API Multi-Stage Dockerfile (`apps/api/Dockerfile`)**:
+   - **Stage 1 (Builder)**:
+     - Sets `WORKDIR /usr/src/app`
+     - Copies root `package.json` and `package-lock.json`
+     - Copies workspace manifests: `apps/api/package.json` and `apps/web/package.json`
+     - Executes `npm ci` using the authoritative monorepo lockfile
+     - Copies `apps/api/tsconfig.json` and `apps/api/src/`
+     - Compiles TypeScript: `npm run build --workspace=@algions/api`
+   - **Stage 2 (Production Runner)**:
+     - Based on `node:24.22.2-alpine`
+     - Copies root manifests and workspace manifests
+     - Executes `npm ci --omit=dev --workspace=@algions/api --include-workspace-root && npm cache clean --force`
+     - Copies compiled `apps/api/dist` and schema migration SQL `schema.sql`
+     - Enforces non-root execution (`chown -R node:node /usr/src/app` and `USER node`)
+     - Sets `WORKDIR /usr/src/app/apps/api`
+     - Runs native Node.js HTTP liveness health check
+3. **Hardened Web Frontend Dockerfile (`apps/web/Dockerfile`)**:
+   - **Stage 1 (Builder)**:
+     - Copies root manifests and workspace manifests
+     - Executes `npm ci` from the authoritative lockfile
+     - Copies Vite, PostCSS, Tailwind configs, and React source
+     - Compiles static assets: `npm run build --workspace=@algions/web`
+   - **Stage 2 (Nginx Runner)**:
+     - Based on maintained stable `nginx:1.30.6-alpine`
+     - Copies compiled static assets from builder into `/usr/share/nginx/html`
+     - Copies reverse proxy configuration: `infra/nginx/nginx.conf` and `infra/nginx/default.conf`
+     - Creates `/etc/nginx/ssl` directory for TLS certificates
+     - Verifies HTTPS with `wget -q --spider --no-check-certificate https://localhost/ || exit 1`
 
 ---
 
-## 4. Disaster Recovery & Rollback Drill Evidence
+## 3. Image Build Verification & Artifact Sizes
 
-### 4.1 Disaster Recovery Drill (`scripts/test-disaster-recovery.ts`)
-- Backup archive generated: `drill_backup_1794303574769.json`
-- SHA-256 checksum computed: `56c916c6c01cac3a52b05f01c9416541a36c8d50cf9d5c5ce0fd0a541e867995`
-- Checksum validation verified prior to restore.
-- Target restored into clean isolated database.
-- State assertions: Products (3/3), Orders (2/2), Audit logs (2/2), Inventory balances (100% Match).
+Executed `docker compose build --no-cache`:
+```text
+# Image algions-api:local Built (285MB total, 67.2MB compressed)
+# Image algions-web:local Built (93.2MB total, 26.2MB compressed)
+```
 
-### 4.2 Application Rollback Drill (`scripts/test-rollback-drill.ts`)
-- Baseline deployment established: `v1.0.0-release` (Healthy).
-- Candidate release introduced: `v1.0.1-candidate` (Simulated failure).
-- Health gate: Probed `/api/v1/health/ready` -> returned HTTP 503; candidate flagged unhealthy.
-- Automated rollback: `scripts/rollback.sh` extracted previous known-good tag from `.deployment_history`.
-- Redeployment: Restored `v1.0.0-release`.
-- Post-rollback verification: `/api/v1/health/ready` returned HTTP 200 OK.
+Both multi-stage builds completed cleanly with 0 errors.
+
+---
+
+## 4. Live Runtime Service Health & Observability Verification
+
+### 4.1 Service Process Table (`docker compose ps`)
+```text
+NAME                 IMAGE                    COMMAND                  SERVICE      STATUS                    PORTS
+algions-api          algions-api:local        "docker-entrypoint.s…"   api          Up 5 minutes (healthy)    4000/tcp
+algions-grafana      grafana/grafana:13.3.0   "/run.sh"                grafana      Up 5 minutes              127.0.0.1:3001->3000/tcp
+algions-nginx        algions-web:local        "/docker-entrypoint.…"   nginx        Up 3 minutes (healthy)    0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+algions-postgres     postgres:16-alpine       "docker-entrypoint.s…"   postgres     Up 5 minutes (healthy)    5432/tcp
+algions-prometheus   prom/prometheus:v3.13.5  "/bin/prometheus --c…"   prometheus   Up 5 minutes (healthy)    9090/tcp
+```
+
+### 4.2 Endpoint & Protocol Verification
+1. **HTTP to HTTPS Redirection (Port 80 -> 443)**:
+   ```bash
+   curl.exe -i http://localhost/
+   ```
+   **Result**: `HTTP/1.1 301 Moved Permanently` | `Location: https://localhost/`
+
+2. **Frontend Static Bundle Delivery (HTTPS Port 443)**:
+   ```bash
+   curl.exe -k -i https://localhost/
+   ```
+   **Result**: `HTTP/1.1 200 OK` | Content-Type: `text/html` | Serving `HEAVY | Luxury Fashion E-Commerce` with Anton & Space Grotesk fonts.
+
+3. **Backend API Readiness & Database Connectivity via Nginx**:
+   ```bash
+   curl.exe -k -i https://localhost/api/v1/health/ready
+   ```
+   **Result**:
+   ```json
+   {
+     "status": "ok",
+     "timestamp": "2026-11-10T11:13:13.021Z",
+     "uptimeSeconds": 159,
+     "service": "algions-product-order-api",
+     "checks": {
+       "database": {
+         "status": "healthy",
+         "responseTimeMs": 1
+       }
+     }
+   }
+   ```
+
+4. **Product Catalog Retrieval via Reverse Proxy**:
+   ```bash
+   curl.exe -k -s https://localhost/api/v1/products
+   ```
+   **Result**: HTTP 200 OK. Returns 6 active fashion SKUs (`HW-PF-001` through `HW-FC-006`) with correct prices, stock levels, and category assignments.
+
+5. **Prometheus Target Status**:
+   ```bash
+   docker exec algions-prometheus wget -qO- http://localhost:9090/api/v1/targets
+   ```
+   **Result**:
+   - `job: algions-api`
+   - `scrapeUrl: http://api:4000/api/v1/metrics`
+   - `health: up`
+   - `lastError: ""`
+
+6. **Grafana Health & Datasource Connection**:
+   - Grafana service running on `127.0.0.1:3001` (restricted to localhost).
+   - Prometheus datasource automatically provisioned (`url: http://prometheus:9090`).
+   - Direct Prometheus probe from Grafana container: `Prometheus Server is Healthy.`
+   - Provisioned dashboard located at `/etc/grafana/dashboards/algions_overview.json` (6,238 bytes).
+
+---
+
+## 5. Security & Network Isolation Audit
+
+1. **Database Isolation**: PostgreSQL (port 5432) has no host port binding and is accessible only to containers attached to `algions-internal-bridge`.
+2. **API Isolation**: Express API (port 4000) has no host port binding. All ingress is routed through Nginx reverse proxy.
+3. **Grafana Protection**: Port 3000 is bound strictly to `127.0.0.1:3001` (never exposed to `0.0.0.0`).
+4. **Secret Management**: Passwords (`DB_PASSWORD`, `JWT_SECRET`, `ADMIN_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`) are loaded strictly from untracked `.env` (ignored by Git).
+5. **Least Privilege & Linux Capabilities**: API container drops all kernel capabilities (`cap_drop: [ALL]`), prevents privilege escalation (`no-new-privileges:true`), and runs under unprivileged `node` user (UID 1000).
+
+---
+
+## 6. GitHub Container Registry (GHCR) Separation
+
+- **Local Development**: `docker-compose.yml` uses local image identifiers (`algions-api:local` and `algions-web:local`) with `pull_policy: build`, ensuring reproducible local builds without requiring external registry authentication.
+- **Production / Release**: `docker-compose.prod.yml` defines image overrides targeting `ghcr.io/sayyeds/algions-api:<SHA>` and `ghcr.io/sayyeds/algions-web:<SHA>` with `pull_policy: if_not_present`.
+- **Release CI/CD Workflow**: `.github/workflows/release.yml` is configured with `context: .` to build and publish multi-arch container images with provenance and SBOM when release tags (`v*.*.*`) are pushed. Remote publication is pending git remote configuration.
+
+---
+
+## 7. Remaining Gaps & Final Assessment Classification
+
+| Area | Status | Notes |
+| :--- | :--- | :--- |
+| **Monorepo Build** | **VERIFIED** | Resolved lockfile context. Multi-stage builds pass reproducibly. |
+| **Container Orchestration** | **VERIFIED** | All 5 containers running and healthy in Docker Desktop WSL2. |
+| **API & Database Integration** | **VERIFIED** | Ready probe returns HTTP 200 with 1ms PostgreSQL round-trip. |
+| **TLS & Nginx Ingress** | **VERIFIED** | Mandatory 301 redirect and TLS termination verified. |
+| **Metrics & Observability** | **VERIFIED** | Prometheus target UP; Grafana dashboard provisioned. |
+| **GHCR Remote Publication** | **BLOCKED** | Ready in workflow; awaits `git remote add origin` to GitHub. |

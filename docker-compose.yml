@@ -1,5 +1,5 @@
 # ==============================================================================
-# Algions AI Labs — Production-Style Docker Compose Orchestration
+# Algions AI Labs — Production-Style Docker Compose Orchestration (Local Build)
 # Services: PostgreSQL, Product & Order API, Nginx TLS Proxy, Prometheus, Grafana
 # ==============================================================================
 name: algions-platform
@@ -34,9 +34,10 @@ services:
   # 2. Product and Order API Service (Node.js LTS / TypeScript)
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
-    image: ${API_IMAGE:-ghcr.io/sayyeds/algions-api:${IMAGE_TAG:-08733bd}}
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: algions-api:local
+    pull_policy: build
     container_name: algions-api
     restart: unless-stopped
     environment:
@@ -73,9 +74,10 @@ services:
   # 3. Web & Reverse Proxy Service (Nginx + React SPA)
   nginx:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
-    image: ${WEB_IMAGE:-ghcr.io/sayyeds/algions-web:${IMAGE_TAG:-08733bd}}
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: algions-web:local
+    pull_policy: build
     container_name: algions-nginx
     restart: unless-stopped
     ports:
@@ -91,7 +93,7 @@ services:
     networks:
       - internal_network
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider --no-check-certificate https://localhost/ || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3

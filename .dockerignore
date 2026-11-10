@@ -1,13 +1,38 @@
+# Dependencies
 node_modules
+**/node_modules
+
+# Build outputs
 dist
+**/dist
 build
+**/build
+
+# Test & coverage artifacts
 coverage
+test-results
+playwright-report
+
+# Version control & CI/CD
 .git
 .github
+
+# Secrets and environment files
+.env*
+!.env.example
+*.key
+*.pem
+
+# Database backups & local dumps
 backups
 logs
 tmp
 *.md
-.env*
-!.env.example
+
+# Infrastructure local state
+*.tfstate
+*.tfstate.*
+.terraform
+
+# Compose files
 docker-compose*.yml
