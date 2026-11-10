@@ -1,65 +1,58 @@
-# Algions E-Commerce Platform — 3–5 Minute Technical Demonstration Script
+# Algions AI Labs — 3–5 Minute Technical Demonstration Script
 
-This script is structured for a concise, high-impact technical demo during a live interview.
+This script is structured for a concise, high-impact technical walkthrough during an engineering interview or technical review.
 
 ---
 
 ## Part 1: Architecture & Design System (Minute 0:00 – 1:00)
-- **Action**: Open the browser to `https://localhost` (Storefront Home).
+- **Action**: Open the browser to `http://localhost:3000` (or `https://localhost` under Docker Nginx).
 - **Spoken Points**:
-  > *"Here is the HEAVYWEIGHT luxury fashion e-commerce storefront. It follows the exact Superdesign draft `df189593-ef46-4348-841e-a68cf7d4f972` — brutalist editorial typography with Anton headings, Space Grotesk metadata, grain texture overlay, and real-time inventory synchronization."*
+  > *"Here is the HEAVYWEIGHT luxury fashion e-commerce storefront. It follows the exact Superdesign draft `df189593-ef46-4348-841e-a68cf7d4f972` — brutalist editorial typography with Anton display headings, Space Grotesk metadata, grain texture overlay, and real-time inventory synchronization."*
 - **Action**: Point out the floating **Health Signal** pill in the lower left corner:
-  > *"Notice the real-time DevOps health signal: the API reports LIVE and the PostgreSQL connection reports READY with low query latency."*
+  > *"Notice the real-time DevOps health signal: the API reports LIVE and the database reports READY with sub-millisecond query latency. The API is powered by a Node.js 24 LTS runtime and Express."*
 
 ---
 
-## Part 2: Order Creation & Idempotency Enforcement (Minute 1:00 – 2:30)
+## Part 2: Order Creation, Idempotency & Privacy Protection (Minute 1:00 – 2:15)
 - **Action**: Click on a product (e.g. `Statement Puffer`), select Quantity 2, click `ADD TO BAG`.
-- **Action**: Open Shopping Bag (`/checkout`).
+- **Action**: Open Shopping Bag (`/bag`) and proceed to Checkout (`/checkout`).
 - **Spoken Points**:
-  > *"In the checkout workflow, notice this green box displaying the active `Idempotency-Key` UUID. All monetary calculations are performed strictly on the server in integer cents ($280.00 = 28000 cents), preventing client price tampering."*
+  > *"In the checkout workflow, all monetary calculations are performed strictly on the server in integer cents ($280.00 = 28000 cents), preventing client price tampering. In the lower drawer, technical diagnostics expose the active cryptographic `Idempotency-Key` and SHA-256 request payload hash."*
 - **Action**: Click `PLACE ORDER`.
-- **Observation**: Order confirms with reference `HW-2024-XXXX`.
-- **Action**: Navigate back to Checkout, click `TEST IDEMPOTENCY (RE-SEND EXACT SAME KEY)`.
+- **Observation**: Order confirms with reference `HW-2026-XXXX`.
+- **Action**: Navigate to `/track-order` and search the order reference.
 - **Spoken Points**:
-  > *"When we replay the request with the identical key, the backend returns the cached order immediately with the header `X-Idempotent-Replayed: true`. Most importantly, stock is not deducted a second time."*
-- **Action**: Show what happens if the payload is altered with the same key:
-  > *"If the payload is modified while reusing the key, the backend's SHA-256 hash comparison trips and rejects the request with HTTP 409 Conflict."*
+  > *"For customer privacy protection, lookups without matching credentials mask sensitive customer PII (`c***@heavyweight.nyc`). Verified requests with customer email matching or admin JWT disclose full order records."*
 
 ---
 
-## Part 3: Protected Admin & Immutable Audit Events (Minute 2:30 – 3:30)
-- **Action**: Click `OPERATIONS (ADMIN)` in the header. Log in with `admin@algions.com` / `AdminSecretPassword123!`.
-- **Action**: Adjust stock for `Statement Puffer` (+5 pieces, reason: `"Restock"`).
+## Part 3: Prometheus Metrics & Latency Histogram (Minute 2:15 – 3:15)
+- **Action**: Open terminal or browser to `http://localhost:4000/api/v1/metrics`.
 - **Spoken Points**:
-  > *"All administrative operations are protected with JWT tokens. When we commit this stock adjustment, an immutable audit event is immediately appended to PostgreSQL with actor ID, before/after snapshots, and request correlation ID."*
-- **Action**: Point out the updated row in the Audit Log table.
+  > *"The API features a native Prometheus metric engine. In addition to process uptime and memory, notice the `http_request_duration_seconds` metric: it is a true Prometheus histogram with cumulative buckets from 5 milliseconds to 10 seconds. In Grafana, this powers real-time p95 percentile latency graphs calculated via `histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))`."*
+- **Action**: Point out domain counters:
+  > *"Notice `orders_created_total`, `orders_idempotent_replayed_total`, and `stock_adjustments_total`. Every business event increments real-time counters scraped by Prometheus every 10 seconds."*
 
 ---
 
-## Part 4: Deliberate Failure, Observability & Recovery (Minute 3:30 – 5:00)
-- **Action**: Open terminal, show readiness check:
+## Part 4: Deliberate Failure, Observability & Recovery (Minute 3:15 – 4:15)
+- **Action**: Run the health check script in Git Bash:
   ```bash
-  curl -k https://localhost/api/v1/health/ready
-  # Returns 200 OK
-  ```
-- **Action**: Stop PostgreSQL:
-  ```bash
-  docker compose stop postgres
-  curl -k -i https://localhost/api/v1/health/ready
-  # Returns 503 Service Unavailable with database disconnected
+  bash scripts/health-check.sh http://localhost:4000
   ```
 - **Spoken Points**:
-  > *"Notice that `/health/live` remains 200 because the Node process is running, but `/health/ready` immediately flags 503. The frontend status indicator turns red."*
-- **Action**: Restart PostgreSQL:
-  ```bash
-  docker compose start postgres
-  curl -k https://localhost/api/v1/health/ready
-  # Automatically recovers and returns 200 OK
-  ```
-- **Action**: Demonstrate the backup script:
+  > *"The platform decouples liveness from readiness. If PostgreSQL is disconnected or stopped in the test environment, `/api/v1/health/live` remains 200 OK because the Node.js process is healthy, but `/api/v1/health/ready` immediately returns HTTP 503 Service Unavailable, alerting ingress controllers and Grafana to stop routing traffic."*
+- **Action**: Demonstrate PostgreSQL reconnection:
+  > *"As soon as PostgreSQL recovers, the readiness probe automatically restores to HTTP 200, orders resume processing, and the database status gauge returns to HEALTHY."*
+
+---
+
+## Part 5: Backup, Restoration & Rollback (Minute 4:15 – 5:00)
+- **Action**: Run the database backup routine:
   ```bash
   bash scripts/backup-db.sh
   ```
 - **Spoken Points**:
-  > *"Our automated backup script executes `pg_dump -Fc`, verifies file size, generates a SHA-256 checksum, and cleans up backups older than 7 days. Our restore script verifies this checksum before any destructive restore."*
+  > *"Our automated backup script executes `pg_dump -Fc` custom compression, verifies archive integrity, and computes a SHA-256 checksum stored in `.sha256`. Our restore script `scripts/restore-db.sh` validates this checksum before executing and refuses to run without an explicit `--confirm` flag to prevent accidental production overwrite."*
+- **Action**: Reference the rollback procedure:
+  > *"Finally, our deployment script maintains an append-only `.deployment_history` file. If a new deployment fails health verification, `scripts/rollback.sh` reads the previous known-good image tag, redeploys the previous release, and loops until `/api/v1/health/ready` confirms full recovery."*
