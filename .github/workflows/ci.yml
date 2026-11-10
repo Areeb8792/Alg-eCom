@@ -24,20 +24,20 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U algions_user -d algions_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     env:
-      DB_HOST: localhost
-      DB_PORT: 5432
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
       DB_USER: algions_user
       DB_PASSWORD: algions_password
       DB_NAME: algions_db
-      DATABASE_URL: postgresql://algions_user:algions_password@localhost:5432/algions_db
+      DATABASE_URL: postgresql://algions_user:algions_password@127.0.0.1:5432/algions_db
       JWT_SECRET: super_secure_ci_jwt_secret_at_least_32_characters_long
-      PORT: 4000
+      PORT: '4000'
       HOST: 0.0.0.0
       NODE_ENV: test
 
@@ -70,6 +70,15 @@ jobs:
 
       - name: Initialize Database Schema & Seed
         run: |
+          for i in $(seq 1 30); do
+            if nc -z 127.0.0.1 5432 2>/dev/null || (command -v pg_isready >/dev/null && pg_isready -h 127.0.0.1 -p 5432 -U algions_user -d algions_db); then
+              echo "PostgreSQL is reachable on 127.0.0.1:5432."
+              sleep 1
+              break
+            fi
+            echo "Waiting for PostgreSQL (attempt $i/30)..."
+            sleep 1
+          done
           npm run db:migrate --workspace=@algions/api
           npm run db:seed --workspace=@algions/api
 
@@ -83,7 +92,7 @@ jobs:
         run: |
           npm run dev:api &
           npm run dev:web &
-          npx wait-on http://localhost:3000 http://localhost:4000/api/v1/health/live --timeout 30000
+          npx wait-on http-get://127.0.0.1:3000 http-get://127.0.0.1:4000/api/v1/health/live --timeout 30000
 
       - name: Execute End-to-End Browser Test Suite
         run: npm run test:e2e

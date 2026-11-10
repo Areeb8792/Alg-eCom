@@ -1,12 +1,27 @@
+import path from 'path';
 import bcrypt from 'bcryptjs';
 import { fileURLToPath } from 'url';
 import { pool, query } from './connection.js';
 import { config } from '../config/index.js';
 import { logger } from '../logging/logger.js';
 
-export async function runSeeds(): Promise<void> {
+export async function runSeeds(retries = 5): Promise<void> {
   logger.info('Starting database seeding...');
-  const client = await pool.connect();
+  let client;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      client = await pool.connect();
+      break;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      logger.warn({ attempt, err }, 'Failed to connect to database for seeding, retrying in 2s...');
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+
+  if (!client) {
+    throw new Error('Database connection failed after multiple retries');
+  }
 
   try {
     await client.query('BEGIN');
@@ -137,7 +152,13 @@ export async function runSeeds(): Promise<void> {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const isMainScript = process.argv[1] && (
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) ||
+  process.argv[1].endsWith('seed.ts') ||
+  process.argv[1].endsWith('seed.js')
+);
+
+if (isMainScript) {
   runSeeds()
     .then(async () => {
       logger.info('Seed complete');
