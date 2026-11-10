@@ -86,8 +86,8 @@ jobs:
           DB_PASSWORD: algions_password
           DB_NAME: algions_db
         run: |
-          npm run db:migrate
-          npm run db:seed
+          docker exec -i algions-ci-postgres psql -U algions_user -d algions_db < apps/api/src/database/schema.sql
+          npm run db:seed --workspace=@algions/api
 
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
         run: npm test
