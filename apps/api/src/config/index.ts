@@ -18,7 +18,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters long').default('development_jwt_secret_32_characters_long_min'),
   JWT_EXPIRES_IN: z.string().default('24h'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
-  CORS_ORIGIN: z.string().default('http://localhost:3000,http://localhost:80,https://localhost,https://algions.com'),
+  CORS_ORIGIN: z.string().default('http://localhost:3000,http://127.0.0.1:3000,http://localhost:80,http://127.0.0.1:80,http://localhost:4000,http://127.0.0.1:4000,https://localhost,https://127.0.0.1,https://algions.com'),
   ADMIN_USERNAME: z.string().default('admin@algions.com'),
   ADMIN_PASSWORD: z.string().default('AdminSecretPassword123!'),
 });

@@ -23,6 +23,14 @@ export function createApp(): Express {
           if (allowedOrigins.includes(requestOrigin) || allowedOrigins.includes('*')) {
             return callback(null, true);
           }
+          try {
+            const url = new URL(requestOrigin);
+            if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+              return callback(null, true);
+            }
+          } catch {
+            // Ignore parse errors
+          }
           return callback(new Error(`CORS policy: origin ${requestOrigin} is not allowed`));
         };
 

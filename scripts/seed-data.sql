@@ -14,7 +14,7 @@ ON CONFLICT (sku) DO NOTHING;
 -- 2. Admin Users
 INSERT INTO admin_users (id, username, password_hash, role)
 VALUES 
-('a0000000-0000-0000-0000-000000000001', 'admin@algions.com', '$2a$10$w4rUe8gTf4V9g6xO3.4i7.e2D3e5L0t4H6y1S0v7B8N9M0K1L2O3P', 'ADMIN')
+('a0000000-0000-0000-0000-000000000001', 'admin@algions.com', '$2a$10$iJKbJ.EX5GYkrqDI7pEKHOJYZP9SjudlJd0hBJJJhFoiaxz8EPnGS', 'ADMIN')
 ON CONFLICT (username) DO NOTHING;
 
 -- 3. Orders
