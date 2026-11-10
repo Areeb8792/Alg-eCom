@@ -166,6 +166,7 @@ if (isMainScript) {
       process.exit(0);
     })
     .catch(async (err) => {
+      console.error('Seed failed:', err);
       logger.error({ err }, 'Seed script error');
       await pool.end();
       process.exit(1);

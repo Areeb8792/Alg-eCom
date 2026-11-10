@@ -22,7 +22,7 @@ jobs:
           POSTGRES_PASSWORD: algions_password
           POSTGRES_DB: algions_db
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U algions_user -d algions_db"
           --health-interval 10s
@@ -31,17 +31,22 @@ jobs:
 
     env:
       DB_HOST: 127.0.0.1
-      DB_PORT: '5432'
+      DB_PORT: '5433'
       DB_USER: algions_user
       DB_PASSWORD: algions_password
       DB_NAME: algions_db
-      DATABASE_URL: postgresql://algions_user:algions_password@127.0.0.1:5432/algions_db
+      DATABASE_URL: postgresql://algions_user:algions_password@127.0.0.1:5433/algions_db
       JWT_SECRET: super_secure_ci_jwt_secret_at_least_32_characters_long
       PORT: '4000'
       HOST: 0.0.0.0
       NODE_ENV: test
 
     steps:
+      - name: Disable Pre-installed Host PostgreSQL Service
+        run: |
+          sudo systemctl stop postgresql.service 2>/dev/null || true
+          sudo systemctl disable postgresql.service 2>/dev/null || true
+
       - name: Checkout Source Code
         uses: actions/checkout@v4
         with:
@@ -70,13 +75,13 @@ jobs:
 
       - name: Initialize Database Schema & Seed
         run: |
+          echo "Waiting for PostgreSQL service container on port 5433..."
           for i in $(seq 1 30); do
-            if nc -z 127.0.0.1 5432 2>/dev/null || (command -v pg_isready >/dev/null && pg_isready -h 127.0.0.1 -p 5432 -U algions_user -d algions_db); then
-              echo "PostgreSQL is reachable on 127.0.0.1:5432."
-              sleep 1
+            if pg_isready -h 127.0.0.1 -p 5433 -U algions_user -d algions_db 2>/dev/null; then
+              echo "PostgreSQL is ready and accepting connections on port 5433."
               break
             fi
-            echo "Waiting for PostgreSQL (attempt $i/30)..."
+            echo "Waiting for PostgreSQL on port 5433 (attempt $i/30)..."
             sleep 1
           done
           npm run db:migrate --workspace=@algions/api

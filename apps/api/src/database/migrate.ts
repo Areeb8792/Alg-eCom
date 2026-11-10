@@ -57,6 +57,7 @@ if (isMainScript) {
       process.exit(0);
     })
     .catch(async (err) => {
+      console.error('Migration failed:', err);
       logger.error({ err }, 'Migration script error');
       await pool.end();
       process.exit(1);
