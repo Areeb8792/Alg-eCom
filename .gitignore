@@ -29,7 +29,6 @@ out/
 
 # Database backups and dumps
 backups/
-*.sql
 *.dump
 *.tar.gz
 

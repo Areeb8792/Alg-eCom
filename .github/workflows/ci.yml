@@ -91,6 +91,8 @@ jobs:
           fi
           echo "Schema applied successfully."
 
+          docker exec -i algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql || true
+
           SEED_OUT=$(npx tsx apps/api/src/database/seed.ts 2>&1)
           SEED_EXIT=$?
           if [ $SEED_EXIT -ne 0 ]; then
