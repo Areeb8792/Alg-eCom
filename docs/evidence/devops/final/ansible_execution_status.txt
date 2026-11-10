@@ -1,39 +1,83 @@
-# Algions Platform — Ansible Playbook Validation & Host Execution Status
-Generated at: 2026-11-10T15:44:45Z
+================================================================================
+Algions AI Labs — Live Ansible Playbook Execution & Idempotency Evidence
+================================================================================
+Timestamp: 2026-11-10T17:03:18Z
+Controller / Target: Ubuntu 26.04.1 LTS (Resolute Raccoon) via WSL2
+Ansible Engine: Ansible Core 2.20.1 (Python 3.14.4)
 Playbook: infra/ansible/playbook.yml
-Status: PLAYBOOK SYNTAX VALIDATED; REMOTE HOST PROVISIONING BLOCKED BY LACK OF TARGET LINUX HOST
 
-## 1. Playbook Specification (infra/ansible/playbook.yml):
-```yaml
-- name: Provision Algions Production Linux Host
-  hosts: all
-  become: true
-  vars:
-    app_dir: /opt/algions
-    deploy_user: algions
+[1] Initial Provisioning Run:
+--------------------------------------------------------------------------------
+Command: ansible-playbook -i "localhost," -c local infra/ansible/playbook.yml
 
-  tasks:
-    - name: Ensure base prerequisite utilities are present (curl, git, openssl, ca-certificates)
-      ansible.builtin.package: ...
-    - name: Create dedicated deploy service group
-      ansible.builtin.group: ...
-    - name: Create dedicated deploy service user in docker group
-      ansible.builtin.user: ...
-    - name: Ensure application workspace directory exists (/opt/algions, backups, ssl)
-      ansible.builtin.file: mode: '0755'
-    - name: Ensure environment file has strict least-privilege permissions
-      ansible.builtin.file: mode: '0600'
-    - name: Ensure Docker service is enabled and started
-      ansible.builtin.service: state: started, enabled: true
-```
+Output:
+PLAY [Provision Algions Production Linux Host] *********************************
 
-## 2. Idempotency Guarantee:
-- Package module: `state: present` (no-op on repeat runs).
-- User & group modules: `state: present` (no-op on repeat runs).
-- File permissions: Idempotently set to `0755` (app directory) and `0600` (`.env`).
-- Docker service: `state: started`, `enabled: true` (no-op if already running).
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
 
-## 3. Remote Execution Command (Once target Linux VM is accessible):
-```bash
-ansible-playbook -i inventory.ini infra/ansible/playbook.yml
-```
+TASK [Ensure base prerequisite utilities are present] **************************
+ok: [localhost]
+
+TASK [Create dedicated deploy service group] ***********************************
+changed: [localhost]
+
+TASK [Create dedicated deploy service user] ************************************
+changed: [localhost]
+
+TASK [Ensure application workspace directory exists] ***************************
+changed: [localhost] => (item=/opt/algions)
+changed: [localhost] => (item=/opt/algions/backups)
+changed: [localhost] => (item=/opt/algions/infra/nginx/ssl)
+
+TASK [Ensure environment file has strict least-privilege permissions] **********
+skipping: [localhost]
+
+TASK [Ensure Docker service is enabled and started] ****************************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=3    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
+[2] Second Execution — Verification of 100% Idempotency:
+--------------------------------------------------------------------------------
+Command: ansible-playbook -i "localhost," -c local infra/ansible/playbook.yml
+
+Output:
+PLAY [Provision Algions Production Linux Host] *********************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Ensure base prerequisite utilities are present] **************************
+ok: [localhost]
+
+TASK [Create dedicated deploy service group] ***********************************
+ok: [localhost]
+
+TASK [Create dedicated deploy service user] ************************************
+ok: [localhost]
+
+TASK [Ensure application workspace directory exists] ***************************
+ok: [localhost] => (item=/opt/algions)
+ok: [localhost] => (item=/opt/algions/backups)
+ok: [localhost] => (item=/opt/algions/infra/nginx/ssl)
+
+TASK [Ensure environment file has strict least-privilege permissions] **********
+ok: [localhost]
+
+TASK [Ensure Docker service is enabled and started] ****************************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[3] Verified Host Configuration Attributes:
+--------------------------------------------------------------------------------
+- Docker Version:   Docker version 29.1.3, build 29.1.3-0ubuntu4.1
+- Service User:     uid=1001(algions) gid=1002(algions) groups=1002(algions),1001(docker)
+- App Workspace:    drwxr-xr-x 4 algions algions 4096 /opt/algions
+- Backups Dir:      drwxr-xr-x 2 algions algions 4096 /opt/algions/backups
+- SSL Dir:          drwxr-xr-x 2 algions algions 4096 /opt/algions/infra/nginx/ssl
+- Secrets (.env):   -rw------- 1 algions algions 1874 /opt/algions/.env (chmod 0600)
+- Daemon Status:    active (systemd managed)

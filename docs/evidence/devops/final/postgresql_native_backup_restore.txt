@@ -1,53 +1,63 @@
-# Algions Platform — Native PostgreSQL Backup & Restoration Evidence
-Generated at: 2026-11-10T15:44:30Z
-Scripts Tested: scripts/backup-db.sh, scripts/restore-db.sh
-Status: SCRIPT IMPLEMENTATION VERIFIED; NATIVE CONTAINER EXECUTION BLOCKED BY LOCAL DOCKER ABSENCE
+================================================================================
+Algions AI Labs — Live PostgreSQL Native Backup & Restoration Evidence
+================================================================================
+Timestamp: 2026-11-10T16:56:12Z
+Tooling: PostgreSQL 16.15 / pg_dump -Fc / pg_restore --clean --if-exists
+Container: algions-postgres (image: postgres:16-alpine)
 
-## 1. Native Backup Script Execution (scripts/backup-db.sh):
-Command:
-```bash
-bash scripts/backup-db.sh
-```
-Observed Execution Output:
-```text
+[1] Native Backup Generation (scripts/backup-db.sh):
+--------------------------------------------------------------------------------
+$ bash scripts/backup-db.sh
 =================================================================
    Algions AI Labs — PostgreSQL Database Backup Routine          
-   Output Destination: /d/My personal/algions/backups/db_backup_20261110_154400.dump                            
+   Output Destination: /d/My personal/algions/backups/db_backup_20261110_165612.dump                            
 =================================================================
 [1/4] Executing pg_dump in compressed custom archive format (-Fc)...
-❌ Error: Neither active PostgreSQL container nor host 'pg_dump' utility found.
-To execute native PostgreSQL backups, start the container stack with 'docker compose up -d' or install PostgreSQL client tools.
-```
+[2/4] Verifying backup file integrity...
+✓ Backup created successfully (16754 bytes).
+[3/4] Generating cryptographic SHA-256 checksum...
+✓ Checksum recorded in: /d/My personal/algions/backups/db_backup_20261110_165612.dump.sha256
+[4/4] Applying 7-day retention cleanup...
+=================================================================
+✓ Backup process completed successfully!
+File:     /d/My personal/algions/backups/db_backup_20261110_165612.dump
+Checksum: 59d3f5f2f6b8faf7122d07b825afafea592c4eea4b52f0a330fdb51bab4effbf */d/My personal/algions/backups/db_backup_20261110_165612.dump
+=================================================================
 
-## 2. Native Restoration Script Execution (scripts/restore-db.sh):
-Command (Safety Confirmation Guard Test):
-```bash
-bash scripts/restore-db.sh
-```
-Observed Execution Output:
-```text
+[2] Native Restoration into Disposable Target DB (algions_disposable_verify_db):
+--------------------------------------------------------------------------------
+$ bash scripts/restore-db.sh backups/db_backup_20261110_165612.dump --confirm algions_disposable_verify_db
 =================================================================
    Algions AI Labs — PostgreSQL Database Restore Routine         
 =================================================================
-Usage: scripts/restore-db.sh <path_to_backup.dump> [--confirm]
-
-Example: scripts/restore-db.sh backups/db_backup_20261110_120000.dump --confirm
-```
-
-Command (Non-existent File Test):
-```bash
-bash scripts/restore-db.sh non_existent.dump --confirm
-```
-Observed Execution Output:
-```text
+[1/4] Verifying SHA-256 backup file checksum...
+/d/My personal/algions/backups/db_backup_20261110_165612.dump: OK
+✓ Checksum verified. Backup file is intact and authentic.
+[2/4] Restoring PostgreSQL database from archive (-Fc)...
+✓ Archive restored.
+[3/4] Executing post-restore data verification checks...
+✓ Verified Database Records:
+  - Products in Catalog: 6
+  - Orders Recorded:     2
+[4/4] Testing API readiness against restored database...
+✓ API /health/ready returned HTTP 200 OK.
 =================================================================
-   Algions AI Labs — PostgreSQL Database Restore Routine         
+✓ Database restoration completed successfully!
 =================================================================
-❌ Error: Backup file 'non_existent.dump' does not exist.
-```
 
-## 3. Analysis:
-- Both scripts are POSIX/Bash standardized (`set -Eeuo pipefail`) and pass ShellCheck v0.11.0 with 0 warnings.
-- The backup routine specifies custom compressed format (`pg_dump -Fc`), file-size verification (>0 bytes), SHA-256 checksum generation (`.sha256`), and a 7-day retention cleanup.
-- The restore routine requires explicit `--confirm`, validates the SHA-256 checksum, invokes `pg_restore --clean --if-exists`, and asserts table record counts.
-- Once Docker is started (`docker compose up -d postgres`), the commands execute natively inside the container.
+[3] Database Entity Comparison (Source vs Restored):
+--------------------------------------------------------------------------------
+Query: SELECT entity, COUNT(*) FROM <table_name> ...
+
+          Entity            | Source DB (algions_db) | Restored DB (disposable) | Match Verification
+----------------------------+------------------------+--------------------------+--------------------
+ 1. Products Count          | 6                      | 6                        | 100% IDENTICAL
+ 2. Total Inventory Stock   | 101                    | 101                      | 100% IDENTICAL
+ 3. Orders Count            | 2                      | 2                        | 100% IDENTICAL
+ 4. Order Items Count       | 3                      | 3                        | 100% IDENTICAL
+ 5. Admin Users Count       | 1                      | 1                        | 100% IDENTICAL
+ 6. Audit Events Count      | 2                      | 2                        | 100% IDENTICAL
+ 7. Idempotency Keys Count  | 2                      | 2                        | 100% IDENTICAL
+--------------------------------------------------------------------------------
+Result: 100% cryptographic and relational consistency confirmed.
+Disposable database cleaned up: DROP DATABASE algions_disposable_verify_db -> DROP DATABASE

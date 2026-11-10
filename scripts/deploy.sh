@@ -24,8 +24,8 @@ echo "Current active image tag: ${CURRENT_TAG}"
 
 # 1. Pull / Prepare image
 echo "[1/4] Preparing image ${IMAGE_TAG}..."
-export API_IMAGE="${API_IMAGE:-ghcr.io/sayyeds/algions-api}:${IMAGE_TAG}"
-export WEB_IMAGE="${WEB_IMAGE:-ghcr.io/sayyeds/algions-web}:${IMAGE_TAG}"
+export API_IMAGE="${API_IMAGE_NAME:-algions-api}:${IMAGE_TAG}"
+export WEB_IMAGE="${WEB_IMAGE_NAME:-algions-web}:${IMAGE_TAG}"
 
 # 2. Run Database Migrations safely before updating API
 echo "[2/4] Executing backward-compatible database migrations..."

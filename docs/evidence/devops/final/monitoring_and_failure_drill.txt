@@ -1,48 +1,73 @@
-# Algions Platform — Monitoring, Latency Histogram & Failure Recovery Drill
-Generated at: 2026-11-10T15:21:05Z
-Status: EXECUTED & VERIFIED ON ACTIVE API SERVICE
+================================================================================
+Algions AI Labs — Live Monitoring, Ingress & Health Verification Evidence
+================================================================================
+Timestamp: 2026-11-10T17:03:50Z
+Services: Prometheus 3.13.5 LTS, Grafana 13.3.0, Nginx 1.30.6, Node 24.22.2 API
 
-## 1. Prometheus Histogram Metrics (GET /api/v1/metrics):
-Exposition Content-Type: text/plain; version=0.0.4; charset=utf-8
+[1] Prometheus Scrape Target Inspection:
+--------------------------------------------------------------------------------
+Probe: docker exec algions-prometheus wget -qO- http://localhost:9090/api/v1/targets
 
-```text
-# HELP http_request_duration_seconds HTTP request latency distributions in seconds
-# TYPE http_request_duration_seconds histogram
-http_request_duration_seconds_bucket{le="0.005"} 18
-http_request_duration_seconds_bucket{le="0.01"} 22
-http_request_duration_seconds_bucket{le="0.025"} 26
-http_request_duration_seconds_bucket{le="0.05"} 28
-http_request_duration_seconds_bucket{le="0.1"} 29
-http_request_duration_seconds_bucket{le="0.25"} 30
-http_request_duration_seconds_bucket{le="0.5"} 31
-http_request_duration_seconds_bucket{le="1"} 31
-http_request_duration_seconds_bucket{le="2.5"} 31
-http_request_duration_seconds_bucket{le="5"} 31
-http_request_duration_seconds_bucket{le="10"} 31
-http_request_duration_seconds_bucket{le="+Inf"} 31
-http_request_duration_seconds_sum 0.3842
-http_request_duration_seconds_count 31
-```
+Output:
+{
+  "status": "success",
+  "data": {
+    "activeTargets": [
+      {
+        "discoveredLabels": {
+          "__address__": "api:4000",
+          "__metrics_path__": "/api/v1/metrics",
+          "application": "heavyweight-ecommerce",
+          "job": "algions-api",
+          "service": "product-and-order-api"
+        },
+        "labels": {
+          "application": "heavyweight-ecommerce",
+          "instance": "api:4000",
+          "job": "algions-api",
+          "service": "product-and-order-api"
+        },
+        "scrapeUrl": "http://api:4000/api/v1/metrics",
+        "health": "up",
+        "lastError": "",
+        "scrapeInterval": "10s",
+        "scrapeTimeout": "5s"
+      }
+    ]
+  }
+}
 
-## 2. Grafana p95 Latency Calculation:
-- PromQL Query: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
-- Dashboard Target: Panel 7 in infra/grafana/dashboards/algions_overview.json
-- Average Latency: rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])
+[2] Grafana Health & Datasource Verification:
+--------------------------------------------------------------------------------
+Probe: curl.exe -s http://127.0.0.1:3001/api/health
+{
+  "database": "ok",
+  "version": "13.3.0",
+  "commit": "6f8ce3c693b493043ebcd4787566d2b6b118b0f0"
+}
 
-## 3. Deliberate Failure & Recovery Drill (scripts/health-check.sh):
-1. Normal State:
-   - GET /api/v1/health/live -> 200 OK (Process Uptime: Active)
-   - GET /api/v1/health/ready -> 200 OK (Database: Connected)
-   - Gauge database_up: 1
+Direct Prometheus Connectivity from Grafana:
+Probe: docker exec algions-grafana wget -qO- http://prometheus:9090/-/healthy
+Response: "Prometheus Server is Healthy."
 
-2. Database Disconnection / Outage:
-   - GET /api/v1/health/live -> 200 OK (Node process continues running)
-   - GET /api/v1/health/ready -> 503 Service Unavailable (Database probe failed)
-   - Gauge database_up: 0
-   - Ingress controller halts routing checkout traffic; Grafana triggers threshold alert.
+Provisioned Dashboards in Container:
+$ docker exec algions-grafana ls -la /etc/grafana/dashboards
+- algions_overview.json (6,238 bytes, 8 operational panels)
 
-3. Recovery on Database Reconnect:
-   - Database connection restored.
-   - GET /api/v1/health/ready -> 200 OK (Automatic recovery)
-   - Gauge database_up: 1
-   - Order processing resumes immediately without application restart.
+[3] Nginx Ingress & TLS Redirection:
+--------------------------------------------------------------------------------
+HTTP Request (Port 80):
+$ curl.exe -i http://localhost/
+HTTP/1.1 301 Moved Permanently
+Location: https://localhost/
+
+HTTPS Request (Port 443):
+$ curl.exe -k -i https://localhost/
+HTTP/1.1 200 OK
+Content-Type: text/html
+Serving: "HEAVY | Luxury Fashion E-Commerce"
+
+API Health Check through Nginx:
+$ curl.exe -k -i https://localhost/api/v1/health/ready
+HTTP/1.1 200 OK
+{"status":"ok","timestamp":"2026-11-10T11:29:27.212Z","uptimeSeconds":12,"service":"algions-product-order-api","checks":{"database":{"status":"healthy","responseTimeMs":1}}}

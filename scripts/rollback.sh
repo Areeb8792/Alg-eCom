@@ -31,8 +31,8 @@ fi
 echo "Target rollback image version: ${PREV_TAG}"
 
 # Redeploy previous known-good version
-export API_IMAGE="${API_IMAGE:-ghcr.io/sayyeds/algions-api}:${PREV_TAG}"
-export WEB_IMAGE="${WEB_IMAGE:-ghcr.io/sayyeds/algions-web}:${PREV_TAG}"
+export API_IMAGE="${API_IMAGE_NAME:-algions-api}:${PREV_TAG}"
+export WEB_IMAGE="${WEB_IMAGE_NAME:-algions-web}:${PREV_TAG}"
 
 echo "Redeploying containers to version ${PREV_TAG}..."
 docker compose up -d --no-deps api nginx

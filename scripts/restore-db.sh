@@ -54,7 +54,7 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
 fi
 
 DB_USER="${DB_USER:-algions_user}"
-DB_NAME="${DB_NAME:-algions_db}"
+DB_NAME="${TARGET_DB:-${3:-${DB_NAME:-algions_db}}}"
 
 # [2/4] Perform pg_restore
 echo "[2/4] Restoring PostgreSQL database from archive (-Fc)..."

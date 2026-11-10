@@ -238,3 +238,43 @@ All seven gaps have been systematically remediated and verified in the codebase.
 - **Verification Procedure**:
   - Re-audited gate status sum (21 + 3 + 7 + 1 = 32) and verified code comments.
 - **Actual Final Result**: Exact AWS encryption nomenclature enforced; 32-gate matrix 100% reconciled without ambiguity.
+
+---
+
+### Gap 12: Monorepo Root-Context Build Failure & Live 5-Container Deployment
+- **Existing Implementation**: Dockerfiles in `apps/api` and `apps/web` assumed individual build contexts, but npm workspaces hoist `package-lock.json` exclusively to repository root.
+- **Problem Identified**: `docker compose build` failed with `npm ERR! code EUSAGE: The npm ci command can only install with an existing package-lock.json` because `package-lock.json` was outside the build contexts.
+- **Required Correction**:
+  1. Updated `docker-compose.yml` to set `context: .` with `dockerfile: apps/api/Dockerfile` and `dockerfile: apps/web/Dockerfile`.
+  2. Refactored `apps/api/Dockerfile` multi-stage build to copy root `package.json`, root `package-lock.json`, and workspace manifests before `npm ci`.
+  3. Refactored `apps/web/Dockerfile` to copy root manifests, run `npm ci` and `npm run build --workspace=@algions/web`, copying output into `nginx:1.30.6-alpine`.
+  4. Executed `docker compose build --no-cache` and `docker compose up -d`. Added Grafana Docker Compose health check.
+- **Files Affected**:
+  - [`docker-compose.yml`](../docker-compose.yml)
+  - [`apps/api/Dockerfile`](../apps/api/Dockerfile)
+  - [`apps/web/Dockerfile`](../apps/web/Dockerfile)
+  - [`.dockerignore`](../.dockerignore)
+- **Verification Procedure**:
+  - Live execution of `docker compose ps` showed all 5 services healthy: `algions-postgres`, `algions-api`, `algions-nginx`, `algions-prometheus`, `algions-grafana`.
+  - Endpoint verification confirmed HTTP 301 redirect to HTTPS, HTTP 200 on `/api/v1/health/ready`, and Prometheus target `api:4000` is UP.
+- **Actual Final Result**: 100% reproducible multi-stage Docker builds; all 5 production containers running and healthy.
+
+---
+
+### Gap 13: Live Native Backup/Restore, Real Container Rollback, and Ansible Execution
+- **Existing Implementation**: Operational scripts existed but had not been executed against a live running PostgreSQL 16 container, real container images, and an active Linux host.
+- **Problem Identified**: Theoretical scripts needed genuine validation against live production container environments.
+- **Required Correction**:
+  1. **PostgreSQL Backup & Restore**: Executed `scripts/backup-db.sh` generating `pg_dump -Fc` archive + SHA-256 hash. Restored into `algions_disposable_verify_db` via `scripts/restore-db.sh --confirm`. Verified 100% data consistency across all 7 entities.
+  2. **Real Container Rollback**: Seeded `.deployment_history` with `v1.0.0`, deployed crashing `v1.0.1-candidate` via `scripts/deploy.sh`, executed `scripts/rollback.sh`, and verified automatic return to healthy `v1.0.0`.
+  3. **Ansible Host Provisioning**: Executed `infra/ansible/playbook.yml` in Ubuntu 26.04 WSL2. Verified 100% idempotency (`changed=0`) on the second run.
+- **Files Affected**:
+  - [`scripts/restore-db.sh`](../scripts/restore-db.sh)
+  - [`scripts/deploy.sh`](../scripts/deploy.sh)
+  - [`scripts/rollback.sh`](../scripts/rollback.sh)
+  - [`docs/FINAL_ACCEPTANCE_MATRIX.md`](../docs/FINAL_ACCEPTANCE_MATRIX.md)
+  - [`docs/FINAL_DEVOPS_VERIFICATION.md`](../docs/FINAL_DEVOPS_VERIFICATION.md)
+  - [`docs/evidence/devops/final/`](../docs/evidence/devops/final/)
+- **Verification Procedure**:
+  - All test queries, rollback logs, and Ansible execution summaries recorded in evidence ledger.
+- **Actual Final Result**: 31 out of 32 assessment gates verified with live empirical execution; remaining gate BLOCKED solely on external GitHub credentials for remote GHCR push.

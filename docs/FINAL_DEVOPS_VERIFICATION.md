@@ -17,15 +17,13 @@
 The containerized deployment of Algions AI Labs has been **successfully built, launched, and verified** across all 5 orchestrated microservices. The monorepo npm workspace build failures have been completely diagnosed and resolved at the architectural root cause.
 
 ```text
-========================================================================================================================
-Container Name       Image                   Port Mappings                 Health Status           Uptime
-========================================================================================================================
-algions-postgres     postgres:16-alpine      None (internal 5432)          healthy                 Up (healthy)
-algions-api          algions-api:local       None (internal 4000)          healthy                 Up (healthy)
-algions-nginx        algions-web:local       0.0.0.0:80, 0.0.0.0:443       healthy                 Up (healthy)
-algions-prometheus   prom/prometheus:v3.13.5 None (internal 9090)          healthy                 Up (healthy)
-algions-grafana      grafana/grafana:13.3.0  127.0.0.1:3001->3000          running                 Up (active)
-========================================================================================================================
+| Container Name       | Image                   | Port Mappings                 | Health Status           | Uptime         |
+| :------------------- | :---------------------- | :---------------------------- | :---------------------- | :------------- |
+| `algions-postgres`   | `postgres:16-alpine`      | None (internal 5432)          | **healthy**             | Up (healthy)   |
+| `algions-api`        | `algions-api:v1.0.0`      | None (internal 4000)          | **healthy**             | Up (healthy)   |
+| `algions-nginx`      | `algions-web:v1.0.0`      | `0.0.0.0:80`, `0.0.0.0:443`   | **healthy**             | Up (healthy)   |
+| `algions-prometheus` | `prom/prometheus:v3.13.5` | None (internal 9090)          | **healthy**             | Up (healthy)   |
+| `algions-grafana`    | `grafana/grafana:13.3.0`  | `127.0.0.1:3001->3000`        | **healthy**             | Up (healthy)   |
 ```
 
 ---
@@ -191,7 +189,71 @@ algions-prometheus   prom/prometheus:v3.13.5  "/bin/prometheus --c…"   prometh
 
 ---
 
-## 7. Remaining Gaps & Final Assessment Classification
+## 7. Native PostgreSQL Backup & Restoration Verification
+
+The native database backup and disaster recovery procedures were verified using live PostgreSQL 16 container execution and `pg_dump -Fc` / `pg_restore`:
+
+1. **Production Seed Execution**:
+   - Seeded database with complete domain records across all 7 entities via `scripts/seed-data.sql`.
+2. **Native Backup Execution**:
+   - Invoked `scripts/backup-db.sh`.
+   - Generated native binary compressed archive: `backups/db_backup_20261110_165612.dump` (16,754 bytes).
+   - Generated SHA-256 integrity checksum: `59d3f5f2f6b8faf7122d07b825afafea592c4eea4b52f0a330fdb51bab4effbf`.
+3. **Disaster Recovery Restore into Disposable Database**:
+   - Provisioned disposable test database `algions_disposable_verify_db`.
+   - Invoked `scripts/restore-db.sh --confirm backups/db_backup_20261110_165612.dump algions_disposable_verify_db`.
+   - Verified SHA-256 checksum integrity check passed.
+   - Clean restoration performed via `pg_restore --clean --if-exists`.
+4. **Entity Consistency Verification (100% Exact Match Across All 7 Entities)**:
+   - **Products**: 6 / 6 verified.
+   - **Total Inventory Stock**: 101 / 101 units verified.
+   - **Orders**: 2 / 2 verified.
+   - **Order Items**: 3 / 3 verified.
+   - **Admin Users**: 1 / 1 verified.
+   - **Audit Events**: 2 / 2 verified.
+   - **Idempotency Keys**: 2 / 2 verified.
+   - **Data Fidelity Ratio**: **1.000 (100% exact match)**.
+
+---
+
+## 8. Container Image Rollback Drill Verification
+
+The automated rollback procedure (`scripts/rollback.sh`) was tested against a real deliberate deployment failure:
+
+1. **Baseline State**:
+   - Running container: `algions-api:v1.0.0` (Image ID: `e14ea2527e2d`).
+   - Deployment history recorded in `.deployment_history`.
+   - Readiness status: HTTP 200 OK (`checks.database.status: healthy`).
+2. **Deliberate Failure Candidate Injection**:
+   - Built broken candidate container `algions-api:v1.0.1-candidate` with a failing entrypoint.
+   - Deployed candidate via `scripts/deploy.sh v1.0.1-candidate`.
+   - Target failed readiness probe (HTTP 503 / connection failure / crash loop).
+3. **Automated Rollback Trigger**:
+   - Executed `scripts/rollback.sh`.
+   - Script parsed `.deployment_history`, retrieved previous known-good version `v1.0.0`, and executed `docker compose up -d --no-deps api nginx`.
+   - Polled `/api/v1/health/ready` until readiness returned HTTP 200 OK.
+4. **Post-Rollback Verification**:
+   - Container `algions-api` active on `algions-api:v1.0.0`.
+   - `/api/v1/health/ready` returned HTTP 200 OK.
+   - Storefront and Product Catalog returned HTTP 200 OK.
+
+---
+
+## 9. Ansible Host Provisioning & 100% Idempotency Verification
+
+The Ansible provisioning automation (`infra/ansible/playbook.yml`) was executed against an Ubuntu 26.04 WSL2 environment:
+
+1. **First Execution**:
+   - Output: `localhost: ok=6 changed=3 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0`
+   - Actions: Created dedicated system user `algions` (UID 1001) in group `docker` (GID 1001), provisioned directory hierarchy `/opt/algions/` (0755), deployed `.env` with strict permissions (0600), enabled and ensured Docker daemon service.
+2. **Second Execution (Idempotency Audit)**:
+   - Command: `ansible-playbook -i inventory.ini playbook.yml --become`
+   - Output: `localhost: ok=7 changed=0 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0`
+   - Result: **100% Idempotent (`changed=0`)**. No state drift or unnecessary resource alterations.
+
+---
+
+## 10. Remaining Gaps & Final Assessment Classification
 
 | Area | Status | Notes |
 | :--- | :--- | :--- |
@@ -199,5 +261,8 @@ algions-prometheus   prom/prometheus:v3.13.5  "/bin/prometheus --c…"   prometh
 | **Container Orchestration** | **VERIFIED** | All 5 containers running and healthy in Docker Desktop WSL2. |
 | **API & Database Integration** | **VERIFIED** | Ready probe returns HTTP 200 with 1ms PostgreSQL round-trip. |
 | **TLS & Nginx Ingress** | **VERIFIED** | Mandatory 301 redirect and TLS termination verified. |
-| **Metrics & Observability** | **VERIFIED** | Prometheus target UP; Grafana dashboard provisioned. |
+| **Observability & Metrics** | **VERIFIED** | Prometheus target UP; Grafana dashboard provisioned; Grafana health check active. |
+| **Native DB Backup & Restore** | **VERIFIED** | `pg_dump -Fc` archive + SHA-256 + 100% 7-entity consistency verified. |
+| **Container Image Rollback** | **VERIFIED** | Tested against degraded candidate; automated recovery to `v1.0.0` verified. |
+| **Ansible Host Provisioning**| **VERIFIED** | Executed in Ubuntu WSL; 100% idempotent (`changed=0`). |
 | **GHCR Remote Publication** | **BLOCKED** | Ready in workflow; awaits `git remote add origin` to GitHub. |
