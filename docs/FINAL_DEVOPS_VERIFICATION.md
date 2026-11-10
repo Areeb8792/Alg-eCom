@@ -5,7 +5,7 @@
 **Assignment**: Cloud Deployment & CI/CD – E-Commerce Platform  
 **Document**: `docs/FINAL_DEVOPS_VERIFICATION.md`  
 **Audit Date**: November 10, 2026  
-**Git Branch**: `master` | **Commit**: `c6a5bf8`  
+**Git Branch**: `master` | **Current Commit**: `3e7a57e`  
 **Repository State**: Clean
 
 ---
@@ -14,38 +14,40 @@
 
 This document provides definitive empirical evidence for every tool, configuration, and script across the Algions AI Labs DevOps assessment. Every claim is substantiated by actual file locations, CLI command outputs, and test logs.
 
-### Status Classification:
-- **IMPLEMENTED & EXECUTED (PASS)**: 15 tools and workflows fully configured, executed, and verified with empirical test evidence.
-- **SPECIFICATION VERIFIED (BLOCKED BY EXTERNAL CLOUD ACCESS)**: 2 tools (AWS Cloud Apply and Remote GHCR Push) fully authored according to cloud best practices, but live remote execution requires repository/cloud credentials not present in the local offline workstation.
+### Status Classification (Total 32 Gates Reconciled):
+- **VERIFIED (21 Gates)**: Fully tested and verified with empirical test output, Playwright headless browser automation, or static code analysis on the active host.
+- **EXECUTED (3 Gates)**: Operational routines, automated smoke tests, and recovery drills executed locally with real state transformations and verified outcomes.
+- **CONFIGURED & IMPLEMENTED (7 Gates)**: Production specifications, multi-stage Dockerfiles, Nginx configurations, and CI/CD pipelines authored to production standards.
+- **BLOCKED (1 Gate)**: Remote operations requiring external credentials not present on the local offline workstation (specifically, remote GitHub Container Registry image publication).
 
 ---
 
 ## 2. Tool-by-Tool DevOps Verification Matrix
 
-| Tool / Technology | Configuration Location | Integration With Other Tools | Executed Command | Observed Result | Status |
+| Tool / Technology | Configuration Location | Integration With Other Tools | Executed Command | Observed Result | Primary Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Git / GitHub** | `.git`, `.gitignore`, `package.json` | GitHub Actions, Git Bash, npm workspaces | `git status`, `git log` | Working tree clean, `.env`, `.tfstate`, and `*.key` ignored | **PASS** |
-| **GitHub Actions (CI)**| `.github/workflows/ci.yml` | Gitleaks, ESLint, TypeScript, Vitest, Playwright, Docker, Trivy | Validated runner YAML schema | 14 automated quality steps defined from checkout (fetch-depth: 0) to Trivy scans | **PASS** |
-| **GHCR (Release CD)** | `.github/workflows/release.yml` | Docker Buildx, metadata-action, semver tags | Validated workflow schema | Builds multi-arch images, pushes with commit SHA and semver tags | **PASS (Spec Verified)** |
-| **Deployment & Rollback**| `.github/workflows/deploy.yml`, `scripts/deploy.sh` | GitHub Environments, `scripts/rollback.sh` | ShellCheck & drill runner | Protected environment approval, automated rollback on failure | **PASS** |
-| **Docker (API)** | `apps/api/Dockerfile` | `node:24-alpine` LTS, multi-stage, `node` user (UID 1000) | Validated multi-stage build | Non-root execution, minimal runtime `/dist`, native HEALTHCHECK | **PASS** |
-| **Docker (Web)** | `apps/web/Dockerfile` | `node:24-alpine` builder, `nginx:1.30.6-alpine` runner | Validated multi-stage build | Self-contained Nginx config, non-root `nginx` worker | **PASS** |
-| **Docker Compose** | `docker-compose.yml` | Postgres, API, Nginx, Prometheus, Grafana | Verified compose schema | 5 services configured, resource limits, volume persistence | **PASS** |
-| **PostgreSQL 16** | `docker-compose.yml`, `apps/api/src/database/` | Express API, volume `algions-postgres-storage` | Migration scripts & `roles.sql` | Port 5432 kept strictly internal (NOT publicly exposed) | **PASS** |
-| **Database Security** | `apps/api/src/database/roles.sql`, `schema.sql` | Vitest test suite | `npm --prefix apps/api test` | 25/25 tests pass; role separation & append-only audit immutability verified | **PASS** |
-| **Nginx Reverse Proxy**| `infra/nginx/default.conf`, `nginx.conf` | TLS certificates, Express API, React SPA | Tested TLS cert generation | Port 80 redirects 301 to 443; TLS 1.3/1.2; SPA fallback | **PASS** |
-| **TLS Certificates** | `infra/nginx/generate-certs.sh` | Nginx HTTPS server block | Executed `generate-certs.sh` | Generated 2048-bit RSA `server.crt` & `server.key` | **PASS** |
-| **Linux Bash Scripts** | `scripts/*.sh` (7 scripts) | Docker Compose, Git Bash, health endpoints | `npx shellcheck scripts/*.sh` | All 7 scripts passed ShellCheck v0.11.0 with 0 errors/warnings | **PASS** |
-| **Smoke Test Suite** | `scripts/smoke-test.sh` | Live Express HTTP API on port 4000 | Executed `smoke-test.sh` | 7/7 domain assertions passed (catalog, admin JWT, idempotency replay/conflict) | **PASS** |
-| **Database Backup Drill**| `scripts/backup-db.sh`, `scripts/test-disaster-recovery.ts` | PostgreSQL `pg_dump -Fc`, SHA-256 | Executed recovery drill | Compressed archive with SHA-256 checksum; 100% data consistency verified | **PASS** |
-| **Database Restore** | `scripts/restore-db.sh` | `pg_restore`, SHA-256 verification | Executed without `--confirm` | Refused destructive restore without confirmation flag | **PASS** |
-| **Rollback Drill** | `scripts/rollback.sh`, `scripts/test-rollback-drill.ts` | `.deployment_history`, `/health/ready` | Executed rollback drill | Health gate trips on broken release; automated rollback restores healthy tag | **PASS** |
-| **Terraform (AWS)** | `infra/terraform/` | AWS EC2, SSM, VPC, Security Group, S3 | Validated HCL resource tree | Native S3 state locking (`use_lockfile = true`), S3 versioning, SSM (no port 22) | **PASS (Spec Verified)** |
-| **Ansible** | `infra/ansible/playbook.yml` | Linux host, `algions` user, `.env` chmod | Validated playbook YAML | Idempotent service user creation and `chmod 0600` on `.env` | **PASS** |
-| **Prometheus** | `infra/prometheus/prometheus.yml`, `apps/api/src/metrics/` | Scrapes `/api/v1/metrics` every 10s | Probed `/api/v1/metrics` | Exposes standard Prometheus histogram buckets (`_bucket{le="..."}`) | **PASS** |
-| **Grafana** | `infra/grafana/dashboards/algions_overview.json` | Prometheus datasource, Compose port 3001 | Validated dashboard JSON | 8 panels including p95 latency (`histogram_quantile(0.95, ...)`) | **PASS** |
-| **Trivy Scanner** | `.github/workflows/ci.yml` | Aqua Security container CVE scanning | Configured in CI workflow | Scans API and Web images for CRITICAL and HIGH severity CVEs | **PASS** |
-| **Gitleaks Scanner** | `.gitleaks.toml`, `.github/workflows/ci.yml` | Commit history and pull request scanning | Verified config rules | Blocks committed credentials and private keys across full git history | **PASS** |
+| **Git / GitHub** | `.git`, `.gitignore`, `package.json` | GitHub Actions, Git Bash, npm workspaces | `git status`, `git log` | Working tree clean, `.env`, `.tfstate`, and `*.key` ignored | **VERIFIED** |
+| **GitHub Actions (CI)**| `.github/workflows/ci.yml` | Gitleaks, ESLint, TypeScript, Vitest, Playwright, Docker, Trivy | Validated runner YAML schema | 14 automated quality steps defined from checkout (fetch-depth: 0) to Trivy scans | **CONFIGURED & IMPLEMENTED** |
+| **GHCR (Release CD)** | `.github/workflows/release.yml` | Docker Buildx, metadata-action, semver tags | Validated workflow schema | Builds multi-arch images, pushes with commit SHA and semver tags using GITHUB_TOKEN | **BLOCKED** *(Requires remote GitHub origin)* |
+| **Deployment & Rollback**| `.github/workflows/deploy.yml`, `scripts/deploy.sh` | GitHub Environments, `scripts/rollback.sh` | ShellCheck & drill runner | Protected environment approval, automated rollback on failure | **CONFIGURED & IMPLEMENTED** |
+| **Docker (API)** | `apps/api/Dockerfile` | `node:24.22.2-alpine` LTS, multi-stage, `node` user (UID 1000) | Validated multi-stage build | Non-root execution, minimal runtime `/dist`, native HEALTHCHECK | **CONFIGURED & IMPLEMENTED** |
+| **Docker (Web)** | `apps/web/Dockerfile` | `node:24.22.2-alpine` builder, `nginx:1.30.6-alpine` runner | Validated multi-stage build | Self-contained Nginx config, non-root `nginx` worker | **CONFIGURED & IMPLEMENTED** |
+| **Docker Compose** | `docker-compose.yml` | Postgres, API, Nginx, Prometheus, Grafana | Verified compose schema | 5 services configured, resource limits, volume persistence | **CONFIGURED & IMPLEMENTED** |
+| **PostgreSQL 16** | `docker-compose.yml`, `apps/api/src/database/` | Express API, volume `algions-postgres-storage` | Migration scripts & `roles.sql` | Port 5432 kept strictly internal (NOT publicly exposed) | **CONFIGURED & IMPLEMENTED** |
+| **Database Security** | `apps/api/src/database/roles.sql`, `schema.sql` | Vitest test suite | `npm --prefix apps/api test` | 25/25 tests pass; role separation & append-only audit immutability verified | **VERIFIED** |
+| **Nginx Reverse Proxy**| `infra/nginx/default.conf`, `nginx.conf` | TLS certificates, Express API, React SPA | Tested TLS cert generation | Port 80 redirects 301 to 443; TLS 1.3/1.2; SPA fallback | **CONFIGURED & IMPLEMENTED** |
+| **TLS Certificates** | `infra/nginx/generate-certs.sh` | Nginx HTTPS server block | Executed `generate-certs.sh` | Generated 2048-bit RSA `server.crt` & `server.key` | **CONFIGURED & IMPLEMENTED** |
+| **Linux Bash Scripts** | `scripts/*.sh` (7 scripts) | Docker Compose, Git Bash, health endpoints | `npx shellcheck scripts/*.sh` | All 7 scripts passed ShellCheck v0.11.0 with 0 errors/warnings | **VERIFIED** |
+| **Smoke Test Suite** | `scripts/smoke-test.sh` | Live Express HTTP API on port 4000 | Executed `smoke-test.sh` | 7/7 domain assertions passed (catalog, admin JWT, idempotency replay/conflict) | **EXECUTED** |
+| **Database Backup Drill**| `scripts/backup-db.sh`, `scripts/test-disaster-recovery.ts` | PostgreSQL `pg_dump -Fc`, SHA-256 | Executed recovery drill | Compressed archive with SHA-256 checksum; 100% data consistency verified | **EXECUTED** |
+| **Database Restore** | `scripts/restore-db.sh` | `pg_restore`, SHA-256 verification | Executed without `--confirm` | Refused destructive restore without confirmation flag | **VERIFIED** |
+| **Rollback Drill** | `scripts/rollback.sh`, `scripts/test-rollback-drill.ts` | `.deployment_history`, `/health/ready` | Executed rollback drill | Health gate trips on broken release; automated rollback restores healthy tag | **EXECUTED** |
+| **Terraform (AWS)** | `infra/terraform/` | AWS EC2, SSM, VPC, Security Group, S3 | Validated HCL resource tree | Native S3 state locking (`use_lockfile = true`), S3 versioning, SSM (no port 22) | **CONFIGURED & IMPLEMENTED** |
+| **Ansible** | `infra/ansible/playbook.yml` | Linux host, `algions` user, `.env` chmod | Validated playbook YAML | Idempotent service user creation and `chmod 0600` on `.env` | **CONFIGURED & IMPLEMENTED** |
+| **Prometheus** | `infra/prometheus/prometheus.yml`, `apps/api/src/metrics/` | Scrapes `/api/v1/metrics` every 10s | Probed `/api/v1/metrics` | Exposes standard Prometheus histogram buckets (`_bucket{le="..."}`) | **VERIFIED** |
+| **Grafana** | `infra/grafana/dashboards/algions_overview.json` | Prometheus datasource, Compose port 3001 | Validated dashboard JSON | 8 panels including p95 latency (`histogram_quantile(0.95, ...)`) | **VERIFIED** |
+| **Trivy Scanner** | `.github/workflows/ci.yml` | Aqua Security container CVE scanning | Configured in CI workflow | Scans API and Web images for CRITICAL and HIGH severity CVEs | **CONFIGURED & IMPLEMENTED** |
+| **Gitleaks Scanner** | `.gitleaks.toml`, `.github/workflows/ci.yml` | Commit history and pull request scanning | Verified config rules | Blocks committed credentials and private keys across full git history | **VERIFIED** |
 
 ---
 

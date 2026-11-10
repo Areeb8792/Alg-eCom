@@ -17,7 +17,7 @@ terraform {
     bucket       = "algions-terraform-state-prod"
     key          = "ecommerce/terraform.tfstate"
     region       = "us-east-1"
-    encrypt      = true
-    use_lockfile = true
+    encrypt      = true # SSE-S3 (Server-Side Encryption with Amazon S3-Managed Keys: AES256)
+    use_lockfile = true # Native S3 state locking via object conditional writes (Terraform 1.10+)
   }
 }

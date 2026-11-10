@@ -154,12 +154,14 @@ resource "aws_s3_bucket" "backups" {
   }
 }
 
+# S3 Server-Side Encryption Configuration (SSE-S3 with Amazon S3-Managed Keys: AES256)
+# Note: If AWS KMS (SSE-KMS) is required, sse_algorithm is set to "aws:kms" with kms_master_key_id
 resource "aws_s3_bucket_server_side_encryption_configuration" "backups_encryption" {
   bucket = aws_s3_bucket.backups.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm = "AES256" # SSE-S3 (Server-Side Encryption with Amazon S3-Managed Keys)
     }
   }
 }
