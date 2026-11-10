@@ -8,9 +8,26 @@ In accordance with Algions AI Labs assessment guidelines and academic integrity 
 2. **API & Database Implementation**: Authoring Express routing, Zod validation schemas, SQL schema migrations, and transactional idempotency logic.
 3. **Frontend Integration**: Translating the supplied Superdesign HTML/CSS draft into modular React components while preserving 100% design fidelity.
 4. **DevOps & Scripting**: Writing multi-stage Dockerfiles, Docker Compose orchestrations, bash automation scripts, and GitHub Actions workflows.
-5. **Documentation**: Structuring the comprehensive documentation suite, runbooks, and test plans.
+5. **Gap Closure & Monorepo Debugging**: Diagnosing npm workspace build-context boundary failures (`npm ERR! code EUSAGE`), refactoring Docker build contexts to repository root, authoring native PostgreSQL backup/restore drills with SHA-256 validation, and authoring container rollback drills.
+6. **Documentation & Compliance**: Structuring the comprehensive documentation suite, 32-gate acceptance matrix, operations runbooks, and test plans.
 
 All code, schemas, and configurations were verified for correctness, type integrity, security boundaries, and test execution.
+
+---
+
+## 2. Explicit Operational Constraints & Known Limitations
+
+To maintain absolute non-fabrication integrity, the following operational boundaries are transparently acknowledged:
+
+1. **Remote GHCR Image Publication (Gate 26)**:
+   - The GitHub Actions release workflow (`.github/workflows/release.yml`) is fully written, configured with Docker Buildx multi-arch compilation, and wired for SBOM generation.
+   - However, because the repository currently resides as a local Git repository without a pre-configured remote GitHub origin, live remote publication to `ghcr.io` remains **BLOCKED** pending the user adding their GitHub remote origin and pushing release tags.
+2. **Local Self-Signed TLS Certificates**:
+   - The local Nginx container terminates TLS using a locally generated 2048-bit RSA self-signed certificate (`nginx/ssl/server.crt`). Browsers and CLI tools require explicit acceptance of the self-signed certificate (e.g. `curl -k` or browser security exception). In cloud deployment, this is replaced by an automated Let's Encrypt Certbot ACME container or AWS Certificate Manager (ACM) ALB certificate.
+3. **Ansible Provisioning Target**:
+   - The Ansible provisioning playbook (`infra/ansible/playbook.yml`) was executed and verified 100% idempotent (`changed=0`) against an Ubuntu 26.04 WSL2 environment rather than a live paid AWS EC2 instance, avoiding unnecessary cloud expenditure during local assessment verification.
+4. **Container Rollback Downtime Characterization**:
+   - The rollback procedure (`scripts/rollback.sh`) is characterized accurately as a **health-gated deployment with verified automated rollback** rather than uninterrupted continuous zero downtime. While Nginx dependency gates prevent routing traffic to a degraded candidate container, service recovery during an active candidate crash takes ~15 seconds while the previous container image is restored and passes health checks.
 
 ---
 

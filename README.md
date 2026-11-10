@@ -2,11 +2,14 @@
 ### DevOps & Cloud Engineering Shortlisting Assessment
 
 [![CI Pipeline](https://github.com/sayyeds/algions-ecommerce-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/sayyeds/algions-ecommerce-platform/actions/workflows/ci.yml)
-[![Tests Passing](https://img.shields.io/badge/tests-20%2F20%20passed-brightgreen.svg)](docs/TEST_PLAN.md)
+[![Tests Passing](https://img.shields.io/badge/backend%20tests-25%20passed-brightgreen.svg)](docs/TEST_PLAN.md)
+[![E2E Tests](https://img.shields.io/badge/playwright%20e2e-8%20passed-brightgreen.svg)](docs/TEST_PLAN.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED.svg)](https://www.docker.com/)
-[![Nginx](https://img.shields.io/badge/Nginx-TLS%20Proxy-009639.svg)](https://nginx.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-5--Service%20Stack-2496ED.svg)](https://www.docker.com/)
+[![Nginx](https://img.shields.io/badge/Nginx-1.30.6--alpine-009639.svg)](https://nginx.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16--alpine-336791.svg)](https://www.postgresql.org/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-3.13.5%20LTS-E6522C.svg)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-13.3.0-F46800.svg)](https://grafana.com/)
 
 ---
 
@@ -19,44 +22,41 @@ Rather than implementing a generic mock marketplace, this platform delivers an o
 ### Core Engineering Capabilities Demonstrated:
 - **ACID-Backed Idempotency**: Order creation requires an `Idempotency-Key` header with SHA-256 payload verification. Repeating a request returns the cached result without duplicate stock deduction. Altering the payload with the same key returns `HTTP 409 Conflict`.
 - **Atomic Concurrency & Financial Safety**: Eliminates overselling via PostgreSQL atomic updates (`UPDATE products SET stock = stock - $1 WHERE id = $2 AND stock >= $1 RETURNING *;`). Monetary amounts are tracked strictly in integer minor units (cents), preventing floating-point rounding vulnerabilities.
-- **Defense-in-Depth Containerization**: Multi-stage Docker builds running as unprivileged `node` user (UID 1000) with dropped Linux capabilities. PostgreSQL is strictly isolated to an internal Docker bridge network and never exposed on the public host interface.
+- **Defense-in-Depth Containerization**: Multi-stage Docker builds running as unprivileged `node` user (UID 1000) with dropped Linux capabilities (`cap_drop: ALL`). PostgreSQL is strictly isolated to an internal Docker bridge network and never exposed on the public host interface.
 - **Nginx Reverse Proxy & TLS**: Enforces HTTPS (TLS 1.2/1.3), redirects HTTP traffic from port 80 to 443 with 301 Moved Permanently, applies strict security headers (CSP, HSTS, X-Frame-Options DENY), and serves the React SPA.
-- **Observability & Diagnostics**: Deep health probes (`/api/v1/health/live`, `/api/v1/health/ready`), Prometheus-compatible `/metrics`, structured JSON logging (Pino) with sensitive credential redaction, and request correlation IDs (`X-Correlation-ID`).
-- **Disaster Recovery**: Automated database backup script (`pg_dump -Fc` with SHA-256 checksum generation and 7-day retention) and verified restore script with integrity checks and safety confirmation guards.
-- **Automated Rollback**: Deployment automation (`scripts/deploy.sh`) verifies health after container release and automatically triggers rollback (`scripts/rollback.sh`) to the previous known-good version if readiness fails.
-- **Infrastructure as Code & Automation**: Production-ready Terraform AWS EC2 infrastructure with Systems Manager Session Manager access (no open SSH port 22 to the internet) and Ansible provisioning playbook.
+- **Observability & Diagnostics**: Deep health probes (`/api/v1/health/live`, `/api/v1/health/ready`), Prometheus-compatible `/metrics` with latency histograms, Grafana 13.3.0 dashboard bound strictly to localhost (`127.0.0.1:3001`), structured JSON logging (Pino) with sensitive credential redaction, and request correlation IDs (`X-Correlation-ID`).
+- **Disaster Recovery**: Automated database backup script (`pg_dump -Fc` with SHA-256 checksum generation and 7-day retention) and verified restore script with integrity checks and safety confirmation guards. 100% verified across 7 domain entities.
+- **Health-Gated Automated Rollback**: Deployment automation (`scripts/deploy.sh`) verifies health after container release and automatically triggers rollback (`scripts/rollback.sh`) to the previous known-good version if readiness fails.
+- **Infrastructure as Code & Automation**: Production-ready Terraform AWS EC2 infrastructure with Systems Manager Session Manager access (no open SSH port 22 to the internet) and Ansible provisioning playbook verified 100% idempotent on Linux.
 
 ---
 
 ## 2. Architecture & Network Topology
 
 ```text
-[ Client Web Browser / API Consumer ]
-                 │
-                 ▼  HTTPS :443 (TLS 1.2 / 1.3) | HTTP :80 (301 Redirect)
-┌────────────────────────────────────────────────────────────────────────┐
-│ Nginx Reverse Proxy (algions-nginx)                                    │
-│ - Static React SPA Delivery (Gzip compressed)                          │
-│ - Security Headers: CSP, HSTS, X-Frame-Options DENY                    │
-│ - JSON Access Logging with Request Correlation                         │
-└─────────────────────────────────┬──────────────────────────────────────┘
-                                  │ Private Docker Bridge (internal_network)
-                                  ▼ Forward /api/v1/*
-┌────────────────────────────────────────────────────────────────────────┐
-│ Product & Order API Service (algions-api :4000)                        │
-│ - Node.js LTS 22 / TypeScript / Express                                │
-│ - Unprivileged 'node' User (UID 1000) | cap_drop: ALL                  │
-│ - Zod Validation, Pino Structured Logging (Sensitive Redaction)       │
-│ - JWT Admin Authentication & Immutable Audit Events                    │
-└─────────────────────────────────┬──────────────────────────────────────┘
-                                  │ Private Docker Bridge (Port 5432)
-                                  ▼ [NO HOST PORT EXPOSURE]
-┌────────────────────────────────────────────────────────────────────────┐
-│ Relational Database (algions-postgres :5432)                          │
-│ - PostgreSQL 16 Alpine                                                 │
-│ - Persistent Named Volume: algions-postgres-storage                    │
-│ - Atomic Row-Level Locking, Check Constraints (stock >= 0)             │
-└────────────────────────────────────────────────────────────────────────┘
+[ Client Web Browser / Storefront ]         [ Platform Operator / SRE ]
+                 │                                        │
+                 ▼ HTTPS :443 / HTTP :80 (301)            ▼ HTTP :3001 (Localhost Only)
+┌──────────────────────────────────────────────────┐ ┌──────────────────────────────────────┐
+│ Nginx Reverse Proxy (algions-nginx)              │ │ Grafana 13.3.0 (algions-grafana)     │
+│ - Static React SPA Delivery (Gzip compressed)    │ │ - Pre-provisioned Dashboards         │
+│ - Security Headers: CSP, HSTS, X-Frame-Options   │ │ - Bound strictly to 127.0.0.1:3001   │
+└────────────────────────┬─────────────────────────┘ └──────────────────┬───────────────────┘
+                         │ Private Docker Bridge                        │ Internal Bridge
+                         ▼ Forward /api/v1/*                            ▼ PromQL Queries :9090
+┌──────────────────────────────────────────────────┐ ┌──────────────────────────────────────┐
+│ Product & Order API Service (algions-api :4000)  │ │ Prometheus 3.13.5 LTS (algions-prom) │
+│ - Node.js LTS 24.22.2 / TypeScript / Express     │ │ - Scrapes /api/v1/metrics            │
+│ - Unprivileged 'node' User (UID 1000) | cap_drop │ │ - Latency Histograms & Counters      │
+└────────────────────────┬─────────────────────────┘ └──────────────────┬───────────────────┘
+                         │ Private Docker Bridge (Port 5432)            │
+                         ▼ [NO HOST PORT EXPOSURE]                      │
+┌──────────────────────────────────────────────────┐                    │
+│ Relational Database (algions-postgres :5432)     │                    │
+│ - PostgreSQL 16 Alpine                           │                    │
+│ - Persistent Named Volume: algions-postgres-data │────────────────────┘
+│ - Atomic Row-Level Locking, Check Constraints    │
+└──────────────────────────────────────────────────┘
 ```
 
 For complete architectural specifications and diagrams, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -67,12 +67,16 @@ For complete architectural specifications and diagrams, see [docs/ARCHITECTURE.m
 
 | Tier | Technology | Rationale |
 | :--- | :--- | :--- |
-| **Backend API** | Node.js 22 LTS, TypeScript, Express | High-throughput async I/O, type-safe API contracts, fast boot time. |
-| **Persistence** | PostgreSQL 16, `pg` Connection Pool | Native row-level locking, ACID transactions, check constraints, foreign keys. |
+| **Backend API** | Node.js 24.22.2 LTS, TypeScript, Express | High-throughput async I/O, type-safe API contracts, fast boot time. |
+| **Persistence** | PostgreSQL 16 Alpine, `pg` Connection Pool | Native row-level locking, ACID transactions, check constraints, foreign keys. |
 | **Logging** | Pino & Pino-HTTP | Structured JSON logs, sub-millisecond execution, automatic secret redaction. |
 | **Validation** | Zod | Runtime input parsing and type inference for query parameters and JSON bodies. |
 | **Frontend** | React 18, TypeScript, Tailwind CSS, Lucide | High-fidelity editorial luxury-fashion UI matching Superdesign draft `df189593`. |
-| **Proxy / Web** | Nginx Alpine | Low-memory TLS termination, HTTP-to-HTTPS redirect, static asset caching. |
+| **Proxy / Web** | Nginx 1.30.6 Alpine | Low-memory TLS termination, HTTP-to-HTTPS redirect, static asset caching. |
+| **Containers** | Docker (Multi-stage), Docker Compose | Minimal attack surface, dependency locking, non-root execution. |
+| **Observability**| Prometheus 3.13.5 LTS, Grafana 13.3.0 | Real-time p95 request latency histograms, error rates, local-only dashboard. |
+| **CI/CD** | GitHub Actions, GHCR | Automated linting, typechecking, 25 backend tests, 8 Playwright E2E, Trivy, Gitleaks. |
+| **IaC / Cloud**| Terraform, AWS EC2, SSM, Ansible | Parameterized cloud infrastructure with secure Session Manager access. |
 | **Containers** | Docker (Multi-stage), Docker Compose | Minimal attack surface, dependency locking, non-root execution. |
 | **CI/CD** | GitHub Actions, GHCR | Automated linting, typechecking, 20 automated tests, and container publishing. |
 | **IaC / Cloud**| Terraform, AWS EC2, SSM, Ansible | Parameterized cloud infrastructure with secure Session Manager access. |

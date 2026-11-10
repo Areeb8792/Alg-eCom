@@ -8,6 +8,7 @@ The **Algions E-Commerce Platform** is designed around a single, domain-specific
 flowchart TD
     Client["HTTPS Client / Browser\n(Web Storefront)"]
     Admin["HTTPS Client\n(Admin Operations)"]
+    Operator["Platform Operator / SRE\n(127.0.0.1 Only)"]
 
     subgraph Host_DMZ ["Public Host Interface"]
         direction TB
@@ -15,26 +16,39 @@ flowchart TD
         Port80["Port 80 (HTTP 301 Redirect)"]
     end
 
+    subgraph Host_Loopback ["Host Loopback Interface (127.0.0.1)"]
+        direction TB
+        Port3001["Port 3001 (Grafana UI - Localhost Bound)"]
+    end
+
     subgraph Internal_Bridge ["Docker Isolated Bridge Network (algions-internal-bridge)"]
         direction TB
-        NginxProxy["Nginx Reverse Proxy & Static SPA Delivery\n(algions-nginx)"]
+        NginxProxy["Nginx Reverse Proxy & Static SPA Delivery\n(algions-nginx :80, :443)"]
         
         subgraph AppTier ["Application Tier"]
-            NodeAPI["Node.js LTS / Express API\n(algions-api :4000)\nNon-root 'node' UID 1000"]
+            NodeAPI["Node.js LTS (24.22.2) / Express API\n(algions-api :4000)\nNon-root 'node' UID 1000 | cap_drop: ALL"]
         end
 
         subgraph DataTier ["Data Tier (Isolated)"]
-            PostgresDB[("PostgreSQL 16\n(algions-postgres :5432)\nPersistent Storage: algions-postgres-storage")]
+            PostgresDB[("PostgreSQL 16 Alpine\n(algions-postgres :5432)\nVolume: algions-postgres-storage")]
+        end
+
+        subgraph ObservabilityTier ["Observability Tier"]
+            PrometheusSvc["Prometheus 3.13.5 LTS\n(algions-prometheus :9090)\nScrapes /api/v1/metrics"]
+            GrafanaSvc["Grafana 13.3.0\n(algions-grafana :3000)\nPre-provisioned Dashboards"]
         end
     end
 
     Client -->|HTTPS :443| Port443 --> NginxProxy
     Client -.->|HTTP :80| Port80 -->|301 Redirect| Port443
     Admin -->|HTTPS :443| Port443 --> NginxProxy
+    Operator -->|HTTP :3001| Port3001 --> GrafanaSvc
 
     NginxProxy -->|Static Assets| NginxProxy
     NginxProxy -->|Proxy /api/v1/*| NodeAPI
     NodeAPI -->|Connection Pool (pg)| PostgresDB
+    PrometheusSvc -->|Scrape metrics :4000| NodeAPI
+    GrafanaSvc -->|Query PromQL :9090| PrometheusSvc
 ```
 
 ---
@@ -48,6 +62,8 @@ flowchart TD
 | **Nginx** | `443/tcp` | `443/tcp` | `0.0.0.0/0` | TLS Termination, static React delivery, and API reverse proxy. |
 | **API** | `4000/tcp` | **None** | `internal_network` only | Express API backend. Never exposed directly on host interface. |
 | **PostgreSQL**| `5432/tcp` | **None** | `internal_network` only | Relational persistence. Never published to the public host. |
+| **Prometheus**| `9090/tcp` | **None** | `internal_network` only | TSDB metrics collection. Accessible only within private container bridge. |
+| **Grafana** | `3000/tcp` | `127.0.0.1:3001` | `127.0.0.1` (Localhost) | Observability dashboards. Strictly bound to loopback; never exposed to `0.0.0.0`. |
 
 ### 2.2 Why the Database Port (5432) is Not Exposed
 Exposing raw database ports to host interfaces creates significant attack vectors:
