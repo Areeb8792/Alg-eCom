@@ -31,6 +31,16 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     return;
   }
 
+  if (err instanceof Error && err.message.startsWith('CORS policy:')) {
+    res.status(403).json({
+      error: {
+        code: 'CORS_FORBIDDEN',
+        message: err.message
+      }
+    });
+    return;
+  }
+
   logger.error(
     {
       err,

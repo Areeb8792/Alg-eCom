@@ -3,9 +3,9 @@ import cors from 'cors';
 import { requestCorrelationMiddleware } from './middleware/requestLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiRouter } from './routes/index.js';
-import { config } from './config/index.js';
+import { config, Config } from './config/index.js';
 
-export function createApp(): Express {
+export function createApp(appConfig: Config = config): Express {
   const app = express();
 
   // Basic security, trusted proxy and parsing middleware
@@ -13,26 +13,38 @@ export function createApp(): Express {
   app.set('trust proxy', 1); // Trust single reverse proxy hop (Nginx) to prevent IP spoofing
 
   // Environment-configurable CORS supporting explicit allowed origins for dev & production
-  const allowedOrigins = config.CORS_ORIGIN.split(',').map((o) => o.trim());
-  const corsOrigin =
-    allowedOrigins.length === 1 && allowedOrigins[0] === '*'
-      ? '*'
-      : (requestOrigin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-          // Allow requests with no origin (e.g. mobile apps, curl, automated server probes)
-          if (!requestOrigin) return callback(null, true);
-          if (allowedOrigins.includes(requestOrigin) || allowedOrigins.includes('*')) {
-            return callback(null, true);
-          }
-          try {
-            const url = new URL(requestOrigin);
-            if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
-              return callback(null, true);
-            }
-          } catch {
-            // Ignore parse errors
-          }
-          return callback(new Error(`CORS policy: origin ${requestOrigin} is not allowed`));
-        };
+  const allowedOrigins = appConfig.CORS_ORIGIN.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const isProduction = appConfig.NODE_ENV === 'production';
+
+  const corsOrigin = (requestOrigin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, automated server probes, health checks)
+    if (!requestOrigin) return callback(null, true);
+
+    // Exact match against explicit allowed origins
+    if (allowedOrigins.includes(requestOrigin)) {
+      return callback(null, true);
+    }
+
+    // In development and test environments, allow wildcard and localhost/127.0.0.1 origins
+    if (!isProduction) {
+      if (allowedOrigins.includes('*')) {
+        return callback(null, true);
+      }
+      try {
+        const url = new URL(requestOrigin);
+        if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+          return callback(null, true);
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+
+    // In production, unlisted origins (including unlisted localhost ports) are rejected
+    return callback(new Error(`CORS policy: origin ${requestOrigin} is not allowed`));
+  };
 
   app.use(cors({ origin: corsOrigin, credentials: true }));
   app.use(express.json({ limit: '1mb' }));

@@ -41,7 +41,6 @@ jobs:
             -e POSTGRES_USER=algions_user \
             -e POSTGRES_PASSWORD=algions_password \
             -e POSTGRES_DB=algions_db \
-            -e POSTGRES_HOST_AUTH_METHOD=trust \
             postgres:16-alpine
 
           for i in $(seq 1 30); do
@@ -83,7 +82,7 @@ jobs:
         run: |
           set +e
           echo "=== Step 10: Initialize Database Schema & Seed ==="
-          DB_PSQL_OUT=$(docker exec -i algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/schema.sql 2>&1)
+          DB_PSQL_OUT=$(docker exec -i -e PGPASSWORD=algions_password algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/schema.sql 2>&1)
           PSQL_EXIT=$?
           if [ $PSQL_EXIT -ne 0 ]; then
             echo "::error title=PSQL_FAILED::psql failed with exit $PSQL_EXIT: $DB_PSQL_OUT"
@@ -92,7 +91,7 @@ jobs:
           fi
           echo "Schema applied successfully."
 
-          docker exec -i algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql || true
+          docker exec -i -e PGPASSWORD=algions_password algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql || true
 
           SEED_OUT=$(npx tsx apps/api/src/database/seed.ts 2>&1)
           SEED_EXIT=$?
@@ -128,11 +127,17 @@ jobs:
 
       - name: Run Trivy Container Vulnerability Scan (API)
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity CRITICAL,HIGH --exit-code 0 algions-api:test
+          echo "=== Scanning algions-api:test for HIGH severity vulnerabilities (audit log) ==="
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH --ignore-unfixed --exit-code 0 algions-api:test
+          echo "=== Enforcing ZERO fixable CRITICAL vulnerabilities on algions-api:test ==="
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity CRITICAL --ignore-unfixed --exit-code 1 algions-api:test
 
       - name: Run Trivy Container Vulnerability Scan (Web)
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity CRITICAL,HIGH --exit-code 0 algions-web:test
+          echo "=== Scanning algions-web:test for HIGH severity vulnerabilities (audit log) ==="
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH --ignore-unfixed --exit-code 0 algions-web:test
+          echo "=== Enforcing ZERO fixable CRITICAL vulnerabilities on algions-web:test ==="
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity CRITICAL --ignore-unfixed --exit-code 1 algions-web:test
 
       - name: Stop PostgreSQL Container
         if: always()
