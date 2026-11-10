@@ -1,14 +1,15 @@
 # ==============================================================================
 # Algions AI Labs — Production / GHCR Release Compose Override
-# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Usage: IMAGE_TAG=v1.0.0 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Note: Requires prior GitHub Actions release workflow execution to publish images.
 # ==============================================================================
 name: algions-platform
 
 services:
   api:
-    image: ${API_IMAGE:-ghcr.io/sayyeds/algions-api:08733bd}
+    image: ${API_IMAGE:-ghcr.io/sayyeds/algions-api:${IMAGE_TAG:-v1.0.0}}
     pull_policy: if_not_present
 
   nginx:
-    image: ${WEB_IMAGE:-ghcr.io/sayyeds/algions-web:08733bd}
+    image: ${WEB_IMAGE:-ghcr.io/sayyeds/algions-web:${IMAGE_TAG:-v1.0.0}}
     pull_policy: if_not_present

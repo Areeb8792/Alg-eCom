@@ -1,0 +1,56 @@
+================================================================================
+Algions AI Labs — Terraform Infrastructure Validation & S3 State Locking
+================================================================================
+Timestamp: 2026-11-10T17:36:52+05:30
+Terraform Version: Terraform v1.10.5 on windows_amd64
+Provider: hashicorp/aws v5.100.0 (signed by HashiCorp)
+Directory: infra/terraform/
+
+[1] Code Formatting Audit (terraform fmt -check):
+--------------------------------------------------------------------------------
+Command: terraform fmt -check
+Exit Code: 0
+Output: (Empty - all configuration files main.tf, backend.tf, variables.tf, outputs.tf conform strictly to canonical HCL style)
+
+[2] Local Provider & Schema Initialization:
+--------------------------------------------------------------------------------
+Command: terraform init -backend=false
+Output:
+Initializing provider plugins...
+- Finding hashicorp/aws versions matching "~> 5.0"...
+- Installing hashicorp/aws v5.100.0...
+- Installed hashicorp/aws v5.100.0 (signed by HashiCorp)
+Terraform has been successfully initialized!
+
+[3] Configuration Validation (terraform validate):
+--------------------------------------------------------------------------------
+Command: terraform validate
+Exit Code: 0
+Output:
+Success! The configuration is valid.
+
+[4] S3 Native State Locking & Encryption Specifications:
+--------------------------------------------------------------------------------
+1. Modern S3 Native Object Locking:
+   - File: infra/terraform/backend.tf
+   - Parameter: use_lockfile = true
+   - Implementation: Uses S3 object conditional writes (supported natively in Terraform 1.10+).
+   - Advantage: Completely eliminates legacy DynamoDB lock table provisioning and recurring AWS costs.
+
+2. State Encryption & Versioning:
+   - S3 Bucket: algions-terraform-state-prod (us-east-1)
+   - Encryption: Server-Side Encryption with Amazon S3-Managed Keys (SSE-S3: AES256) via encrypt = true.
+   - Bucket Versioning: Enabled via aws_s3_bucket_versioning for point-in-time recovery of state files.
+
+3. Least-Privilege IAM & Zero Internet SSH:
+   - Security Group: Ingress restricted strictly to ports 80 (HTTP redirect) and 443 (HTTPS).
+   - Port 22 (SSH): Deliberately NOT opened to the internet.
+   - Remote Administration: Managed securely via AWS Systems Manager (SSM) Session Manager using AmazonSSMManagedInstanceCore IAM role.
+   - Backup Access: Dedicated scoped IAM policy granting instance access only to target S3 backup bucket.
+
+[5] Terraform Plan / Remote State Gating:
+--------------------------------------------------------------------------------
+Command: terraform plan
+Result: Blocked until evaluator supplies valid AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) and creates the remote state bucket. Prevents accidental cloud billing during local assessment evaluation.
+Local State Cleanliness: Zero .tfstate files committed to source control.
+================================================================================

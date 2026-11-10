@@ -113,17 +113,14 @@ This script automatically:
 5. Launches containers in background mode.
 6. Waits for PostgreSQL readiness and executes database schema migrations and seed.
 
-### 4.4 Manual Docker Compose Execution
-```bash
-# 1. Generate local TLS certificates:
-bash infra/nginx/generate-certs.sh
-
-# 2. Build and launch containers:
-docker compose up -d --build
-
-# 3. View running container status:
-docker compose ps
-```
+### 4.4 Verified Production Endpoints
+Once the 5-service production container stack is running:
+- **Web Storefront**: `https://localhost/` (or `http://localhost/` for automatic 301 redirect)
+- **API Liveness Probe**: `https://localhost/api/v1/health/live`
+- **API Readiness Probe**: `https://localhost/api/v1/health/ready`
+- **Application Prometheus Metrics**: `https://localhost/api/v1/metrics`
+- **Grafana Observability Dashboard**: `http://127.0.0.1:3001` (Bound strictly to localhost loopback)
+- **Prometheus Scrape Inspection**: `docker compose exec prometheus wget -qO- http://localhost:9090/api/v1/targets` (Internal container network)
 
 ---
 

@@ -6,6 +6,10 @@ Services: Prometheus 3.13.5 LTS, Grafana 13.3.0, Nginx 1.30.6, Node 24.22.2 API
 
 [1] Prometheus Scrape Target Inspection:
 --------------------------------------------------------------------------------
+Security & Port Architecture:
+Prometheus is intentionally unexposed on host interfaces (no published host port)
+to protect monitoring metrics from external probing. It communicates exclusively
+within 'algions-internal-bridge'. Host operators inspect targets via Docker exec:
 Probe: docker exec algions-prometheus wget -qO- http://localhost:9090/api/v1/targets
 
 Output:

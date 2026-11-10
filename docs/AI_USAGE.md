@@ -19,7 +19,7 @@ All code, schemas, and configurations were verified for correctness, type integr
 
 To maintain absolute non-fabrication integrity, the following operational boundaries are transparently acknowledged:
 
-1. **Remote GHCR Image Publication (Gate 26)**:
+1. **Remote GHCR Image Publication (Gate 21)**:
    - The GitHub Actions release workflow (`.github/workflows/release.yml`) is fully written, configured with Docker Buildx multi-arch compilation, and wired for SBOM generation.
    - However, because the repository currently resides as a local Git repository without a pre-configured remote GitHub origin, live remote publication to `ghcr.io` remains **BLOCKED** pending the user adding their GitHub remote origin and pushing release tags.
 2. **Local Self-Signed TLS Certificates**:

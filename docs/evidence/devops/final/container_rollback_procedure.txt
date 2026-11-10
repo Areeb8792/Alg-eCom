@@ -40,6 +40,17 @@ dependency failed to start: container algions-api is unhealthy
 
 Container state: Restarting (1) - Unhealthy / Crash detected.
 
+Architectural Clarification on Startup Gating vs. Runtime Failover:
+Docker Compose 'depends_on: condition: service_healthy' functions strictly as a
+startup dependency order gate during container creation/recreation. If an updated
+container fails its health check, Compose halts deployment and prevents dependent
+services from binding to the failing container. It does NOT provide dynamic runtime
+traffic failover or automatic upstream removal in Nginx during steady state.
+Instead, automated recovery is driven by 'scripts/rollback.sh', which reads
+.deployment_history and redeploys the previous known-good baseline version.
+Consequently, this is characterized accurately as a 'health-gated deployment with
+verified automated rollback' (~15s MTTR), not continuous zero downtime.
+
 [3] Automated Rollback Execution (scripts/rollback.sh):
 --------------------------------------------------------------------------------
 Execution: bash scripts/rollback.sh

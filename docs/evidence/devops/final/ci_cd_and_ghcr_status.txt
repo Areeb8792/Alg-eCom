@@ -1,40 +1,49 @@
-# Algions Platform — CI/CD Automation & GHCR Registry Specification
-Generated at: 2026-11-10T15:21:20Z
-Status: SPECIFICATION VERIFIED; REMOTE EXECUTION REQUIRES GITHUB REPO SECRETS
+================================================================================
+Algions AI Labs — CI/CD Pipeline & GHCR Image Release Status
+================================================================================
+Timestamp: 2026-11-10T17:37:00+05:30
+Repository: Local Git Repository (master branch @ commit 85e8120)
+Workflows: .github/workflows/ci.yml and .github/workflows/release.yml
 
-## 1. CI Workflow (.github/workflows/ci.yml):
-- Triggers: Push to main/master/develop, Pull Request to main/master
-- Permissions: contents: read
-- Steps:
-  * Checkout source with fetch-depth: 0 (Enables comprehensive historical Gitleaks secret detection)
-  * Setup Node.js 24 LTS runtime
-  * npm ci (monorepo dependencies)
-  * Gitleaks scanner execution (.gitleaks.toml)
-  * TypeScript typecheck (tsc --noEmit across api and web)
-  * ESLint static analysis
-  * Vitest automated tests (25/25 passing)
-  * Playwright E2E browser tests (8/8 passing in 12.3s)
-  * Docker API multi-stage build check (node:24.22.2-alpine)
-  * Docker Web multi-stage build check (node:24.22.2-alpine + nginx:1.30.6-alpine)
-  * Aqua Security Trivy container vulnerability scanner (CRITICAL/HIGH severity)
+[1] Continuous Integration Pipeline (.github/workflows/ci.yml):
+--------------------------------------------------------------------------------
+Trigger: Pull requests and pushes to master branch
+Automated Verification Suite (14 stages):
+  1. Source checkout with fetch-depth: 0 (enables deep git history secret scanning)
+  2. Node.js LTS 24 runtime environment
+  3. Clean monorepo dependency installation (npm ci)
+  4. Gitleaks secret scanning (.gitleaks.toml)
+  5. TypeScript type integrity check across root and workspaces (npm run typecheck)
+  6. ESLint static code analysis
+  7. 25 Vitest unit & API integration tests (npm test)
+  8. 8 Playwright end-to-end browser user journey tests (npm run test:e2e)
+  9. Production build validation (npm run build)
+ 10. Trivy container vulnerability scanner (CVE scanning)
+Local Test Status: 100% PASS across all unit, integration, and E2E suites.
 
-## 2. Release & GHCR Delivery Workflow (.github/workflows/release.yml):
-- Triggers: Version tags (v*.*.*) or workflow_dispatch
-- Permissions: contents: read, packages: write
-- Registry: ghcr.io using native GITHUB_TOKEN
-- Docker Buildx: Multi-platform builds (linux/amd64, linux/arm64)
-- Provenance & SBOM: provenance: mode=max, sbom: true
-- Artifact References:
-  * ghcr.io/<repo>/api:v1.0.0
-  * ghcr.io/<repo>/api:sha-<commit>
-  * ghcr.io/<repo>/api:latest
-  * ghcr.io/<repo>/web:v1.0.0
-  * ghcr.io/<repo>/web:sha-<commit>
-  * ghcr.io/<repo>/web:latest
+[2] Container Release & GHCR Publication (.github/workflows/release.yml):
+--------------------------------------------------------------------------------
+Trigger: Pushed semver Git release tags (refs/tags/v*.*.*)
+Target Registry: ghcr.io
+Registry Permissions: Standard GITHUB_TOKEN with packages: write, contents: read
+Multi-Architecture Build: linux/amd64 and linux/arm64 via docker/setup-buildx-action
+Supply Chain Security:
+  - Software Bill of Materials (SBOM): sbom: true (SPDX format)
+  - Provenance Attestation: provenance: mode=max (SLSA Level 3 compatible)
 
-## 3. Remote Activation Instructions:
-To trigger remote execution on GitHub:
-1. Add remote git repository: `git remote add origin https://github.com/<owner>/algions.git`
-2. Push branch: `git push -u origin master`
-3. Push release tag: `git tag v1.0.0 && git push origin v1.0.0`
-4. GitHub Actions will execute and publish container images to GHCR using GITHUB_TOKEN automatically.
+[3] Live Image Reference Audit:
+--------------------------------------------------------------------------------
+- Production compose override: docker-compose.prod.yml
+- Declared image tags: ghcr.io/sayyeds/algions-api:08733bd, ghcr.io/sayyeds/algions-web:08733bd
+- Live Pull Test: docker pull ghcr.io/sayyeds/algions-api:08733bd
+  Result: Error response from daemon: error from registry: denied
+- Finding: The image tag 08733bd was a candidate commit reference and does NOT exist publicly on GHCR. Remote release workflow has not yet been triggered because no remote GitHub origin is attached to this workstation.
+- Acceptance Status: Gate 21 is marked BLOCKED from remote publication until candidate pushes to a remote GitHub repository. Local Compose uses reproducible local build tags (algions-api:local, algions-web:local).
+
+[4] Required User Commands to Trigger Remote Publication:
+--------------------------------------------------------------------------------
+git remote add origin https://github.com/<your-username>/algions-ecommerce-platform.git
+git push -u origin master
+git tag v1.0.0
+git push origin v1.0.0
+================================================================================

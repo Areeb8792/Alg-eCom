@@ -189,6 +189,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "backups_lifecycle" {
     id     = "expire-old-backups-after-30-days"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 30
     }
@@ -209,7 +211,7 @@ resource "aws_iam_policy" "backup_s3_policy" {
           "s3:GetObject",
           "s3:ListBucket"
         ]
-        Effect   = "Allow"
+        Effect = "Allow"
         Resource = [
           aws_s3_bucket.backups.arn,
           "${aws_s3_bucket.backups.arn}/*"
