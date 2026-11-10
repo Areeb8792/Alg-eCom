@@ -11,7 +11,22 @@ export function createApp(): Express {
   // Basic security, trusted proxy and parsing middleware
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // Trust single reverse proxy hop (Nginx) to prevent IP spoofing
-  app.use(cors({ origin: config.CORS_ORIGIN }));
+
+  // Environment-configurable CORS supporting explicit allowed origins for dev & production
+  const allowedOrigins = config.CORS_ORIGIN.split(',').map((o) => o.trim());
+  const corsOrigin =
+    allowedOrigins.length === 1 && allowedOrigins[0] === '*'
+      ? '*'
+      : (requestOrigin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+          // Allow requests with no origin (e.g. mobile apps, curl, automated server probes)
+          if (!requestOrigin) return callback(null, true);
+          if (allowedOrigins.includes(requestOrigin) || allowedOrigins.includes('*')) {
+            return callback(null, true);
+          }
+          return callback(new Error(`CORS policy: origin ${requestOrigin} is not allowed`));
+        };
+
+  app.use(cors({ origin: corsOrigin, credentials: true }));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 

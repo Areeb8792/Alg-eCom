@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-algions_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_in_production}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       POSTGRES_DB: ${DB_NAME:-algions_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -36,19 +36,19 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
-    image: ${API_IMAGE:-ghcr.io/sayyeds/algions-api:latest}
+    image: ${API_IMAGE:-ghcr.io/sayyeds/algions-api:${IMAGE_TAG:-08733bd}}
     container_name: algions-api
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 4000
       HOST: 0.0.0.0
-      DATABASE_URL: postgresql://${DB_USER:-algions_user}:${DB_PASSWORD:-change_me_in_production}@postgres:5432/${DB_NAME:-algions_db}
-      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_signing_key_replace_with_strong_random_secret_in_prod}
+      DATABASE_URL: postgresql://${DB_USER:-algions_user}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-algions_db}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin@algions.com}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change_me_admin_secure_password_2024}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:80,https://localhost,https://algions.com}
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,7 +75,7 @@ services:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
-    image: ${WEB_IMAGE:-ghcr.io/sayyeds/algions-web:latest}
+    image: ${WEB_IMAGE:-ghcr.io/sayyeds/algions-web:${IMAGE_TAG:-08733bd}}
     container_name: algions-nginx
     restart: unless-stopped
     ports:
@@ -121,6 +121,12 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -134,7 +140,7 @@ services:
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-AlgionsGrafanaAdmin2024!}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_ANONYMOUS_ENABLED=false
     ports:
@@ -142,12 +148,13 @@ services:
       - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
     volumes:
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./infra/grafana/dashboards:/etc/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     networks:
       - internal_network
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
     deploy:
       resources:
         limits:
