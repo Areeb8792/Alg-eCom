@@ -80,10 +80,25 @@ jobs:
 
       - name: Initialize Database Schema & Seed
         run: |
-          echo "=== Applying schema via psql ==="
-          docker exec -i algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/schema.sql
-          echo "=== Seeding database via tsx ==="
-          npx tsx apps/api/src/database/seed.ts
+          set +e
+          echo "=== Step 10: Initialize Database Schema & Seed ==="
+          DB_PSQL_OUT=$(docker exec -i algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/schema.sql 2>&1)
+          PSQL_EXIT=$?
+          if [ $PSQL_EXIT -ne 0 ]; then
+            echo "::error title=PSQL_FAILED::psql failed with exit $PSQL_EXIT: $DB_PSQL_OUT"
+            echo "PSQL_FAILED: $DB_PSQL_OUT"
+            exit $PSQL_EXIT
+          fi
+          echo "Schema applied successfully."
+
+          SEED_OUT=$(npx tsx apps/api/src/database/seed.ts 2>&1)
+          SEED_EXIT=$?
+          if [ $SEED_EXIT -ne 0 ]; then
+            echo "::error title=SEED_FAILED::seed failed with exit $SEED_EXIT: $SEED_OUT"
+            echo "SEED_FAILED: $SEED_OUT"
+            exit $SEED_EXIT
+          fi
+          echo "Seed completed successfully."
 
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
         run: npm test
