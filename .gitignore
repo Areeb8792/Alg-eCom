@@ -53,3 +53,14 @@ Thumbs.db
 tmp/
 temp/
 scratch/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
+

@@ -20,7 +20,7 @@ export class HealthController {
     const { isReady } = await this.service.getReadiness();
     const output = generatePrometheusMetrics(isReady);
 
-    res.setHeader('Content-Type', 'text/plain; version=0.0.4');
+    res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
     res.status(200).send(output);
   };
 }

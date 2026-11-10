@@ -8,8 +8,9 @@ import { config } from './config/index.js';
 export function createApp(): Express {
   const app = express();
 
-  // Basic security and parsing middleware
+  // Basic security, trusted proxy and parsing middleware
   app.disable('x-powered-by');
+  app.set('trust proxy', 1); // Trust single reverse proxy hop (Nginx) to prevent IP spoofing
   app.use(cors({ origin: config.CORS_ORIGIN }));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));

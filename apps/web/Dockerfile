@@ -3,7 +3,7 @@
 # ==============================================================================
 
 # Stage 1: Build & Compile React SPA
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -16,7 +16,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # Stage 2: Production Nginx Server
-FROM nginx:alpine AS runner
+FROM nginx:1.27-alpine AS runner
 
 # Remove default boilerplate configuration
 RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
