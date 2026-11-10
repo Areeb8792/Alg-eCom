@@ -97,17 +97,9 @@ jobs:
           docker build -t algions-web:test -f apps/web/Dockerfile .
 
       - name: Run Trivy Container Vulnerability Scan (API)
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: 'algions-api:test'
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH'
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity CRITICAL,HIGH --exit-code 0 algions-api:test
 
       - name: Run Trivy Container Vulnerability Scan (Web)
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: 'algions-web:test'
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH'
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity CRITICAL,HIGH --exit-code 0 algions-web:test
