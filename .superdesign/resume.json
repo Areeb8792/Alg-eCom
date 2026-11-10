@@ -1,0 +1,14 @@
+{
+  "projectId": "7f696042-42df-4c14-a518-cf97a2601743",
+  "projectName": "HEAVYWEIGHT - Luxury Fashion E-commerce",
+  "selectedDraftId": "df189593-ef46-4348-841e-a68cf7d4f972",
+  "selectedDraftPreview": "https://superdesign.dev/preview/draft/df189593-ef46-4348-841e-a68cf7d4f972",
+  "status": "ready_for_implementation",
+  "linkedDrafts": {
+    "catalog": "df189593-ef46-4348-841e-a68cf7d4f972",
+    "productDetail": "a5026836-5052-4be0-a86c-3d191fe8636f",
+    "cart": "c5f89dad-bd19-42fa-8528-34077707781e",
+    "checkout": "5327de83-3a28-4cce-8fce-aa491fb68cfa",
+    "orderConfirmed": "b4568d60-3f05-4a11-8edb-5ad3b31d87fd"
+  }
+}

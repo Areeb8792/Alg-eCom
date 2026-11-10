@@ -1,0 +1,991 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <link rel="prefetch" href="https://draft-a5026836-5052-4be0-a86c-3d191fe8636f.preview.superdesign.dev" as="document">
+    <link rel="prefetch" href="https://draft-c5f89dad-bd19-42fa-8528-34077707781e.preview.superdesign.dev" as="document">
+    <link rel="prefetch" href="https://draft-5327de83-3a28-4cce-8fce-aa491fb68cfa.preview.superdesign.dev" as="document">
+    <link rel="prefetch" href="https://draft-b4568d60-3f05-4a11-8edb-5ad3b31d87fd.preview.superdesign.dev" as="document">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@300;400;500;700&display=swap');
+
+        :root {
+            --concrete: #f2f2f2;
+            --ink: #0a0a0a;
+            --red: #dc2626;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: var(--concrete);
+        }
+
+        .anton-heading {
+            font-family: 'Anton', sans-serif;
+            line-height: 0.85;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+        }
+
+        .space-grotesk {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.05em;
+        }
+
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.04;
+            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgNTAwIDUwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz4KICA8ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+CiAgICA8ZmVUdXJidWxlbmNlIHR5cGU9J2ZyYWN0YWxOb2lzZScgYmFzZUZyZXF1ZW5jeT0nMC42NScgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPgogIDwvZmlsdGVyPgogIDxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbHRlcj0ndXJsKCNub2lzZUZpbHRlciknLz4KPC9zdmc+');
+        }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+
+        .grayscale-hover {
+            filter: grayscale(100%);
+            transition: filter 700ms ease, transform 700ms ease;
+        }
+
+        .grayscale-hover:hover {
+            filter: grayscale(0%);
+            transform: scale(1.05);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .nav-link:hover {
+            text-decoration: line-through;
+            text-decoration-thickness: 2px;
+        }
+
+        .mix-blend-diff {
+            mix-blend-mode: difference;
+        }
+
+        .sharp-shadow {
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+        }
+
+        html { background-color: var(--concrete); }
+        @view-transition { navigation: auto; }
+
+        .header-transition { view-transition-name: main-nav; }
+        .cart-transition { view-transition-name: cart-btn; }
+        .footer-transition { view-transition-name: main-footer; }
+        .main-content { view-transition-name: main-content; }
+
+        ::view-transition-old(main-nav),
+        ::view-transition-new(main-nav),
+        ::view-transition-old(cart-btn),
+        ::view-transition-new(cart-btn),
+        ::view-transition-old(main-footer),
+        ::view-transition-new(main-footer) {
+            animation: none;
+            mix-blend-mode: normal;
+        }
+
+        ::view-transition-old(main-content) {
+            animation: 0.25s ease-out both fade-out;
+        }
+        ::view-transition-new(main-content) {
+            animation: 0.25s ease-in 0.1s both fade-in;
+        }
+
+        @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+
+<meta name="preview-version" content="df189593-ef46-4348-841e-a68cf7d4f972" />
+<meta name="preview-timestamp" content="2026-11-10T07:31:46.879Z" />
+
+<style>
+  html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
+    display: none !important; width: 0 !important; height: 0 !important;
+  }
+  html, body, * {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+</style>
+<style>
+          body:not(.sd-ready) { opacity: 0 !important; }
+          body.sd-ready { opacity: 1 !important; transition: opacity 0.1s ease-in; }
+          sd-component { display: block; }
+        </style>
+
+<script type="module">
+  (function() {
+    document.addEventListener('wheel', function(e) {
+      if (e.ctrlKey) e.preventDefault();
+    }, { passive: false });
+  })();
+</script>
+<script type="module">
+    // SuperDesign Runtime
+    console.log('[SuperDesign] Preview loaded for versionId:', "df189593-ef46-4348-841e-a68cf7d4f972");
+
+    window.__SUPERDESIGN_PREVIEW__ = {
+      versionId: "df189593-ef46-4348-841e-a68cf7d4f972",
+      timestamp: "2026-11-10T07:31:46.879Z",
+      _modernScreenshotModule: null,
+
+      sendMessage: function(type, data) {
+        if (window.parent) {
+          window.parent.postMessage({
+            source: 'superdesign-preview',
+            type: type,
+            data: data,
+            versionId: this.versionId
+          }, '*');
+        }
+      },
+
+      ready: function() {
+        this.sendMessage('ready', { timestamp: Date.now() });
+      },
+
+      
+      _captureScreenshotInternal: async function() {
+        if (!this._modernScreenshotModule) {
+          console.log('[SuperDesign] Loading modern-screenshot library...');
+          this._modernScreenshotModule = await import('https://esm.sh/modern-screenshot@4.6.6');
+        }
+        var modernScreenshot = this._modernScreenshotModule;
+        if (!modernScreenshot || !modernScreenshot.domToCanvas) {
+          throw new Error('modern-screenshot library not loaded');
+        }
+
+        var scrollX = window.scrollX || window.pageXOffset;
+        var scrollY = window.scrollY || window.pageYOffset;
+        var viewportWidth = window.innerWidth;
+        var viewportHeight = window.innerHeight;
+        var documentWidth = Math.max(
+          document.documentElement.scrollWidth,
+          document.documentElement.offsetWidth,
+          document.documentElement.clientWidth,
+          document.body.scrollWidth,
+          document.body.offsetWidth
+        );
+        var documentHeight = Math.max(
+          document.documentElement.scrollHeight,
+          document.documentElement.offsetHeight,
+          document.documentElement.clientHeight,
+          document.body.scrollHeight,
+          document.body.offsetHeight
+        );
+
+        var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        var pixelRatio = isMobile ? 1 : (window.devicePixelRatio || 1);
+
+        var dataUrl;
+
+        if (isMobile) {
+          var wrapper = document.createElement('div');
+          wrapper.style.cssText = 'position:fixed;top:0;left:0;width:' + viewportWidth + 'px;height:' + viewportHeight + 'px;overflow:hidden;z-index:999999;pointer-events:none;';
+          var clone = document.body.cloneNode(true);
+          clone.style.cssText = 'position:absolute;top:' + (-scrollY) + 'px;left:' + (-scrollX) + 'px;margin:0;width:' + documentWidth + 'px;';
+          wrapper.appendChild(clone);
+          document.body.appendChild(wrapper);
+          try {
+            var viewportCanvas = await modernScreenshot.domToCanvas(wrapper, {
+              scale: 1, backgroundColor: '#ffffff',
+              width: viewportWidth, height: viewportHeight,
+            });
+            dataUrl = viewportCanvas.toDataURL('image/png', 0.5);
+          } finally {
+            document.body.removeChild(wrapper);
+          }
+        } else {
+          var fullCanvas = await modernScreenshot.domToCanvas(document.documentElement, {
+            scale: pixelRatio, backgroundColor: '#ffffff',
+            width: documentWidth, height: documentHeight,
+          });
+          var viewportCanvas = document.createElement('canvas');
+          viewportCanvas.width = viewportWidth * pixelRatio;
+          viewportCanvas.height = viewportHeight * pixelRatio;
+          var ctx = viewportCanvas.getContext('2d');
+          if (!ctx) throw new Error('Failed to get canvas context');
+          ctx.drawImage(
+            fullCanvas,
+            scrollX * pixelRatio, scrollY * pixelRatio,
+            viewportWidth * pixelRatio, viewportHeight * pixelRatio,
+            0, 0, viewportWidth * pixelRatio, viewportHeight * pixelRatio
+          );
+          dataUrl = viewportCanvas.toDataURL('image/png', 1.0);
+        }
+
+        if (!dataUrl || !dataUrl.startsWith('data:image/png;base64,') || dataUrl.length < 100) {
+          throw new Error('Invalid screenshot data');
+        }
+
+        return {
+          dataUrl: dataUrl,
+          viewportWidth: viewportWidth,
+          viewportHeight: viewportHeight,
+          pixelRatio: pixelRatio
+        };
+      },
+
+      autoCapture: async function() {
+        if (window === window.parent) return;
+        try {
+          var result = await this._captureScreenshotInternal();
+          this.sendMessage('auto-screenshot', {
+            dataUrl: result.dataUrl,
+            timestamp: Date.now(),
+            viewportWidth: result.viewportWidth,
+            viewportHeight: result.viewportHeight,
+            pixelRatio: result.pixelRatio,
+          });
+        } catch (error) {
+          console.error('[SuperDesign] Auto-capture failed:', error);
+        }
+      },
+
+      captureScreenshot: async function(requestId, autoCaptureId) {
+        try {
+          this._currentRequestId = requestId;
+          this._currentAutoCaptureId = autoCaptureId;
+          var result = await this._captureScreenshotInternal();
+          this.sendMessage('screenshot-captured', {
+            dataUrl: result.dataUrl,
+            timestamp: Date.now(),
+            viewportWidth: result.viewportWidth,
+            viewportHeight: result.viewportHeight,
+            pixelRatio: result.pixelRatio,
+            requestId: this._currentRequestId,
+            autoCaptureId: this._currentAutoCaptureId
+          });
+          return result.dataUrl;
+        } catch (error) {
+          console.error('[SuperDesign] Screenshot capture failed:', error);
+          this.sendMessage('screenshot-error', {
+            error: error.message || String(error),
+            timestamp: Date.now(),
+            requestId: this._currentRequestId,
+            autoCaptureId: this._currentAutoCaptureId
+          });
+          throw error;
+        }
+      }
+  
+    };
+
+    
+    // Font loading helpers
+    window.__SUPERDESIGN_PREVIEW__.loadedFonts = new Set();
+    window.__SUPERDESIGN_PREVIEW__.loadGoogleFont = function(fontFamily) {
+      if (!fontFamily || this.loadedFonts.has(fontFamily)) return;
+      if (fontFamily.startsWith('Custom-')) return;
+
+      var systemFonts = ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI',
+        'Roboto', 'Helvetica', 'Arial', 'sans-serif', 'Georgia', 'Times New Roman',
+        'Times', 'serif', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'];
+      if (systemFonts.some(function(sf) { return fontFamily.toLowerCase().includes(sf.toLowerCase()); })) return;
+
+      if (!document.querySelector('link[href*="fonts.googleapis.com"]')) {
+        var preconnect1 = document.createElement('link');
+        preconnect1.rel = 'preconnect';
+        preconnect1.href = 'https://fonts.googleapis.com';
+        document.head.appendChild(preconnect1);
+        var preconnect2 = document.createElement('link');
+        preconnect2.rel = 'preconnect';
+        preconnect2.href = 'https://fonts.gstatic.com';
+        preconnect2.crossOrigin = 'anonymous';
+        document.head.appendChild(preconnect2);
+      }
+
+      var linkId = 'google-font-' + fontFamily.replace(/\\s+/g, '-').toLowerCase();
+      if (!document.getElementById(linkId)) {
+        var link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(fontFamily) + ':wght@400;500;600;700&display=swap';
+        link.onerror = function() { console.error('[SuperDesign] Failed to load Google Font:', fontFamily); };
+        document.head.appendChild(link);
+      }
+      this.loadedFonts.add(fontFamily);
+    };
+
+    window.__SUPERDESIGN_PREVIEW__.loadedCustomFonts = new Set();
+    window.__SUPERDESIGN_PREVIEW__.loadCustomFont = function(fontInfo) {
+      if (!fontInfo || !fontInfo.family || !fontInfo.url) return;
+      if (this.loadedCustomFonts.has(fontInfo.family)) return;
+      var styleId = 'custom-font-' + fontInfo.family.replace(/[^a-zA-Z0-9]/g, '-');
+      if (document.getElementById(styleId)) return;
+      var style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = '@font-face { ' +
+        'font-family: "' + fontInfo.family + '"; ' +
+        'src: url("' + fontInfo.url + '") format("' + (fontInfo.format || 'woff2') + '"); ' +
+        'font-weight: 100 900; font-style: normal; font-display: swap; }';
+      document.head.appendChild(style);
+      this.loadedCustomFonts.add(fontInfo.family);
+    };
+  
+    
+    // Theme sync
+    window.__SUPERDESIGN_PREVIEW__.applyTheme = function(payload, isDark) {
+      var root = document.documentElement;
+      var colorVars = isDark ? payload.dark : payload.light;
+      for (var name in colorVars) {
+        if (colorVars.hasOwnProperty(name)) {
+          root.style.setProperty(name, colorVars[name]);
+        }
+      }
+
+      if (payload.customFonts && Array.isArray(payload.customFonts)) {
+        payload.customFonts.forEach(function(fontInfo) {
+          window.__SUPERDESIGN_PREVIEW__.loadCustomFont(fontInfo);
+        });
+      }
+
+      if (payload.typography) {
+        var t = payload.typography;
+        if (t.fontSans && !t.fontSans.startsWith('Custom-')) window.__SUPERDESIGN_PREVIEW__.loadGoogleFont(t.fontSans);
+        if (t.fontSerif && !t.fontSerif.startsWith('Custom-')) window.__SUPERDESIGN_PREVIEW__.loadGoogleFont(t.fontSerif);
+        if (t.fontMono && !t.fontMono.startsWith('Custom-')) window.__SUPERDESIGN_PREVIEW__.loadGoogleFont(t.fontMono);
+
+        var formatFontValue = function(ff) {
+          if (!ff) return ff;
+          var first = ff.split(',')[0].trim().replace(/^["']|["']$/g, '');
+          return first.startsWith('var(') ? first : '"' + first + '"';
+        };
+        root.style.setProperty('--font-sans', formatFontValue(t.fontSans));
+        root.style.setProperty('--font-serif', formatFontValue(t.fontSerif));
+        root.style.setProperty('--font-mono', formatFontValue(t.fontMono));
+        root.style.setProperty('--font-size', t.fontSize);
+        root.style.setProperty('--line-height', t.lineHeight);
+        root.style.setProperty('--letter-spacing-body', t.letterSpacing);
+        root.style.setProperty('--letter-spacing-heading', t.headingLetterSpacing);
+        root.style.setProperty('--font-weight-regular', t.fontWeightRegular);
+        root.style.setProperty('--font-weight-bold', t.fontWeightBold);
+      }
+
+      if (payload.effects) {
+        root.style.setProperty('--radius', payload.effects.radius);
+        root.style.setProperty('--shadow', payload.effects.shadow);
+      }
+
+      if (isDark) { root.classList.add('dark'); } else { root.classList.remove('dark'); }
+    };
+  
+    
+    // Message listener
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'request-screenshot') {
+        if (window.__SUPERDESIGN_PREVIEW__) {
+          window.__SUPERDESIGN_PREVIEW__.captureScreenshot(event.data.requestId, event.data.autoCaptureId);
+        }
+      }
+
+      if (event.data && event.data.type === 'superdesign-theme-update') {
+        if (window.__SUPERDESIGN_PREVIEW__ && event.data.payload) {
+          var isDark = event.data.isDark || false;
+          window.__SUPERDESIGN_PREVIEW__.applyTheme(event.data.payload, isDark);
+          window.__SUPERDESIGN_PREVIEW__.sendMessage('theme-applied', { timestamp: Date.now(), isDark: isDark });
+        }
+      }
+
+      if (event.data && event.data.type === 'navigate-to-route') {
+        var route = event.data.route;
+        if (route) {
+          if (route === '/') {
+            if (window.location.hash) {
+              history.pushState(null, '', window.location.pathname + window.location.search);
+              window.dispatchEvent(new HashChangeEvent('hashchange'));
+            }
+          } else {
+            var newHash = '#' + route;
+            if (window.location.hash !== newHash) {
+              window.location.hash = route;
+            }
+          }
+        }
+      }
+    });
+  
+    
+    // Page lifecycle
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() { window.__SUPERDESIGN_PREVIEW__.ready(); });
+    } else {
+      window.__SUPERDESIGN_PREVIEW__.ready();
+    }
+
+    function onPageFullyLoaded() {
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          setTimeout(function() {
+            window.__SUPERDESIGN_PREVIEW__.sendMessage('loaded', { timestamp: Date.now() });
+          }, 1500);
+          // Auto-capture disabled for this preview type
+        });
+      });
+    }
+
+    if (document.readyState === 'complete') {
+      onPageFullyLoaded();
+    } else {
+      window.addEventListener('load', onPageFullyLoaded);
+    }
+  
+  </script>
+<script type="module">
+  window.addEventListener('error', function(event) {
+    var msg = event.message || '';
+    var name = (event.error && event.error.name) || msg.split(':')[0] || '';
+    if (name === 'HierarchyRequestError' || msg.includes("Failed to execute 'appendChild' on 'Node'")) return;
+    if (window.__SUPERDESIGN_PREVIEW__) {
+      var err = event.error;
+      window.__SUPERDESIGN_PREVIEW__.sendMessage('error', {
+        message: event.message, filename: event.filename,
+        lineno: event.lineno, colno: event.colno,
+        name: (err && err.name) || name || 'Error',
+        stack: (err && err.stack) || null
+      });
+    }
+  });
+  window.addEventListener('unhandledrejection', function(event) {
+    var reason = event.reason;
+    var msg = (reason && reason.message) || (typeof reason === 'string' ? reason : '');
+    var name = (reason && reason.name) || 'UnhandledRejection';
+    if (name === 'HierarchyRequestError' || msg.includes("Failed to execute 'appendChild' on 'Node'")) return;
+    if (window.__SUPERDESIGN_PREVIEW__) {
+      window.__SUPERDESIGN_PREVIEW__.sendMessage('unhandled-rejection', {
+        reason: (reason && reason.message) || String(reason),
+        name: name,
+        stack: (reason && reason.stack) || null
+      });
+    }
+  });
+</script>
+<script type="module">import '/__visual-edit-bridge/iframe-runtime.mjs?v=81349612';</script>
+<script  src="https://cdn.jsdelivr.net/npm/petite-vue@0.4.1/dist/petite-vue.iife.js"></script>
+<script type="module">
+  (function() {
+    'use strict';
+
+    var MAX_RENDER_DEPTH = 5;
+
+    function showPage() {
+      document.body.classList.add('sd-ready');
+    }
+
+    var componentRegistry = new Map();
+    var instanceRegistry = new Map();
+    var API_BASE = "https://api.superdesign.dev";
+    var DRAFT_ID = "df189593-ef46-4348-841e-a68cf7d4f972";
+
+    function buildDefaultProps(definition) {
+      var defaultProps = {};
+      var props = definition.props;
+      if (!props || !Array.isArray(props)) return defaultProps;
+      for (var i = 0; i < props.length; i++) {
+        var prop = props[i];
+        if (prop.defaultValue === undefined) continue;
+        var path = prop.name.split('.');
+        var current = defaultProps;
+        for (var j = 0; j < path.length - 1; j++) {
+          var key = path[j];
+          if (!(key in current) || typeof current[key] !== 'object' || current[key] === null) {
+            current[key] = {};
+          }
+          current = current[key];
+        }
+        current[path[path.length - 1]] = prop.defaultValue;
+      }
+      return defaultProps;
+    }
+
+    function deepMerge(target, source) {
+      var result = Object.assign({}, target);
+      for (var key in source) {
+        if (!source.hasOwnProperty(key)) continue;
+        if (
+          source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
+          result[key] && typeof result[key] === 'object' && !Array.isArray(result[key])
+        ) {
+          result[key] = deepMerge(result[key], source[key]);
+        } else {
+          result[key] = source[key];
+        }
+      }
+      return result;
+    }
+
+    function registerComponent(id, definition) {
+      componentRegistry.set(id, definition);
+      console.log('[SDComponent] Registered component:', id);
+    }
+
+    function renderComponent(element, depth) {
+      depth = depth || 0;
+      var componentId = element.getAttribute('componentid') || element.getAttribute('ref');
+      var instanceId = element.getAttribute('instance');
+      var propsAttr = element.getAttribute('props');
+
+      if (!componentId) {
+        console.warn('[SDComponent] Missing componentId attribute on sd-component');
+        return;
+      }
+
+      if (depth >= MAX_RENDER_DEPTH) {
+        console.warn('[SDComponent] Max render depth reached for:', componentId);
+        element.setAttribute('data-error', 'max-depth');
+        return;
+      }
+
+      var definition = componentRegistry.get(componentId);
+      if (!definition) {
+        console.warn('[SDComponent] Component not found:', componentId);
+        element.setAttribute('data-pending', 'true');
+        return;
+      }
+
+      var instanceProps = {};
+      if (propsAttr) {
+        try { instanceProps = JSON.parse(propsAttr); }
+        catch (e) { console.warn('[SDComponent] Invalid props JSON:', propsAttr); }
+      }
+
+      var defaultProps = buildDefaultProps(definition);
+      var finalProps = deepMerge(defaultProps, instanceProps);
+
+      element.innerHTML = definition.htmlContent;
+
+      if (window.PetiteVue) {
+        finalProps.$emit = function(eventName, payload) {
+          if (payload && typeof payload === 'object' && payload.href) {
+            window.location.href = payload.href;
+            return;
+          }
+          var customEvent = new CustomEvent('sd-' + eventName, {
+            detail: payload, bubbles: true, composed: true,
+          });
+          element.dispatchEvent(customEvent);
+        };
+        window.PetiteVue.createApp(finalProps).mount(element);
+      } else {
+        console.warn('[SDComponent] Petite-Vue not loaded, template syntax will not be resolved');
+      }
+
+      instanceRegistry.set(instanceId, {
+        componentId: componentId,
+        element: element,
+        props: finalProps,
+        version: definition.version,
+      });
+
+      element.removeAttribute('data-pending');
+      element.setAttribute('data-rendered', 'true');
+      element.setAttribute('data-version', String(definition.version));
+      console.log('[SDComponent] Rendered:', componentId, instanceId);
+
+      // Render any nested sd-component children that were just injected
+      var nestedElements = element.querySelectorAll('sd-component[componentid], sd-component[ref]');
+      if (nestedElements.length > 0) {
+        var missingIds = [];
+        nestedElements.forEach(function(nested) {
+          var nestedId = nested.getAttribute('componentid') || nested.getAttribute('ref');
+          if (nestedId && !componentRegistry.has(nestedId)) {
+            missingIds.push(nestedId);
+          }
+        });
+
+        if (missingIds.length > 0) {
+          // Fetch missing nested components, then render
+          loadComponentsByIds(missingIds).then(function() {
+            nestedElements.forEach(function(nested) {
+              if (!nested.getAttribute('data-rendered')) {
+                renderComponent(nested, depth + 1);
+              }
+            });
+          });
+        } else {
+          // All nested definitions already loaded — render immediately
+          nestedElements.forEach(function(nested) {
+            if (!nested.getAttribute('data-rendered')) {
+              renderComponent(nested, depth + 1);
+            }
+          });
+        }
+      }
+    }
+
+    function updateComponentInstances(componentId) {
+      var elements = document.querySelectorAll('sd-component[componentid="' + componentId + '"], sd-component[ref="' + componentId + '"]');
+      elements.forEach(function(el) { renderComponent(el); });
+    }
+
+    function initializeComponents() {
+      var elements = document.querySelectorAll('sd-component[componentid], sd-component[ref]');
+      elements.forEach(function(el) {
+        if (!el.getAttribute('data-rendered')) { renderComponent(el); }
+      });
+    }
+
+    async function loadComponentsByIds(ids) {
+      if (!ids || ids.length === 0) return;
+      // Deduplicate and filter already-loaded
+      var uniqueIds = ids.filter(function(id, i, arr) {
+        return arr.indexOf(id) === i && !componentRegistry.has(id);
+      });
+      if (uniqueIds.length === 0) return;
+
+      try {
+        console.log('[SDComponent] Batch loading components:', uniqueIds);
+        var response = await fetch(API_BASE + '/v1/design-drafts/components/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ componentIds: uniqueIds }),
+        });
+        if (!response.ok) throw new Error('Batch load failed: ' + response.status);
+        var components = await response.json();
+        console.log('[SDComponent] Batch loaded', components.length, 'components');
+        components.forEach(function(comp) { registerComponent(comp.id, comp); });
+      } catch (error) {
+        console.error('[SDComponent] Failed to batch load components:', error);
+      }
+    }
+
+    async function loadComponentsForDraft() {
+      if (!DRAFT_ID) {
+        console.warn('[SDComponent] No draft ID configured');
+        showPage();
+        return;
+      }
+      try {
+        console.log('[SDComponent] Loading components for draft:', DRAFT_ID);
+        var response = await fetch(API_BASE + '/v1/design-drafts/' + DRAFT_ID + '/components', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!response.ok) throw new Error('Failed to load components: ' + response.status);
+        var components = await response.json();
+        console.log('[SDComponent] Loaded', components.length, 'components');
+        components.forEach(function(comp) { registerComponent(comp.id, comp); });
+        initializeComponents();
+        showPage();
+      } catch (error) {
+        console.error('[SDComponent] Failed to load components:', error);
+        showPage();
+      }
+    }
+
+    function findReferencedComponents() {
+      var elements = document.querySelectorAll('sd-component[componentid], sd-component[ref]');
+      var ids = new Set();
+      elements.forEach(function(el) {
+        var ref = el.getAttribute('componentid') || el.getAttribute('ref');
+        if (ref) ids.add(ref);
+      });
+      return Array.from(ids);
+    }
+
+    window.__SD_COMPONENTS__ = {
+      register: registerComponent,
+      render: renderComponent,
+      update: updateComponentInstances,
+      loadForDraft: loadComponentsForDraft,
+      loadByIds: loadComponentsByIds,
+      init: initializeComponents,
+      findRefs: findReferencedComponents,
+      getRegistry: function() { return componentRegistry; },
+      getInstances: function() { return instanceRegistry; },
+      getDraftId: function() { return DRAFT_ID; },
+    };
+
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'SD_COMPONENT_UPDATE') {
+        var cId = event.data.componentId;
+        var def = event.data.definition;
+        if (cId && def) { registerComponent(cId, def); updateComponentInstances(cId); }
+      }
+      if (event.data && event.data.type === 'SD_COMPONENTS_REGISTER') {
+        var comps = event.data.components;
+        if (Array.isArray(comps)) {
+          comps.forEach(function(c) { registerComponent(c.id, c); });
+          initializeComponents();
+        }
+      }
+    });
+
+    function bootComponents() {
+      // Pre-register components from __SD_COMPONENT_PRELOAD__ (injected by backend for standalone previews)
+      if (window.__SD_COMPONENT_PRELOAD__ && Array.isArray(window.__SD_COMPONENT_PRELOAD__)) {
+        console.log('[SDComponent] Pre-registering', window.__SD_COMPONENT_PRELOAD__.length, 'preloaded components');
+        window.__SD_COMPONENT_PRELOAD__.forEach(function(comp) {
+          registerComponent(comp.id, comp);
+        });
+      }
+
+      var refs = findReferencedComponents();
+      var unloaded = refs.filter(function(id) { return !componentRegistry.has(id); });
+
+      if (unloaded.length > 0) {
+        if (DRAFT_ID) {
+          loadComponentsForDraft();
+        } else {
+          // No draft ID — try batch loading the missing IDs directly
+          loadComponentsByIds(unloaded).then(function() {
+            initializeComponents();
+            showPage();
+          });
+        }
+      } else if (refs.length > 0) {
+        // All components already registered (e.g. from preload) — render immediately
+        initializeComponents();
+        showPage();
+      } else {
+        showPage();
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootComponents);
+    } else {
+      bootComponents();
+    }
+
+    var observer = new MutationObserver(function(mutations) {
+      var hasNew = false;
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1) {
+            if (node.tagName === 'SD-COMPONENT') { hasNew = true; }
+            else if (node.querySelector) {
+              if (node.querySelectorAll('sd-component[componentid], sd-component[ref]').length > 0) hasNew = true;
+            }
+          }
+        });
+      });
+      if (hasNew) {
+        var refs = findReferencedComponents();
+        var unloaded = refs.filter(function(id) { return !componentRegistry.has(id); });
+        if (unloaded.length > 0) {
+          loadComponentsByIds(unloaded).then(function() {
+            initializeComponents();
+          });
+        } else {
+          initializeComponents();
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    console.log('[SDComponent] Runtime initialized');
+  })();
+  </script>
+</head>
+<body>
+    <div class="grain-overlay" data-sd-id="1"></div>
+
+    <div class="min-h-screen relative flex flex-col main-content" data-sd-id="2">
+        
+        <!-- Fixed Header -->
+        <header class="fixed top-0 left-0 w-full z-40 p-8 flex justify-between items-start mix-blend-diff text-white header-transition" data-sd-id="3">
+            <div class="flex flex-col" data-sd-id="4">
+                <a href="#" id="logo-link" class="anton-heading text-4xl lg:text-6xl tracking-tighter" data-sd-id="5">HEAVY</a>
+                <span class="space-grotesk text-[10px] tracking-[0.3em] uppercase opacity-80 mt-1" data-sd-id="6">Est. 2024 / NYC</span>
+            </div>
+
+            <nav class="mr-32 flex flex-col items-end gap-3 space-grotesk" data-sd-id="7">
+                <a href="#" id="nav-essentials" class="nav-link text-xs font-bold" data-sd-id="8">ESSENTIALS</a>
+                <a href="#" id="nav-archive" class="nav-link text-xs font-bold" data-sd-id="9">COLLECTIONS</a>
+                <a href="#" id="nav-about" class="nav-link text-xs font-bold" data-sd-id="10">JOURNAL</a>
+                <a href="#" id="nav-contact" class="nav-link text-xs font-bold" data-sd-id="11">CONTACT</a>
+            </nav>
+        </header>
+
+        <!-- Floating Action Cart -->
+        <a href="https://draft-c5f89dad-bd19-42fa-8528-34077707781e.preview.superdesign.dev" id="cart-button" class="fixed top-8 right-8 z-50 w-16 h-16 bg-white rounded-full flex items-center justify-center transition-transform hover:scale-110 sharp-shadow group cart-transition" data-sd-id="12">
+            <iconify-icon icon="lucide:shopping-bag" class="text-2xl text-[#0a0a0a]"></iconify-icon>
+            <span class="absolute -top-1 -right-1 bg-[#dc2626] text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full font-bold border-2 border-white" data-sd-id="13">2</span>
+        </a>
+
+        <!-- Split Hero Section -->
+        <section class="relative h-screen w-full flex overflow-hidden" data-sd-id="14">
+            <!-- Left Side Content -->
+            <div class="w-[42%] h-full flex flex-col justify-end p-12 pb-24 z-10" data-sd-id="15">
+                <h1 class="anton-heading text-[10vw] leading-[0.8] mb-8 text-[#0a0a0a]" data-sd-id="16">
+                    COUTURE<br>STATEMENT
+                </h1>
+                <div class="space-y-6" data-sd-id="17">
+                    <p class="space-grotesk text-sm leading-relaxed max-w-[320px] text-[#0a0a0a] opacity-80" data-sd-id="18">
+                        Curated luxury pieces designed for the fashion-forward minimalist. Timeless silhouettes that transcend seasons. Handpicked collections from emerging designers and established houses.
+                    </p>
+                    <a href="#" id="hero-cta" class="inline-block space-grotesk font-bold text-sm uppercase border-b-2 border-[#0a0a0a] pb-1 hover:line-through transition-all" data-sd-id="19">EXPLORE COLLECTION</a>
+                </div>
+            </div>
+
+            <!-- Right Side Image -->
+            <div class="absolute right-0 top-0 w-[65%] h-full overflow-hidden grayscale-hover group" data-sd-id="20">
+                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&amp;w=2070&amp;auto=format&amp;fit=crop" alt="Luxury Fashion Editorial" class="w-full h-full object-cover object-left" data-sd-id="21" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1a1a1a/888?text=Image';">
+                <div class="absolute bottom-12 left-0 z-20" data-sd-id="22">
+                    <span class="vertical-text anton-heading text-4xl text-white mix-blend-difference opacity-40" data-sd-id="23">COLLECTION 004</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Horizontal Product Strip (Essentials) -->
+        <section class="bg-[#0a0a0a] py-32 overflow-hidden" data-sd-id="24">
+            <div class="px-12 mb-12 flex justify-between items-end" data-sd-id="25">
+                <h2 class="anton-heading text-5xl text-white" data-sd-id="26">ESSENTIALS</h2>
+                <span class="space-grotesk text-xs text-white/50" data-sd-id="27">SCROLL TO EXPLORE →</span>
+            </div>
+            
+            <div class="flex overflow-x-auto gap-8 px-12 pb-8 hide-scrollbar snap-x" data-sd-id="28">
+                <!-- Product Card 1 -->
+                <a href="https://draft-a5026836-5052-4be0-a86c-3d191fe8636f.preview.superdesign.dev" class="flex-none w-80 snap-start group cursor-pointer block" data-sd-id="29">
+                    <div class="aspect-[3/4] relative overflow-hidden bg-zinc-900" data-sd-id="30">
+                        <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&amp;w=1000&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-sd-id="31" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1a1a1a/888?text=Image';">
+                        <div class="absolute top-3 right-3 bg-white px-2 py-1 text-[10px] font-bold space-grotesk uppercase" data-sd-id="32">SILK BLEND</div>
+                    </div>
+                    <div class="mt-4 space-grotesk flex justify-between items-start" data-sd-id="33">
+                        <h3 class="text-white text-sm font-bold uppercase tracking-wider" data-sd-id="34">Statement Puffer</h3>
+                        <span class="text-white/60 text-xs" data-sd-id="35">$140</span>
+                    </div>
+                </a>
+
+                <!-- Product Card 2 -->
+                <a href="https://draft-a5026836-5052-4be0-a86c-3d191fe8636f.preview.superdesign.dev" class="flex-none w-80 snap-start group cursor-pointer block" data-sd-id="36">
+                    <div class="aspect-[3/4] relative overflow-hidden bg-zinc-900" data-sd-id="37">
+                        <img src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&amp;w=1000&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-sd-id="38" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1a1a1a/888?text=Image';">
+                        <div class="absolute top-3 right-3 bg-white px-2 py-1 text-[10px] font-bold space-grotesk uppercase" data-sd-id="39">HAND FINISHED</div>
+                    </div>
+                    <div class="mt-4 space-grotesk flex justify-between items-start" data-sd-id="40">
+                        <h3 class="text-white text-sm font-bold uppercase tracking-wider" data-sd-id="41">Minimalist Tee</h3>
+                        <span class="text-white/60 text-xs" data-sd-id="42">$65</span>
+                    </div>
+                </a>
+
+                <!-- Product Card 3 -->
+                <a href="https://draft-a5026836-5052-4be0-a86c-3d191fe8636f.preview.superdesign.dev" class="flex-none w-80 snap-start group cursor-pointer block" data-sd-id="43">
+                    <div class="aspect-[3/4] relative overflow-hidden bg-zinc-900" data-sd-id="44">
+                        <img src="https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&amp;w=1000&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-sd-id="45" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1a1a1a/888?text=Image';">
+                        <div class="absolute top-3 right-3 bg-white px-2 py-1 text-[10px] font-bold space-grotesk uppercase" data-sd-id="46">TECHNICAL WEAVE</div>
+                    </div>
+                    <div class="mt-4 space-grotesk flex justify-between items-start" data-sd-id="47">
+                        <h3 class="text-white text-sm font-bold uppercase tracking-wider" data-sd-id="48">Oversized Blazer</h3>
+                        <span class="text-white/60 text-xs" data-sd-id="49">$210</span>
+                    </div>
+                </a>
+
+                <!-- Product Card 4 -->
+                <a href="https://draft-a5026836-5052-4be0-a86c-3d191fe8636f.preview.superdesign.dev" class="flex-none w-80 snap-start group cursor-pointer block" data-sd-id="50">
+                    <div class="aspect-[3/4] relative overflow-hidden bg-zinc-900" data-sd-id="51">
+                        <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&amp;w=1000&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-sd-id="52" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1a1a1a/888?text=Image';">
+                        <div class="absolute top-3 right-3 bg-white px-2 py-1 text-[10px] font-bold space-grotesk uppercase" data-sd-id="53">ORGANIC LINEN</div>
+                    </div>
+                    <div class="mt-4 space-grotesk flex justify-between items-start" data-sd-id="54">
+                        <h3 class="text-white text-sm font-bold uppercase tracking-wider" data-sd-id="55">Tailored Silhouette</h3>
+                        <span class="text-white/60 text-xs" data-sd-id="56">$180</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Featured Collections Section -->
+        <section class="grid grid-cols-12 gap-0" data-sd-id="57">
+            <div class="col-span-12 lg:col-span-4 bg-white p-12 lg:sticky lg:top-0 h-fit border-r border-zinc-200" data-sd-id="58">
+                <h2 class="anton-heading text-6xl mb-6" data-sd-id="59">FEATURED COLLECTIONS</h2>
+                <div class="border-l-4 border-[#0a0a0a] pl-6 space-y-4" data-sd-id="60">
+                    <p class="space-grotesk text-xs uppercase font-bold tracking-widest text-[#dc2626]" data-sd-id="61">NEW: SPRING/SUMMER 2025 COLLECTION</p>
+                    <p class="space-grotesk text-sm leading-relaxed opacity-70" data-sd-id="62">
+                        Explore our carefully curated seasonal collections. Each piece is selected for its design excellence, quality craftsmanship, and timeless appeal. From minimalist essentials to statement silhouettes.
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-12 lg:col-span-8" data-sd-id="63">
+                <div class="grid grid-cols-2" data-sd-id="64">
+                    <div class="aspect-square grayscale-hover overflow-hidden border-b border-zinc-200" data-sd-id="65">
+                        <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&amp;w=1000&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover" data-sd-id="66" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1a1a1a/888?text=Image';">
+                    </div>
+                    <div class="aspect-square grayscale-hover overflow-hidden border-l border-b border-zinc-200" data-sd-id="67">
+                        <img src="https://images.unsplash.com/photo-1445205170230-053b830c6050?q=80&amp;w=1000&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover" data-sd-id="68" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1a1a1a/888?text=Image';">
+                    </div>
+                    <div class="col-span-2 aspect-video grayscale-hover overflow-hidden" data-sd-id="69">
+                        <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&amp;w=2000&amp;auto=format&amp;fit=crop" class="w-full h-full object-cover" data-sd-id="70" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1a1a1a/888?text=Image';">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Utility Footer -->
+        <footer class="bg-[#0a0a0a] text-white pt-32 pb-8 px-12 relative overflow-hidden footer-transition" data-sd-id="71">
+            <div class="grid grid-cols-2 lg:grid-cols-6 gap-12 mb-40 relative z-10" data-sd-id="72">
+                <div class="col-span-2" data-sd-id="73">
+                    <h4 class="anton-heading text-2xl mb-6" data-sd-id="74">SUBSCRIBE TO UPDATES</h4>
+                    <div class="flex items-center border-b border-white/20 pb-2" data-sd-id="75">
+                        <input type="email" placeholder="EMAIL ADDRESS" class="bg-transparent space-grotesk text-xs outline-none w-full" data-sd-id="76">
+                        <button class="text-xs font-bold space-grotesk uppercase hover:line-through" data-sd-id="77">JOIN</button>
+                    </div>
+                </div>
+                <div class="space-y-4" data-sd-id="78">
+                    <h5 class="space-grotesk text-[10px] tracking-[0.2em] opacity-40 uppercase" data-sd-id="79">Shop</h5>
+                    <nav class="flex flex-col gap-2" data-sd-id="80">
+                        <a href="#" id="footer-essentials" class="space-grotesk text-xs hover:line-through" data-sd-id="81">ESSENTIALS</a>
+                        <a href="#" id="footer-archive" class="space-grotesk text-xs hover:line-through" data-sd-id="82">COLLECTIONS</a>
+                        <a href="#" id="footer-objects" class="space-grotesk text-xs hover:line-through" data-sd-id="83">OBJECTS</a>
+                    </nav>
+                </div>
+                <div class="space-y-4" data-sd-id="84">
+                    <h5 class="space-grotesk text-[10px] tracking-[0.2em] opacity-40 uppercase" data-sd-id="85">Info</h5>
+                    <nav class="flex flex-col gap-2" data-sd-id="86">
+                        <a href="#" id="footer-shipping" class="space-grotesk text-xs hover:line-through" data-sd-id="87">SIZING</a>
+                        <a href="#" id="footer-returns" class="space-grotesk text-xs hover:line-through" data-sd-id="88">STOCKISTS</a>
+                        <a href="#" id="footer-terms" class="space-grotesk text-xs hover:line-through" data-sd-id="89">LOOKBOOK</a>
+                    </nav>
+                </div>
+                <div class="space-y-4" data-sd-id="90">
+                    <h5 class="space-grotesk text-[10px] tracking-[0.2em] opacity-40 uppercase" data-sd-id="91">Contact</h5>
+                    <nav class="flex flex-col gap-2" data-sd-id="92">
+                        <a href="#" id="footer-instagram" class="space-grotesk text-xs hover:line-through" data-sd-id="93">INSTAGRAM</a>
+                        <a href="#" id="footer-twitter" class="space-grotesk text-xs hover:line-through" data-sd-id="94">TWITTER</a>
+                        <a href="#" id="footer-email" class="space-grotesk text-xs hover:line-through" data-sd-id="95">EMAIL US</a>
+                    </nav>
+                </div>
+                <div class="space-y-4" data-sd-id="96">
+                    <h5 class="space-grotesk text-[10px] tracking-[0.2em] opacity-40 uppercase" data-sd-id="97">Location</h5>
+                    <p class="space-grotesk text-xs opacity-60 leading-relaxed" data-sd-id="98">
+                        124 CANAL ST<br>NEW YORK, NY 10002
+                    </p>
+                </div>
+            </div>
+
+            <!-- Oversized Footer Text -->
+            <div class="absolute bottom-[-5vw] left-0 w-full flex justify-center pointer-events-none" data-sd-id="99">
+                <h2 class="anton-heading text-[25vw] leading-none text-white/5 opacity-10" data-sd-id="100">HEAVY</h2>
+            </div>
+
+            <div class="relative z-10 flex justify-between items-center pt-8 border-t border-white/10" data-sd-id="101">
+                <span class="space-grotesk text-[10px] opacity-40" data-sd-id="102">© 2024 HEAVYWEIGHT CORP.</span>
+                <div class="flex gap-4" data-sd-id="103">
+                    <iconify-icon icon="simple-icons:mastercard" class="opacity-20 text-xl"></iconify-icon>
+                    <iconify-icon icon="simple-icons:visa" class="opacity-20 text-xl"></iconify-icon>
+                    <iconify-icon icon="simple-icons:applepay" class="opacity-20 text-xl"></iconify-icon>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+</body></html>

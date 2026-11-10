@@ -1,0 +1,45 @@
+name: Continuous Integration (CI)
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks-and-tests:
+    name: Code Quality & Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Verify TypeScript Type Integrity
+        run: npm run typecheck
+
+      - name: Run ESLint & Static Analysis
+        run: npm run lint
+
+      - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
+        run: npm test
+
+      - name: Verify API Multi-Stage Docker Build
+        run: |
+          docker build -t algions-api:test -f apps/api/Dockerfile apps/api
+
+      - name: Verify Web Multi-Stage Docker Build
+        run: |
+          docker build -t algions-web:test -f apps/web/Dockerfile apps/web

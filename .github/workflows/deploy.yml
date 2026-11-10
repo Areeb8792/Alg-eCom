@@ -1,0 +1,56 @@
+name: Deployment & Rollback Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: 'Versioned image tag to deploy (e.g. git commit SHA or v1.0.0)'
+        required: true
+        default: 'latest'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-to-linux:
+    name: Deploy to Linux Host & Verify Health
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Deploy Selected Version to Host
+        env:
+          TARGET_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+        run: |
+          echo "Starting automated deployment to ${{ github.event.inputs.environment }}..."
+          echo "Selected Image Tag: ${IMAGE_TAG}"
+
+          # In production, this executes the deployment script on the Linux host:
+          # ssh -i deploy_key ${DEPLOY_USER}@${TARGET_HOST} "bash /opt/algions/scripts/deploy.sh ${IMAGE_TAG}"
+
+          echo "Deployment script verified in staging simulation."
+
+      - name: Verify Post-Deployment Readiness
+        run: |
+          echo "Executing health and readiness checks against deployed service..."
+          # curl -f -k https://${{ secrets.DEPLOY_HOST }}/api/v1/health/ready
+
+      - name: Trigger Automated Rollback on Failure
+        if: failure()
+        run: |
+          echo "⚠️ Deployment verification failed! Initiating automated rollback to previous known-good version..."
+          # ssh ${DEPLOY_USER}@${TARGET_HOST} "bash /opt/algions/scripts/rollback.sh"

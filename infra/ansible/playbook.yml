@@ -1,0 +1,60 @@
+---
+# ==============================================================================
+# Algions Platform — Automated Linux Host Configuration Playbook
+# ==============================================================================
+- name: Provision Algions Production Linux Host
+  hosts: all
+  become: true
+  vars:
+    app_dir: /opt/algions
+    deploy_user: algions
+
+  tasks:
+    - name: Ensure base prerequisite utilities are present
+      ansible.builtin.package:
+        name:
+          - curl
+          - git
+          - openssl
+          - ca-certificates
+        state: present
+
+    - name: Create dedicated deploy service group
+      ansible.builtin.group:
+        name: "{{ deploy_user }}"
+        state: present
+
+    - name: Create dedicated deploy service user
+      ansible.builtin.user:
+        name: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        groups: docker
+        append: true
+        shell: /bin/bash
+        state: present
+
+    - name: Ensure application workspace directory exists
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0755'
+      loop:
+        - "{{ app_dir }}"
+        - "{{ app_dir }}/backups"
+        - "{{ app_dir }}/infra/nginx/ssl"
+
+    - name: Ensure environment file has strict least-privilege permissions
+      ansible.builtin.file:
+        path: "{{ app_dir }}/.env"
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+        mode: '0600'
+      when: lookup('fileglob', app_dir + '/.env') | length > 0
+
+    - name: Ensure Docker service is enabled and started
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
