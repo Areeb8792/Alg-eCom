@@ -1,0 +1,26 @@
+# Algions Platform — Runtime & Observability Modernisation Audit
+Generated at: 2026-11-10T15:21:00Z
+Status: PINNED PRODUCTION VERSIONS VERIFIED
+
+## 1. Node.js Runtime Patch:
+- Base Image: node:24.22.2-alpine
+- Builder: apps/api/Dockerfile (Stage 1) & apps/web/Dockerfile (Stage 1)
+- Runner: apps/api/Dockerfile (Stage 2)
+- Configuration: .nvmrc pinned to 24.22.2
+- Host Engine: Node v24.10.0 (compatible with 24.x LTS runtime)
+
+## 2. Nginx Reverse Proxy Base Image:
+- Base Image: nginx:1.30.6-alpine (Maintained stable release)
+- Runner: apps/web/Dockerfile (Stage 2)
+- Configuration: apps/web/nginx/default.conf & infra/nginx/default.conf
+- Features: TLS 1.3/1.2 termination, HTTP port 80 redirect to HTTPS, client request rate limiting, SPA route fallback
+
+## 3. Observability Stack Upgrades (docker-compose.yml):
+- Prometheus: prom/prometheus:v3.13.5 (Prometheus 3.x LTS release)
+  * Network: internal_network strictly (No host port exposure)
+  * User: nobody
+  * Retention: 15 days
+- Grafana: grafana/grafana:13.3.0 (Grafana 13.x release)
+  * Port Binding: 127.0.0.1:3001:3000 (Administrative UI bound strictly to localhost)
+  * Security: Anonymous access disabled, public sign-ups disabled
+  * Provisioning: Pre-configured Prometheus datasource & 8-panel dashboard

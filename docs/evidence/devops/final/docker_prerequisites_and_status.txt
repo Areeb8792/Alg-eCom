@@ -1,0 +1,39 @@
+# Algions Platform — Windows Docker & Host Diagnostic Report
+Generated at: 2026-11-10T15:20:50Z
+Host OS: Windows 11 / Windows Server
+Diagnostic Command: docker version; docker info; docker compose version; wsl --status; wsl --list --verbose
+
+## 1. Diagnostic CLI Output:
+```powershell
+PS D:\My personal\algions> docker version
+docker : The term 'docker' is not recognized as the name of a cmdlet, function, script file, or operable program.
+
+PS D:\My personal\algions> docker info
+docker : The term 'docker' is not recognized as the name of a cmdlet, function, script file, or operable program.
+
+PS D:\My personal\algions> docker compose version
+docker : The term 'docker' is not recognized as the name of a cmdlet, function, script file, or operable program.
+
+PS D:\My personal\algions> wsl --status
+Default Version: 2
+
+PS D:\My personal\algions> wsl --list --verbose
+Windows Subsystem for Linux has no installed distributions.
+```
+
+## 2. Analysis & Prerequisite Gap:
+- Docker CLI and Docker Desktop are not installed in the Windows system PATH.
+- WSL2 subsystem is active (Default Version: 2), but no Linux distributions (e.g. Ubuntu) are currently installed or registered.
+- In accordance with the prompt's instructions:
+  * "If the Docker daemon is unavailable: Document the exact missing prerequisite. Do not pretend Docker tests passed."
+  * "Do not change Windows optional features or restart the machine without user approval."
+
+## 3. Required Host Setup Instructions (To run live Docker containers):
+1. Install an approved Linux distribution in WSL2:
+   `wsl.exe --install Ubuntu`
+2. Download and install Docker Desktop for Windows with WSL2 backend:
+   https://docs.docker.com/desktop/install/windows-install/
+3. Enable "Use the WSL 2 based engine" in Docker Desktop Settings > General.
+4. Once Docker Desktop is launched, verify:
+   `docker compose version`
+   `docker compose up -d`

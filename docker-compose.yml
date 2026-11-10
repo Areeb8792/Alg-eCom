@@ -102,9 +102,9 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # 4. Metrics Collection Service (Prometheus)
+  # 4. Metrics Collection Service (Prometheus 3.x LTS)
   prometheus:
-    image: prom/prometheus:v2.54.1
+    image: prom/prometheus:v3.13.5
     container_name: algions-prometheus
     restart: unless-stopped
     user: "nobody"
@@ -127,9 +127,9 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # 5. Observability Visualization Service (Grafana)
+  # 5. Observability Visualization Service (Grafana 13.x)
   grafana:
-    image: grafana/grafana:11.2.0
+    image: grafana/grafana:13.3.0
     container_name: algions-grafana
     restart: unless-stopped
     environment:
@@ -138,7 +138,8 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_ANONYMOUS_ENABLED=false
     ports:
-      - "${GRAFANA_PORT:-3001}:3000"
+      # Restrict administrative monitoring interface strictly to localhost (127.0.0.1)
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
     volumes:
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro

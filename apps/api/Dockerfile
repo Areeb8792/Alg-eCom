@@ -3,7 +3,7 @@
 # ==============================================================================
 
 # Stage 1: Build & Compile TypeScript
-FROM node:24-alpine AS builder
+FROM node:24.22.2-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -18,7 +18,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # Stage 2: Production Minimal Runtime
-FROM node:24-alpine AS runner
+FROM node:24.22.2-alpine AS runner
 
 WORKDIR /usr/src/app
 

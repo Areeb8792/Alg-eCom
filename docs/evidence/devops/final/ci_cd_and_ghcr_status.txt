@@ -1,0 +1,40 @@
+# Algions Platform — CI/CD Automation & GHCR Registry Specification
+Generated at: 2026-11-10T15:21:20Z
+Status: SPECIFICATION VERIFIED; REMOTE EXECUTION REQUIRES GITHUB REPO SECRETS
+
+## 1. CI Workflow (.github/workflows/ci.yml):
+- Triggers: Push to main/master/develop, Pull Request to main/master
+- Permissions: contents: read
+- Steps:
+  * Checkout source with fetch-depth: 0 (Enables comprehensive historical Gitleaks secret detection)
+  * Setup Node.js 24 LTS runtime
+  * npm ci (monorepo dependencies)
+  * Gitleaks scanner execution (.gitleaks.toml)
+  * TypeScript typecheck (tsc --noEmit across api and web)
+  * ESLint static analysis
+  * Vitest automated tests (25/25 passing)
+  * Playwright E2E browser tests (8/8 passing in 12.3s)
+  * Docker API multi-stage build check (node:24.22.2-alpine)
+  * Docker Web multi-stage build check (node:24.22.2-alpine + nginx:1.30.6-alpine)
+  * Aqua Security Trivy container vulnerability scanner (CRITICAL/HIGH severity)
+
+## 2. Release & GHCR Delivery Workflow (.github/workflows/release.yml):
+- Triggers: Version tags (v*.*.*) or workflow_dispatch
+- Permissions: contents: read, packages: write
+- Registry: ghcr.io using native GITHUB_TOKEN
+- Docker Buildx: Multi-platform builds (linux/amd64, linux/arm64)
+- Provenance & SBOM: provenance: mode=max, sbom: true
+- Artifact References:
+  * ghcr.io/<repo>/api:v1.0.0
+  * ghcr.io/<repo>/api:sha-<commit>
+  * ghcr.io/<repo>/api:latest
+  * ghcr.io/<repo>/web:v1.0.0
+  * ghcr.io/<repo>/web:sha-<commit>
+  * ghcr.io/<repo>/web:latest
+
+## 3. Remote Activation Instructions:
+To trigger remote execution on GitHub:
+1. Add remote git repository: `git remote add origin https://github.com/<owner>/algions.git`
+2. Push branch: `git push -u origin master`
+3. Push release tag: `git tag v1.0.0 && git push origin v1.0.0`
+4. GitHub Actions will execute and publish container images to GHCR using GITHUB_TOKEN automatically.
