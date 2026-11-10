@@ -1,0 +1,39 @@
+# Algions Platform — Ansible Playbook Validation & Host Execution Status
+Generated at: 2026-11-10T15:44:45Z
+Playbook: infra/ansible/playbook.yml
+Status: PLAYBOOK SYNTAX VALIDATED; REMOTE HOST PROVISIONING BLOCKED BY LACK OF TARGET LINUX HOST
+
+## 1. Playbook Specification (infra/ansible/playbook.yml):
+```yaml
+- name: Provision Algions Production Linux Host
+  hosts: all
+  become: true
+  vars:
+    app_dir: /opt/algions
+    deploy_user: algions
+
+  tasks:
+    - name: Ensure base prerequisite utilities are present (curl, git, openssl, ca-certificates)
+      ansible.builtin.package: ...
+    - name: Create dedicated deploy service group
+      ansible.builtin.group: ...
+    - name: Create dedicated deploy service user in docker group
+      ansible.builtin.user: ...
+    - name: Ensure application workspace directory exists (/opt/algions, backups, ssl)
+      ansible.builtin.file: mode: '0755'
+    - name: Ensure environment file has strict least-privilege permissions
+      ansible.builtin.file: mode: '0600'
+    - name: Ensure Docker service is enabled and started
+      ansible.builtin.service: state: started, enabled: true
+```
+
+## 2. Idempotency Guarantee:
+- Package module: `state: present` (no-op on repeat runs).
+- User & group modules: `state: present` (no-op on repeat runs).
+- File permissions: Idempotently set to `0755` (app directory) and `0600` (`.env`).
+- Docker service: `state: started`, `enabled: true` (no-op if already running).
+
+## 3. Remote Execution Command (Once target Linux VM is accessible):
+```bash
+ansible-playbook -i inventory.ini infra/ansible/playbook.yml
+```

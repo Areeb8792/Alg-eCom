@@ -30,9 +30,12 @@ echo "[1/4] Executing pg_dump in compressed custom archive format (-Fc)..."
 
 if docker compose ps -q postgres &>/dev/null; then
     docker compose exec -T postgres pg_dump -U "${DB_USER}" -d "${DB_NAME}" -Fc > "${BACKUP_FILE}"
-else
-    # Fallback to local pg_dump if postgres container is not running directly in compose
+elif command -v pg_dump &>/dev/null; then
     pg_dump -U "${DB_USER}" -d "${DB_NAME}" -Fc -f "${BACKUP_FILE}"
+else
+    echo "❌ Error: Neither active PostgreSQL container nor host 'pg_dump' utility found."
+    echo "To execute native PostgreSQL backups, start the container stack with 'docker compose up -d' or install PostgreSQL client tools."
+    exit 1
 fi
 
 # [2/4] Verify file existence and non-empty status

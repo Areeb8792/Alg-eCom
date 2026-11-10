@@ -60,8 +60,12 @@ DB_NAME="${DB_NAME:-algions_db}"
 echo "[2/4] Restoring PostgreSQL database from archive (-Fc)..."
 if docker compose ps -q postgres &>/dev/null; then
     docker compose exec -T postgres pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists < "${BACKUP_FILE}" || true
-else
+elif command -v pg_restore &>/dev/null; then
     pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists "${BACKUP_FILE}" || true
+else
+    echo "❌ Error: Neither active PostgreSQL container nor host 'pg_restore' utility found."
+    echo "To execute native PostgreSQL restores, start the container stack with 'docker compose up -d' or install PostgreSQL client tools."
+    exit 1
 fi
 echo "✓ Archive restored."
 
