@@ -1,6 +1,7 @@
 # ==============================================================================
 # Algions Platform — Terraform Remote State Configuration
-# Secure S3 Backend with Server-Side Encryption and DynamoDB State Locking
+# Modern Native S3 Locking (use_lockfile = true) with Server-Side Encryption
+# Eliminates legacy DynamoDB table dependency using S3 conditional writes.
 # ==============================================================================
 
 # Note: In production CI/CD, initialize with:
@@ -8,15 +9,15 @@
 #   -backend-config="bucket=algions-terraform-state-prod" \
 #   -backend-config="key=ecommerce/terraform.tfstate" \
 #   -backend-config="region=us-east-1" \
-#   -backend-config="dynamodb_table=algions-terraform-locks" \
-#   -backend-config="encrypt=true"
+#   -backend-config="encrypt=true" \
+#   -backend-config="use_lockfile=true"
 
 terraform {
   backend "s3" {
-    bucket         = "algions-terraform-state-prod"
-    key            = "ecommerce/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "algions-terraform-locks"
-    encrypt        = true
+    bucket       = "algions-terraform-state-prod"
+    key          = "ecommerce/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }

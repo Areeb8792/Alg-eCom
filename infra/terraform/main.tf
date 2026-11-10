@@ -164,6 +164,13 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "backups_encryptio
   }
 }
 
+resource "aws_s3_bucket_versioning" "backups_versioning" {
+  bucket = aws_s3_bucket.backups.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "aws_s3_bucket_public_access_block" "backups_public_block" {
   bucket = aws_s3_bucket.backups.id
 

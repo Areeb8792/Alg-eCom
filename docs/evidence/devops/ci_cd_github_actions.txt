@@ -1,0 +1,42 @@
+# Algions Platform — GitHub Actions & CI/CD Pipeline Verification
+Generated at: 2026-11-10T15:11:00Z
+Status: CONFIGURATION SPECIFICATION VALIDATED; REMOTE EXECUTION AWAITING GITHUB REPO SECRETS
+
+## Workflow 1: Continuous Integration (.github/workflows/ci.yml)
+- Triggers: Push to main/master/develop, Pull Requests to main/master
+- Permissions: contents: read
+- Steps:
+  1. actions/checkout@v4 with fetch-depth: 0 (Enables full git history secret scan)
+  2. actions/setup-node@v4 (node-version: 24 LTS, npm cache enabled)
+  3. npm ci (Monorepo root dependencies)
+  4. gitleaks/gitleaks-action@v2 (.gitleaks.toml configuration)
+  5. npm run typecheck (tsc --noEmit across api and web)
+  6. npm run lint (ESLint static analysis)
+  7. npm test (Vitest unit, idempotency, concurrency, and security suites)
+  8. npx playwright install --with-deps chromium
+  9. npm run test:e2e (8 complete customer & admin browser journeys)
+  10. docker build API multi-stage (node:24-alpine)
+  11. docker build Web multi-stage (node:24-alpine + nginx:1.30.6-alpine)
+  12. aquasecurity/trivy-action@0.24.0 (API container vulnerability audit, CRITICAL/HIGH)
+  13. aquasecurity/trivy-action@0.24.0 (Web container vulnerability audit, CRITICAL/HIGH)
+
+## Workflow 2: Container Release & GHCR Delivery (.github/workflows/release.yml)
+- Triggers: Push of semantic version tags (v*.*.*), manual workflow_dispatch
+- Permissions: contents: read, packages: write
+- Registry: ghcr.io (GitHub Container Registry)
+- Buildx: Multi-platform image builder (linux/amd64, linux/arm64)
+- Target Tags:
+  * Commit SHA: ghcr.io/<repo>/api:sha-<commit>
+  * Semantic Tag: ghcr.io/<repo>/api:v1.0.0
+  * Latest Tag: ghcr.io/<repo>/api:latest
+- Artifact Evidence: Emits immutable image SHA-256 digests in GitHub step summary
+
+## Workflow 3: Automated Deployment & Rollback (.github/workflows/deploy.yml)
+- Triggers: workflow_dispatch with target environment (staging / production) and image_tag
+- Approval: GitHub Protected Environment with manual reviewer sign-off gate
+- Execution: Deploys target container tag to Linux host, executes database migrations, and loops on /api/v1/health/ready
+- Failure Recovery: If readiness probe fails within 30s timeout, automatically invokes scripts/rollback.sh
+
+## External Authentication Status:
+- Local Workstation: Windows host does not have direct write access to remote GitHub repository secrets (DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, GHCR package push).
+- Status Classification: CONFIGURED & VERIFIED SPECIFICATION (Requires remote GitHub access for live trigger).

@@ -1,0 +1,56 @@
+# Algions Platform — Production Docker Compose Specification Verification
+Generated at: 2026-11-10T15:10:00Z
+Status: VALIDATED CONFIGURATION SPECIFICATION
+
+## Compose Services Topology:
+1. Service: postgres
+   - Image: postgres:16-alpine
+   - Container Name: algions-postgres
+   - Volume: postgres_data -> /var/lib/postgresql/data
+   - Port 5432: Strictly internal on network 'internal_network' (No host port exposure)
+   - Healthcheck: pg_isready -U algions_user -d algions_db
+   - Resource Constraints: cpus: 1.0, memory: 512M
+
+2. Service: api
+   - Build Context: ./apps/api (Dockerfile: node:24-alpine multi-stage)
+   - Image: ghcr.io/sayyeds/algions-api:latest
+   - Container Name: algions-api
+   - Port 4000: Internal to Docker bridge (routed via Nginx)
+   - Security: no-new-privileges: true, cap_drop: [ALL]
+   - User: node (UID 1000)
+   - Healthcheck: node -e "http.get('http://localhost:4000/api/v1/health/live')"
+   - Depends On: postgres (condition: service_healthy)
+   - Resource Constraints: cpus: 1.0, memory: 512M
+
+3. Service: nginx
+   - Build Context: ./apps/web (Dockerfile: node:24-alpine builder, nginx:1.30.6-alpine runner)
+   - Image: ghcr.io/sayyeds/algions-web:latest
+   - Container Name: algions-nginx
+   - Ports: 80:80, 443:443
+   - Volumes: nginx.conf, default.conf, SSL certs (mounted read-only)
+   - Depends On: api (condition: service_healthy)
+   - Resource Constraints: cpus: 0.5, memory: 256M
+
+4. Service: prometheus
+   - Image: prom/prometheus:v2.54.1
+   - Container Name: algions-prometheus
+   - User: nobody
+   - Scrape Target: api:4000/api/v1/metrics (interval: 10s)
+   - Volume: prometheus_data -> /prometheus
+   - Resource Constraints: cpus: 0.5, memory: 256M
+
+5. Service: grafana
+   - Image: grafana/grafana:11.2.0
+   - Container Name: algions-grafana
+   - Port: 3001:3000
+   - Volume: grafana_data -> /var/lib/grafana
+   - Provisioning: Pre-configured Prometheus datasource & 8-panel dashboard
+   - Resource Constraints: cpus: 0.5, memory: 256M
+
+Networks:
+  internal_network: driver bridge, isolated container communication
+
+Volumes:
+  postgres_data: algions-postgres-storage
+  prometheus_data: algions-prometheus-storage
+  grafana_data: algions-grafana-storage

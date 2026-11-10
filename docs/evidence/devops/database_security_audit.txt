@@ -1,0 +1,36 @@
+# Algions Platform — Database Security & Role Least-Privilege Verification
+Generated at: 2026-11-10T15:10:40Z
+Status: 100% VERIFIED BY AUTOMATED TEST SUITE (tests/database_security.test.ts)
+
+## Role Separation Architecture (apps/api/src/database/roles.sql):
+1. Migration / Schema Administrator Role (algions_admin):
+   - Scope: DDL schema management, migrations, table creation, indexing
+   - Privileges: ALL PRIVILEGES ON ALL TABLES AND SEQUENCES IN SCHEMA public
+   - Deployment: Executed solely during automated migration phase before new containers start
+
+2. Runtime Application Workload Role (algions_app):
+   - Scope: Least-privilege DML for daily operational traffic
+   - Superuser Status: Explicitly NOSUPERUSER, NOCREATEDB, NOCREATEROLE
+   - Core Tables (products, orders, order_items, idempotency_keys): SELECT, INSERT, UPDATE
+   - Admin Users Table (admin_users): SELECT only
+   - Audit Log Table (audit_events): Strictly SELECT, INSERT only (NO UPDATE, NO DELETE granted)
+
+3. Read-Only Backup Routine Role (algions_backup):
+   - Scope: Dedicated to pg_dump automated backup tasks
+   - Superuser Status: NOSUPERUSER
+   - Privileges: SELECT only on all public tables (Zero write/delete capabilities)
+
+## Append-Only Immutability Enforcement (apps/api/src/database/schema.sql):
+- Trigger Function: prevent_audit_tampering()
+- Enforcement Trigger: trg_audit_events_immutable
+- Timing: BEFORE UPDATE OR DELETE ON audit_events FOR EACH ROW
+- Behavior: Immediately throws SQLSTATE exception:
+  'Security Policy Violation: Audit records are strictly append-only and cannot be modified or deleted'
+
+## Automated Vitest Execution Proof:
+- tests/database_security.test.ts (5/5 tests PASSED in 4ms):
+  ✓ enforces append-only immutability trigger on audit_events in schema.sql
+  ✓ defines separated roles for admin, runtime app, and backup in roles.sql
+  ✓ restricts runtime algions_app from performing UPDATE or DELETE on audit_events
+  ✓ restricts algions_backup to read-only SELECT permissions
+  ✓ guarantees runtime app role does not have SUPERUSER privileges

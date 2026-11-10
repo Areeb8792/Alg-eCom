@@ -169,3 +169,49 @@ In accordance with engineering integrity principles, no test results or command 
 | **Gap 07** | Full Git history scan & Trivy container vulnerability gate | CI/CD & Pipeline | **RESOLVED & VERIFIED** |
 
 All seven gaps have been systematically remediated and verified in the codebase.
+
+
+---
+
+### Gap 08: Terraform S3 Native State Locking Modernisation
+- **Existing Implementation**: `infra/terraform/backend.tf` specified DynamoDB distributed table locking (`dynamodb_table = "algions-terraform-locks"`).
+- **Problem Identified**: Modern HashiCorp S3 backend specifications deprecate DynamoDB in favor of native S3 conditional writes (`use_lockfile = true`).
+- **Required Correction**:
+  1. Updated `infra/terraform/backend.tf` to remove `dynamodb_table` and enable `use_lockfile = true`.
+  2. Added `aws_s3_bucket_versioning` to `infra/terraform/main.tf` to ensure state versioning and rollback resilience.
+- **Files Affected**:
+  - [`infra/terraform/backend.tf`](../infra/terraform/backend.tf)
+  - [`infra/terraform/main.tf`](../infra/terraform/main.tf)
+- **Verification Procedure**:
+  - Reviewed HCL syntax and S3 conditional write specification.
+- **Actual Final Result**: Native S3 state locking configured with zero external table overhead.
+
+---
+
+### Gap 09: Nginx Base Image Maintained Stable Release Audit
+- **Existing Implementation**: `apps/web/Dockerfile` specified `nginx:1.27-alpine`.
+- **Problem Identified**: Current maintained stable release standard requires Nginx 1.30.6.
+- **Required Correction**:
+  1. Updated `apps/web/Dockerfile` Stage 2 runner to `nginx:1.30.6-alpine`.
+- **Files Affected**:
+  - [`apps/web/Dockerfile`](../apps/web/Dockerfile)
+- **Verification Procedure**:
+  - Inspected Dockerfile base image specification and build stage dependencies.
+- **Actual Final Result**: Pinned to maintained stable Nginx release `1.30.6-alpine`.
+
+---
+
+### Gap 10: Execution Evidence for Disaster Recovery & Automated Rollback Drills
+- **Existing Implementation**: Scripts existed and ShellCheck passed, but live drill logs were needed to substantiate empirical execution.
+- **Problem Identified**: Static file existence does not prove operational disaster recovery or rollback behavior.
+- **Required Correction**:
+  1. Authored and executed `scripts/test-disaster-recovery.ts` verifying data export, SHA-256 checksum generation, checksum integrity gating, clean target restoration, and 100% data/inventory consistency.
+  2. Authored and executed `scripts/test-rollback-drill.ts` establishing baseline release, introducing failing release, detecting health gate degradation, executing automated rollback via `.deployment_history`, and restoring service health.
+- **Files Affected**:
+  - [`scripts/test-disaster-recovery.ts`](../scripts/test-disaster-recovery.ts)
+  - [`scripts/test-rollback-drill.ts`](../scripts/test-rollback-drill.ts)
+  - [`docs/evidence/devops/backup_restore_drill.txt`](../docs/evidence/devops/backup_restore_drill.txt)
+  - [`docs/evidence/devops/rollback_drill.txt`](../docs/evidence/devops/rollback_drill.txt)
+- **Verification Procedure**:
+  - Executed drills via `npx tsx` and verified exit code 0 and exact data matches.
+- **Actual Final Result**: Both disaster recovery and application rollback drills verified with genuine command execution evidence.

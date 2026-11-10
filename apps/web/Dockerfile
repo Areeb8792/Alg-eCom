@@ -15,8 +15,8 @@ COPY src/ ./src/
 # Compile production static bundle to /dist
 RUN npm run build
 
-# Stage 2: Production Nginx Server
-FROM nginx:1.27-alpine AS runner
+# Stage 2: Production Nginx Server (Maintained Stable Release)
+FROM nginx:1.30.6-alpine AS runner
 
 # Remove default boilerplate configuration
 RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*

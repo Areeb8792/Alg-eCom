@@ -1,0 +1,38 @@
+# Algions Platform — Terraform Infrastructure & Remote State Verification
+Generated at: 2026-11-10T15:10:30Z
+Status: VALIDATED INFRASTRUCTURE SPECIFICATION
+
+## Remote State Configuration (infra/terraform/backend.tf):
+- Backend Type: S3
+- Bucket: algions-terraform-state-prod
+- Key: ecommerce/terraform.tfstate
+- Region: us-east-1
+- Encryption: Enabled (AES256)
+- State Locking Architecture: Modern Native S3 Locking (use_lockfile = true)
+  * Eliminates legacy DynamoDB table dependency
+  * Uses S3 object conditional writes (PutObject with If-Match headers)
+  * Eliminates split-brain locking race conditions
+
+## Provisioned AWS Cloud Resources (infra/terraform/main.tf):
+1. aws_security_group.web_sg:
+   - Ingress: Port 80 (HTTP redirect), Port 443 (HTTPS)
+   - Port 22 (SSH): Strictly DENIED / Closed (AWS Systems Manager used instead)
+   - Egress: Outbound allowed for container pulls and package updates
+2. aws_iam_role.ec2_ssm_role:
+   - Attached Policy: arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+   - Secure shell management via AWS Session Manager without public IP/port exposure
+3. aws_instance.app_server:
+   - AMI: Amazon Linux 2023 (al2023-ami-2023.*-x86_64)
+   - Root Volume: 30GB gp3 with KMS encryption enabled
+   - User Data: Automated Docker and Docker Compose plugin initialization
+4. aws_s3_bucket.backups:
+   - Versioning: Enabled (aws_s3_bucket_versioning)
+   - Server-Side Encryption: Enabled (AES256)
+   - Public Access Block: BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets = true
+   - Lifecycle Management: 30-day automatic expiration rule
+5. aws_iam_policy.backup_s3_policy:
+   - Least-privilege PutObject, GetObject, ListBucket restricted exclusively to backup bucket ARN
+
+Terraform Format Check: PASS
+Terraform Architecture Specification: COMPLIANT
+Remote State Locking Migration: COMPLETED (Native S3 use_lockfile = true)

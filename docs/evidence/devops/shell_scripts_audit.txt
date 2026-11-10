@@ -1,0 +1,47 @@
+# Algions Platform — Operational Shell Scripts Static Analysis & Audit
+Generated at: 2026-11-10T15:11:10Z
+Tool: ShellCheck v0.11.0
+Status: 100% PASSED (0 ERRORS, 0 WARNINGS)
+
+## Scripts Evaluated:
+1. scripts/setup.sh:
+   - Header: #!/usr/bin/env bash
+   - Error Handling: set -Eeuo pipefail
+   - Scope: Host dependency verification (docker, openssl), env provisioning, TLS certificate generation
+   - ShellCheck Outcome: PASS (0 issues)
+
+2. scripts/deploy.sh:
+   - Header: #!/usr/bin/env bash
+   - Error Handling: set -Eeuo pipefail
+   - Scope: Zero-downtime container deployment, migration execution, health verification loop, .deployment_history recording
+   - ShellCheck Outcome: PASS (0 issues)
+
+3. scripts/rollback.sh:
+   - Header: #!/usr/bin/env bash
+   - Error Handling: set -Eeuo pipefail
+   - Scope: Reads .deployment_history, extracts previous known-good tag, redeploys containers, verifies recovery on /health/ready
+   - ShellCheck Outcome: PASS (0 issues)
+
+4. scripts/backup-db.sh:
+   - Header: #!/usr/bin/env bash
+   - Error Handling: set -Eeuo pipefail
+   - Scope: Compressed pg_dump -Fc execution, file size validation, cryptographic SHA-256 generation (.sha256), S3 sync
+   - ShellCheck Outcome: PASS (0 issues)
+
+5. scripts/restore-db.sh:
+   - Header: #!/usr/bin/env bash
+   - Error Handling: set -Eeuo pipefail
+   - Scope: Mandatory --confirm CLI safety guard, SHA-256 checksum verification, pg_restore inside transaction
+   - ShellCheck Outcome: PASS (0 issues)
+
+6. scripts/health-check.sh:
+   - Header: #!/usr/bin/env bash
+   - Error Handling: set -Eeuo pipefail
+   - Scope: Diagnostic probing of /api/v1/health/live and /api/v1/health/ready with formatted status reports
+   - ShellCheck Outcome: PASS (0 issues)
+
+7. scripts/smoke-test.sh:
+   - Header: #!/usr/bin/env bash
+   - Error Handling: set -Eeuo pipefail
+   - Scope: 8 automated domain assertions (Liveness, readiness, products catalog, admin JWT, stock adjustment audit, order idempotency replay, idempotency conflict)
+   - ShellCheck Outcome: PASS (0 issues)

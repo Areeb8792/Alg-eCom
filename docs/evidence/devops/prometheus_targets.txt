@@ -1,0 +1,68 @@
+# Algions Platform — Prometheus Metrics & Latency Histogram Verification
+Generated at: 2026-11-10T15:10:48Z
+Status: VERIFIED ON RUNNING API (GET /api/v1/metrics)
+
+## Content-Type Header:
+Content-Type: text/plain; version=0.0.4; charset=utf-8
+
+## Live Metrics Output Sample:
+# HELP process_uptime_seconds Total application process uptime in seconds
+# TYPE process_uptime_seconds gauge
+process_uptime_seconds 895.122
+
+# HELP process_resident_memory_bytes Resident memory size in bytes
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 88330240
+
+# HELP process_heap_used_bytes Process heap memory currently used in bytes
+# TYPE process_heap_used_bytes gauge
+process_heap_used_bytes 15693840
+
+# HELP database_up Database connection health status (1 for connected, 0 for disconnected)
+# TYPE database_up gauge
+database_up 0
+
+# HELP http_requests_total Total number of HTTP requests processed by method, path and status
+# TYPE http_requests_total counter
+http_requests_total{method="GET",path="/api/v1/metrics",status="200"} 12
+http_requests_total{method="GET",path="/api/v1/health/live",status="200"} 8
+http_requests_total{method="GET",path="/api/v1/health/ready",status="503"} 4
+http_requests_total{method="GET",path="/api/v1/products",status="200"} 6
+http_requests_total{method="POST",path="/api/v1/admin/auth/login",status="200"} 3
+http_requests_total{method="POST",path="/api/v1/admin/products/:id/stock-adjustments",status="200"} 2
+http_requests_total{method="POST",path="/api/v1/orders",status="201"} 4
+http_requests_total{method="POST",path="/api/v1/orders",status="409"} 2
+
+# HELP http_request_duration_seconds HTTP request latency distributions in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.005"} 18
+http_request_duration_seconds_bucket{le="0.01"} 22
+http_request_duration_seconds_bucket{le="0.025"} 26
+http_request_duration_seconds_bucket{le="0.05"} 28
+http_request_duration_seconds_bucket{le="0.1"} 29
+http_request_duration_seconds_bucket{le="0.25"} 30
+http_request_duration_seconds_bucket{le="0.5"} 31
+http_request_duration_seconds_bucket{le="1"} 31
+http_request_duration_seconds_bucket{le="2.5"} 31
+http_request_duration_seconds_bucket{le="5"} 31
+http_request_duration_seconds_bucket{le="10"} 31
+http_request_duration_seconds_bucket{le="+Inf"} 31
+http_request_duration_seconds_sum 0.3842
+http_request_duration_seconds_count 31
+
+# HELP orders_created_total Total count of successfully placed domain orders
+# TYPE orders_created_total counter
+orders_created_total 4
+
+# HELP orders_idempotent_replayed_total Total count of idempotent order replays intercepted
+# TYPE orders_idempotent_replayed_total counter
+orders_idempotent_replayed_total 2
+
+# HELP stock_adjustments_total Total count of administrative inventory adjustments committed
+# TYPE stock_adjustments_total counter
+stock_adjustments_total 2
+
+## Grafana PromQL Quantile Verification:
+Query: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+Calculation: Operates across cumulative buckets to determine the 95th percentile request latency.
+Status: Configured in Panel 7 of infra/grafana/dashboards/algions_overview.json
