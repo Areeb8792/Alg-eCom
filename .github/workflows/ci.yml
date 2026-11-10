@@ -78,6 +78,13 @@ jobs:
         run: npm run lint
 
       - name: Initialize Database Schema & Seed
+        env:
+          DATABASE_URL: postgresql://algions_user:algions_password@127.0.0.1:5432/algions_db
+          DB_HOST: 127.0.0.1
+          DB_PORT: '5432'
+          DB_USER: algions_user
+          DB_PASSWORD: algions_password
+          DB_NAME: algions_db
         run: |
           npm run db:migrate
           npm run db:seed
