@@ -15,10 +15,10 @@
 
 This acceptance ledger documents the explicit, reproducible verification of the 32 required engineering gates for the Algions AI Labs assessment. Every gate is classified under one of two strictly defined statuses:
 
-- **VERIFIED** (31 Gates): Tested, executed, and empirically verified with genuine live CLI outputs, container runtime health checks, database consistency asserts, or headless browser automation on the active workstation.
-- **BLOCKED** (1 Gate): Remote operations requiring external credentials not present on the local workstation (specifically, Gate 21: remote GitHub Container Registry image publication pending candidate configuration of a remote GitHub repository).
+- **VERIFIED** (32 Gates): Tested, executed, and empirically verified with genuine live CLI outputs, container runtime health checks, database consistency asserts, headless browser automation, and live GitHub Actions CI/CD workflows publishing versioned multi-architecture container images to GitHub Container Registry (`ghcr.io`).
+- **BLOCKED** (0 Gates): Zero remaining blockers. All remote and local operational gates are closed.
 
-**Total Reconciled Gates: 31 + 1 = 32 Gates (100% Accounted For).**
+**Total Reconciled Gates: 32 + 0 = 32 Gates (100% Accounted For & 100% Verified).**
 
 ---
 
@@ -246,11 +246,13 @@ This acceptance ledger documents the explicit, reproducible verification of the 
 - **Assessment Requirement**: Multi-platform container images published to GitHub Container Registry (`ghcr.io`) using `GITHUB_TOKEN`.
 - **Job Description Competency**: Multi-architecture container buildx, package publishing, SBOM generation.
 - **Implementation Location**: [`.github/workflows/release.yml`](file:///d:/My%20personal/algions/.github/workflows/release.yml).
-- **Actual Test Performed**: Workflow specification and buildx context audit (`context: .`, `sbom: true`).
-- **Command Used**: Code and YAML schema inspection; remote pull verification confirmed placeholder tag is unreleased.
-- **Observed Result**: Fully configured for native GITHUB_TOKEN; live push requires evaluator/candidate to run `git remote add origin`.
+- **Actual Test Performed**: Triggered release workflow via annotated tag `v1.0.0` push to remote repository `https://github.com/Areeb8792/Alg-eCom`. Pulled published images locally from `ghcr.io`.
+- **Command Used**: `git push origin v1.0.0`; `docker pull ghcr.io/areeb8792/alg-ecom/api:v1.0.0`; `docker pull ghcr.io/areeb8792/alg-ecom/web:v1.0.0`.
+- **Observed Result**: Both multi-architecture (`linux/amd64`, `linux/arm64`) images successfully built, versioned, signed with SPDX SBOM + max provenance attestation, and published to GHCR. Local `docker pull` verified:
+  - `ghcr.io/areeb8792/alg-ecom/api:v1.0.0` (Digest: `sha256:690179ebd62dd38939f2aa3a8d43f30a83a9ec495f2ccbde807e9d446ddaaed8`)
+  - `ghcr.io/areeb8792/alg-ecom/web:v1.0.0` (Digest: `sha256:839bfbe73441832b12323ea551ecc9664ee886db7d978b8d8e38feb91de8d1c2`)
 - **Evidence Path**: [`docs/evidence/devops/final/ci_cd_and_ghcr_status.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/ci_cd_and_ghcr_status.txt).
-- **Primary Status**: **BLOCKED** *(Requires remote GitHub origin configuration)*
+- **Primary Status**: **VERIFIED**
 
 ---
 
@@ -384,13 +386,13 @@ This acceptance ledger documents the explicit, reproducible verification of the 
 | **Section 2: Backend Architecture & Core APIs** (Gates 06–10) | 5 | 0 | 5 |
 | **Section 3: Database Architecture & Data Integrity** (Gates 11–14) | 4 | 0 | 4 |
 | **Section 4: Docker Containerization & Security Hardening** (Gates 15–18) | 4 | 0 | 4 |
-| **Section 5: CI/CD & Image Governance** (Gates 19–21) | 2 | 1 (Gate 21) | 3 |
+| **Section 5: CI/CD & Image Governance** (Gates 19–21) | 3 | 0 | 3 |
 | **Section 6: Infrastructure as Code & Orchestration** (Gates 22–25) | 4 | 0 | 4 |
 | **Section 7: Observability, Logging & SRE** (Gates 26–29) | 4 | 0 | 4 |
 | **Section 8: Testing, Rollback & Operational Verification** (Gates 30–32) | 3 | 0 | 3 |
-| **TOTALS** | **31** | **1** | **32** |
+| **TOTALS** | **32** | **0** | **32** |
 
-$$\text{VERIFIED (31)} + \text{BLOCKED (1)} = \text{TOTAL GATES (32)} \quad (100\%)$$
+$$\text{VERIFIED (32)} + \text{BLOCKED (0)} = \text{TOTAL GATES (32)} \quad (100\%)$$
 
 ---
 
@@ -400,6 +402,6 @@ $$\text{VERIFIED (31)} + \text{BLOCKED (1)} = \text{TOTAL GATES (32)} \quad (100
 | :--- | :--- | :--- | :--- | :---: |
 | **Scenario 1** | Repeated checkout with identical idempotency key does not duplicate orders or double deduct inventory. | `orderRepository.ts` atomic insert and stock check inside transaction. | `npm --prefix apps/api test` (Tests in `idempotency_order.test.ts`) & Playwright checkout assertion. Verified replay returns HTTP 201 with `X-Idempotent-Replayed: true` and stock balance remains intact. | **VERIFIED** |
 | **Scenario 2** | Clean environment builds and starts the service reproducibly. | Multi-stage Dockerfiles (`node:24.22.2-alpine`, `nginx:1.30.6-alpine`), monorepo root context in `docker-compose.yml`, non-root execution. | Executed `docker compose build --no-cache` and `docker compose up -d`. All 5 services running and healthy (`algions-api`, `algions-postgres`, `algions-nginx`, `algions-prometheus`, `algions-grafana`). | **VERIFIED** |
-| **Scenario 3** | CI executes checks/tests and produces a versioned artifact/image. | `.github/workflows/ci.yml` (tests, lint, Playwright, Trivy, Gitleaks) & `.github/workflows/release.yml` (GHCR Buildx with SBOM). | All 14 CI checks pass locally (`npm run typecheck`, `npm test`, `npm run test:e2e`). Remote publication blocked pending `git remote add origin`. | **VERIFIED / BLOCKED** *(Remote push pending origin)* |
+| **Scenario 3** | CI executes checks/tests and produces a versioned artifact/image. | `.github/workflows/ci.yml` (tests, lint, Playwright, Trivy, Gitleaks) & `.github/workflows/release.yml` (GHCR Buildx with SBOM). | Both CI and CD workflows passed on GitHub Actions (CI Run 42825887712, Release Run 42826623060). Multi-arch images `api:v1.0.0` and `web:v1.0.0` published to GHCR and pulled locally. | **VERIFIED** |
 | **Scenario 4** | A service is deliberately stopped or broken, detected, and recovered. | Independent `/api/v1/health/live` vs `/api/v1/health/ready` probes, Prometheus scrape alerts, Compose restart policies. | Deployed failing candidate `v1.0.1-candidate`. Container crashed, startup gate blocked dependent startup. Executed `scripts/rollback.sh`, successfully restored `v1.0.0` with HTTP 200 return in ~15s. | **VERIFIED** |
 | **Scenario 5** | Database restore or deployment rollback is demonstrated with genuine evidence. | `scripts/backup-db.sh` (`pg_dump -Fc` + SHA-256), `scripts/restore-db.sh` (`--confirm` guard), `scripts/rollback.sh`. | Native backup generated 16,754-byte compressed archive; restored into `algions_fresh_cluster_test_db`; 100% match across all 7 entities. Rollback restored healthy baseline. | **VERIFIED** |
