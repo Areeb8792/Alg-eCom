@@ -174,8 +174,8 @@ jobs:
           echo "✓ Created disposable restoration target database: algions_ci_disposable_restore_db."
 
           # Restore using algions_admin into disposable database
-          docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db --no-owner /tmp/ci_full_backup.dump
-          echo "✓ Restored backup archive into disposable database."
+          RESTORE_OUT=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db --clean --if-exists --no-owner /tmp/ci_full_backup.dump 2>&1 || true)
+          echo "✓ Restored backup archive into disposable database (notices/output: ${RESTORE_OUT})."
 
           # Verify restored records and queries in disposable database
           RESTORED_PRODUCTS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM products;")
@@ -183,7 +183,7 @@ jobs:
           RESTORED_AUDIT=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM audit_events;")
           SAMPLE_PROD=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT name FROM products WHERE slug = 'statement-puffer';")
           echo "✓ Verified restored records in disposable DB: products=${RESTORED_PRODUCTS}, admins=${RESTORED_ADMINS}, audit_events=${RESTORED_AUDIT}, sample='${SAMPLE_PROD}'"
-          if [ "$RESTORED_PRODUCTS" -lt 3 ] || [ "$SAMPLE_PROD" != "Statement Puffer" ]; then
+          if [ -z "$RESTORED_PRODUCTS" ] || [ "$RESTORED_PRODUCTS" -lt 3 ] || [ "$SAMPLE_PROD" != "Statement Puffer" ]; then
             echo "::error title=RESTORE_DATA_MISMATCH::Restored database records did not match expected seed data!"
             exit 1
           fi
