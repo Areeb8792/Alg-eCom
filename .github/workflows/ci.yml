@@ -92,10 +92,11 @@ jobs:
           echo "✓ Schema applied successfully."
 
           # 2a. Fail-closed verification: Ensure roles.sql FAILS when variables are absent
-          if docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql 2>&1 | grep -q "FATAL: Required psql variable"; then
+          FAIL_CLOSED_OUT=$(docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql 2>&1 || true)
+          if echo "$FAIL_CLOSED_OUT" | grep -q "FATAL: Required psql variable"; then
             echo "✓ Confirmed: roles.sql fails closed when required password variables are missing."
           else
-            echo "::error title=FAIL_CLOSED_VIOLATION::roles.sql did not fail when password variables were absent!"
+            echo "::error title=FAIL_CLOSED_VIOLATION::roles.sql did not fail when password variables were absent! Output: $FAIL_CLOSED_OUT"
             exit 1
           fi
 
