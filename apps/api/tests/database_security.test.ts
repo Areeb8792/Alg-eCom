@@ -29,6 +29,11 @@ describe('Database Security & Least-Privilege Role Architecture', () => {
     expect(rolesSql).not.toContain("'algions_app_password'");
     expect(rolesSql).not.toContain("'algions_backup_password'");
 
+    // Ingests credentials from environment variables to avoid process command argument exposure
+    expect(rolesSql).toContain('\\getenv admin_password DB_MIGRATION_PASSWORD');
+    expect(rolesSql).toContain('\\getenv app_password DB_APP_PASSWORD');
+    expect(rolesSql).toContain('\\getenv backup_password DB_BACKUP_PASSWORD');
+
     // Must enforce fail-closed checks on required psql variables
     expect(rolesSql).toContain('\\if :{?admin_password}');
     expect(rolesSql).toContain('RAISE EXCEPTION \'FATAL: Required psql variable "admin_password" is missing');
@@ -36,6 +41,14 @@ describe('Database Security & Least-Privilege Role Architecture', () => {
     expect(rolesSql).toContain('RAISE EXCEPTION \'FATAL: Required psql variable "app_password" is missing');
     expect(rolesSql).toContain('\\if :{?backup_password}');
     expect(rolesSql).toContain('RAISE EXCEPTION \'FATAL: Required psql variable "backup_password" is missing');
+
+    // Must reject empty string or whitespace passwords
+    expect(rolesSql).toContain("length(trim(:'admin_password')) = 0");
+    expect(rolesSql).toContain("RAISE EXCEPTION 'FATAL: Password for \"algions_admin\" cannot be empty. Aborting role provisioning.';");
+    expect(rolesSql).toContain("length(trim(:'app_password')) = 0");
+    expect(rolesSql).toContain("RAISE EXCEPTION 'FATAL: Password for \"algions_app\" cannot be empty. Aborting role provisioning.';");
+    expect(rolesSql).toContain("length(trim(:'backup_password')) = 0");
+    expect(rolesSql).toContain("RAISE EXCEPTION 'FATAL: Password for \"algions_backup\" cannot be empty. Aborting role provisioning.';");
 
     // Sets passwords from validated psql variables
     expect(rolesSql).toContain("ALTER ROLE algions_admin WITH PASSWORD :'admin_password';");

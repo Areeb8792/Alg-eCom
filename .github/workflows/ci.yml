@@ -100,14 +100,23 @@ jobs:
             exit 1
           fi
 
-          # 2b. Apply Least-Privilege Roles with validated dynamic variable password injection (no static credentials in SQL)
-          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" \
-            -v ON_ERROR_STOP=1 \
-            -v admin_password="$DB_MIGRATION_PASSWORD" \
-            -v app_password="$DB_APP_PASSWORD" \
-            -v backup_password="$DB_BACKUP_PASSWORD" \
-            < apps/api/src/database/roles.sql
-          echo "✓ Roles and ownership transfer applied successfully."
+          # 2b. Fail-closed empty password verification: Ensure roles.sql FAILS when passwords are empty strings
+          FAIL_EMPTY_OUT=$(docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -v admin_password="" -v app_password="" -v backup_password="" < apps/api/src/database/roles.sql 2>&1 || true)
+          if echo "$FAIL_EMPTY_OUT" | grep -q "cannot be empty"; then
+            echo "✓ Confirmed: roles.sql fails closed when passwords are empty strings."
+          else
+            echo "::error title=FAIL_EMPTY_VIOLATION::roles.sql did not reject empty passwords! Output: $FAIL_EMPTY_OUT"
+            exit 1
+          fi
+
+          # 2c. Apply Least-Privilege Roles with environment credentials (no visible password arguments in process command)
+          docker exec -i \
+            -e PGPASSWORD="$DB_PASSWORD" \
+            -e DB_MIGRATION_PASSWORD="$DB_MIGRATION_PASSWORD" \
+            -e DB_APP_PASSWORD="$DB_APP_PASSWORD" \
+            -e DB_BACKUP_PASSWORD="$DB_BACKUP_PASSWORD" \
+            algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql
+          echo "✓ Roles and ownership transfer applied successfully via environment credentials."
 
           # 3. Authentication Verification: Confirm all three roles authenticate with assigned credentials
           ADMIN_AUTH=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -A -c "SELECT current_user;")
@@ -161,6 +170,15 @@ jobs:
 
           # 10. Full Backup & Restore Drill: Execute pg_dump -Fc with table data as algions_backup, restore into disposable DB
           echo "=== Executing Full Disaster-Recovery Backup Drill via algions_backup ==="
+
+          # Capture ground-truth baseline counts from active database
+          SRC_PRODUCTS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -A -c "SELECT COUNT(*) FROM products;")
+          SRC_ORDERS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -A -c "SELECT COUNT(*) FROM orders;")
+          SRC_ADMINS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -A -c "SELECT COUNT(*) FROM admin_users;")
+          SRC_AUDIT=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -A -c "SELECT COUNT(*) FROM audit_events;")
+          SRC_SAMPLE_PROD=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -A -c "SELECT name FROM products WHERE slug = 'statement-puffer';")
+          echo "✓ Source DB baseline: products=${SRC_PRODUCTS}, orders=${SRC_ORDERS}, admins=${SRC_ADMINS}, audit_events=${SRC_AUDIT}, sample='${SRC_SAMPLE_PROD}'"
+
           docker exec -e PGPASSWORD="$DB_BACKUP_PASSWORD" algions-ci-postgres pg_dump -U "$DB_BACKUP_USER" -d "$DB_NAME" -Fc -f /tmp/ci_full_backup.dump
           BACKUP_SIZE=$(docker exec algions-ci-postgres wc -c /tmp/ci_full_backup.dump | awk '{print $1}')
           echo "✓ Backup archive created (${BACKUP_SIZE} bytes)."
@@ -174,18 +192,25 @@ jobs:
           docker exec -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "CREATE DATABASE algions_ci_disposable_restore_db OWNER algions_admin;"
           echo "✓ Created disposable restoration target database: algions_ci_disposable_restore_db."
 
-          # Restore using algions_admin into disposable database
-          RESTORE_OUT=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db --clean --if-exists --no-owner /tmp/ci_full_backup.dump 2>&1 || true)
-          echo "✓ Restored backup archive into disposable database (notices/output: ${RESTORE_OUT})."
+          # Restore using algions_admin into disposable database (no || true: any genuine restoration failure causes immediate non-zero exit)
+          docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db --no-owner /tmp/ci_full_backup.dump
+          echo "✓ Restored backup archive into disposable database."
 
-          # Verify restored records and queries in disposable database
+          # Verify restored records and queries in disposable database against source database
           RESTORED_PRODUCTS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM products;")
+          RESTORED_ORDERS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM orders;")
           RESTORED_ADMINS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM admin_users;")
           RESTORED_AUDIT=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM audit_events;")
           SAMPLE_PROD=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT name FROM products WHERE slug = 'statement-puffer';")
-          echo "✓ Verified restored records in disposable DB: products=${RESTORED_PRODUCTS}, admins=${RESTORED_ADMINS}, audit_events=${RESTORED_AUDIT}, sample='${SAMPLE_PROD}'"
-          if [ -z "$RESTORED_PRODUCTS" ] || [ "$RESTORED_PRODUCTS" -lt 3 ] || [ "$SAMPLE_PROD" != "Statement Puffer" ]; then
-            echo "::error title=RESTORE_DATA_MISMATCH::Restored database records did not match expected seed data!"
+          echo "✓ Verified restored records in disposable DB: products=${RESTORED_PRODUCTS}, orders=${RESTORED_ORDERS}, admins=${RESTORED_ADMINS}, audit_events=${RESTORED_AUDIT}, sample='${SAMPLE_PROD}'"
+
+          # Exact parity assertions against ground-truth source database
+          if [ -z "$RESTORED_PRODUCTS" ] || [ "$RESTORED_PRODUCTS" -ne "$SRC_PRODUCTS" ] || \
+             [ "$RESTORED_ORDERS" -ne "$SRC_ORDERS" ] || \
+             [ "$RESTORED_ADMINS" -ne "$SRC_ADMINS" ] || \
+             [ "$RESTORED_AUDIT" -ne "$SRC_AUDIT" ] || \
+             [ "$SAMPLE_PROD" != "$SRC_SAMPLE_PROD" ]; then
+            echo "::error title=RESTORE_DATA_MISMATCH::Restored database records did not match source database counts!"
             exit 1
           fi
 

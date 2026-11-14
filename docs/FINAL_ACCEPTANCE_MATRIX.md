@@ -10,8 +10,11 @@
 **Default Branch**: `main`  
 **Baseline Release Commit**: `2268023` (Tag: `v1.0.0`)  
 **Security Hardened Commit**: `464b7dd` (Tag: `v1.0.1`)  
-**CI Pipeline Runs**: [Run 42825887712](https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712) (v1.0.0, 19/19 passed) & [Run 42832007351](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351) (v1.0.1, 19/19 passed)  
-**CD Release Runs**: [Run 42826623060](https://github.com/Areeb8792/Alg-eCom/actions/runs/42826623060) (v1.0.0, published) & [Run 42832961461](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832961461) (v1.0.1, published)  
+**Least-Privilege Roles Commit**: `89f9421` (Tag: `v1.0.2`)  
+**Security Reconciliation Commit**: `de93112` (Tag: `v1.0.3`)  
+**Production Release Freeze Commit**: `e707648` (Tag: `v1.0.4`)  
+**CI Pipeline Runs**: [Run 42825887712](https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712) (v1.0.0), [Run 42832007351](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351) (v1.0.1), [Run 43620011522](https://github.com/Areeb8792/Alg-eCom/actions/runs/43620011522) (v1.0.2), [Run 43623107698](https://github.com/Areeb8792/Alg-eCom/actions/runs/43623107698) (v1.0.3), [Run 43629877319](https://github.com/Areeb8792/Alg-eCom/actions/runs/43629877319) (v1.0.4, 19/19 passed)  
+**CD Release Runs**: [Run 42826623060](https://github.com/Areeb8792/Alg-eCom/actions/runs/42826623060) (v1.0.0), [Run 42832961461](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832961461) (v1.0.1), [Run 43620482558](https://github.com/Areeb8792/Alg-eCom/actions/runs/43620482558) (v1.0.2), [Run 43623550814](https://github.com/Areeb8792/Alg-eCom/actions/runs/43623550814) (v1.0.3), [Run 43630261658](https://github.com/Areeb8792/Alg-eCom/actions/runs/43630261658) (v1.0.4, published to GHCR)  
 **Evaluation Standard**: DevOps & Cloud Engineering Assessment Brief  
 
 ---
@@ -231,9 +234,9 @@ This acceptance ledger documents the explicit, reproducible verification of the 
 - **Assessment Requirement**: Automated verification workflow testing TypeScript type integrity, linting, unit tests, and E2E browser tests with isolated database authentication.
 - **Job Description Competency**: Continuous integration, GitHub Actions workflow engineering, database container lifecycle management.
 - **Implementation Location**: [`.github/workflows/ci.yml`](file:///d:/My%20personal/algions/.github/workflows/ci.yml).
-- **Actual Test Performed**: Triggered CI workflow on pushes to `main`. Executed all 19 job lifecycle steps in GitHub Actions runner, including isolated PostgreSQL 16 container bootstrap with strict password authentication (removing insecure `trust` method), Gitleaks secret scanning, typecheck, linting, database schema/seed initialization with password auth, 36 Vitest unit/security/idempotency tests, and 8 Playwright browser journeys.
-- **Command Used**: Remote GitHub Actions CI runs [42825887712](https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712) and [42832007351](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351).
-- **Observed Result**: 19 of 19 pipeline steps completed with `success`. Clean passes across TypeScript compiler, 36 Vitest tests, and 8 Playwright browser tests.
+- **Actual Test Performed**: Triggered CI workflow on pushes to `main`. Executed all job lifecycle steps in GitHub Actions runner, including isolated PostgreSQL 16 container bootstrap with strict password authentication, Gitleaks secret scanning, typecheck, linting, database schema/seed initialization, fail-closed least-privilege role provisioning (`roles.sql`), live role privilege boundary enforcement (`algions_admin`, `algions_app`, `algions_backup`), full compressed binary backup drill (`pg_dump -Fc`), automated restore into disposable database (`algions_ci_disposable_restore_db`), 57 Vitest unit/security/idempotency tests, and 8 Playwright browser journeys.
+- **Command Used**: Remote GitHub Actions CI runs [42825887712](https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712) (v1.0.0), [42832007351](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351) (v1.0.1), [43620011522](https://github.com/Areeb8792/Alg-eCom/actions/runs/43620011522) (v1.0.2), [43623107698](https://github.com/Areeb8792/Alg-eCom/actions/runs/43623107698) (v1.0.3), and [43629877319](https://github.com/Areeb8792/Alg-eCom/actions/runs/43629877319) (v1.0.4).
+- **Observed Result**: All pipeline steps completed with `success`. Clean passes across TypeScript compiler, 57 Vitest tests, and 8 Playwright browser tests. Full disaster recovery backup and restore verified with strict table data count matching.
 - **Evidence Path**: [`docs/evidence/devops/final/ci_cd_and_ghcr_status.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/ci_cd_and_ghcr_status.txt).
 - **Primary Status**: **VERIFIED**
 
@@ -242,7 +245,7 @@ This acceptance ledger documents the explicit, reproducible verification of the 
 - **Job Description Competency**: DevSecOps, secret leak prevention, container vulnerability management.
 - **Implementation Location**: [`.github/workflows/ci.yml`](file:///d:/My%20personal/algions/.github/workflows/ci.yml), [`.gitleaks.toml`](file:///d:/My%20personal/algions/.gitleaks.toml).
 - **Actual Test Performed**: Full Git history scanned by Gitleaks Action (`fetch-depth: 0`). Multi-stage container images scanned by Trivy using a two-tier policy: failing the build on confirmed fixable CRITICAL vulnerabilities (`--severity CRITICAL --ignore-unfixed --exit-code 1`), while auditing and logging HIGH severity base runtime advisories (`--severity HIGH --ignore-unfixed --exit-code 0`).
-- **Command Used**: Automated execution in CI Run 42832007351 (Steps 7, 17, and 18).
+- **Command Used**: Automated execution in CI Run 43629877319 (Steps 7, 17, and 18).
 - **Observed Result**: Gitleaks reported 0 leaks across repository history. Trivy reported 0 fixable CRITICAL vulnerabilities on both `algions-api:test` and `algions-web:test`, exiting code 0.
 - **Evidence Path**: [`docs/evidence/devops/final/ci_cd_and_ghcr_status.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/ci_cd_and_ghcr_status.txt).
 - **Primary Status**: **VERIFIED**
@@ -251,12 +254,12 @@ This acceptance ledger documents the explicit, reproducible verification of the 
 - **Assessment Requirement**: Multi-platform container images published to GitHub Container Registry (`ghcr.io`) with BuildKit SBOM and provenance attestations.
 - **Job Description Competency**: Multi-architecture container buildx, package publishing, supply chain attestations.
 - **Implementation Location**: [`.github/workflows/release.yml`](file:///d:/My%20personal/algions/.github/workflows/release.yml).
-- **Actual Test Performed**: Triggered release pipeline via Git tag pushes `v1.0.0` and `v1.0.1`. Built multi-platform images (`linux/amd64`, `linux/arm64`) using QEMU and Docker Buildx with BuildKit-generated SBOM (`sbom: true`, SPDX format) and provenance attestations (`provenance: mode=max`, SLSA-compatible). Pulled images locally to verify OCI index manifests and platform layers.
-- **Command Used**: `git push origin v1.0.1`; `wsl -u root docker pull ghcr.io/areeb8792/alg-ecom/api:v1.0.1`; `wsl -u root docker pull ghcr.io/areeb8792/alg-ecom/web:v1.0.1`.
-- **Observed Result**: Both releases published successfully (CD Run 42826623060 for `v1.0.0` and CD Run 42832961461 for `v1.0.1`). Reconciled step count: 10 pipeline steps declared in YAML, 21 execution steps recorded in Actions runner lifecycle log. Local `docker pull` verified:
-  - `ghcr.io/areeb8792/alg-ecom/api:v1.0.1` (Digest: `sha256:2756fd6919ffe79b233a5adbce6cd604575b58ba934aa71924ef5c76a8a6a60e`)
-  - `ghcr.io/areeb8792/alg-ecom/web:v1.0.1` (Digest: `sha256:6243ed7ed11a1aec85fadb4474fe80f8d6daca6ad6cfc2556911460035da5ffb`)
-  - Initial `v1.0.0` images preserved as immutable baseline releases.
+- **Actual Test Performed**: Triggered release pipeline via Git tag pushes `v1.0.0`, `v1.0.1`, `v1.0.2`, `v1.0.3`, and `v1.0.4`. Built multi-platform images (`linux/amd64`, `linux/arm64`) using QEMU and Docker Buildx with BuildKit-generated SBOM (`sbom: true`, SPDX format) and provenance attestations (`provenance: mode=max`, SLSA-compatible).
+- **Command Used**: `git push origin v1.0.4` -> CD Run [43630261658](https://github.com/Areeb8792/Alg-eCom/actions/runs/43630261658).
+- **Observed Result**: Releases published successfully to GHCR. Published v1.0.4 multi-architecture images:
+  - `ghcr.io/areeb8792/alg-ecom/api:v1.0.4` (Digest: `sha256:8db7dd9a2fefa799b0caf11d4c2e88e56d9950d0efa06a98e5b3d3affd6c0d4e`)
+  - `ghcr.io/areeb8792/alg-ecom/web:v1.0.4` (Digest: `sha256:5584f093c296860a7a93956ef87bf9a2601ac16bec656de1ae165122670e9bde`)
+  - Baseline releases `v1.0.0`, `v1.0.1`, `v1.0.2`, and `v1.0.3` preserved as immutable release points.
 - **Evidence Path**: [`docs/evidence/devops/final/ci_cd_and_ghcr_status.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/ci_cd_and_ghcr_status.txt).
 - **Primary Status**: **VERIFIED**
 

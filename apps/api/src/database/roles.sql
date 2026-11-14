@@ -3,24 +3,55 @@
 -- Separates bootstrap admin, DDL migrations, runtime DML, and read-only backups.
 -- ==============================================================================
 
--- 1. Fail-closed credential validation: All three role passwords MUST be supplied via psql variables
+-- 1. Ingest credentials from environment variables if not already set via psql variables
+-- This avoids passing sensitive passwords as visible process command-line arguments.
 \if :{?admin_password}
 \else
-  \echo 'FATAL: Required psql variable "admin_password" is missing. Aborting role provisioning.'
+  \getenv admin_password DB_MIGRATION_PASSWORD
+\endif
+
+\if :{?app_password}
+\else
+  \getenv app_password DB_APP_PASSWORD
+\endif
+
+\if :{?backup_password}
+\else
+  \getenv backup_password DB_BACKUP_PASSWORD
+\endif
+
+-- 2. Fail-closed credential validation: All three role passwords MUST be present
+\if :{?admin_password}
+\else
+  \echo 'FATAL: Required psql variable "admin_password" or environment variable "DB_MIGRATION_PASSWORD" is missing. Aborting role provisioning.'
   DO $$ BEGIN RAISE EXCEPTION 'FATAL: Required psql variable "admin_password" is missing. Aborting role provisioning.'; END $$;
 \endif
 
 \if :{?app_password}
 \else
-  \echo 'FATAL: Required psql variable "app_password" is missing. Aborting role provisioning.'
+  \echo 'FATAL: Required psql variable "app_password" or environment variable "DB_APP_PASSWORD" is missing. Aborting role provisioning.'
   DO $$ BEGIN RAISE EXCEPTION 'FATAL: Required psql variable "app_password" is missing. Aborting role provisioning.'; END $$;
 \endif
 
 \if :{?backup_password}
 \else
-  \echo 'FATAL: Required psql variable "backup_password" is missing. Aborting role provisioning.'
+  \echo 'FATAL: Required psql variable "backup_password" or environment variable "DB_BACKUP_PASSWORD" is missing. Aborting role provisioning.'
   DO $$ BEGIN RAISE EXCEPTION 'FATAL: Required psql variable "backup_password" is missing. Aborting role provisioning.'; END $$;
 \endif
+
+-- 3. Fail-closed empty password validation: Passwords cannot be empty strings or whitespace
+DO $$
+BEGIN
+    IF length(trim(:'admin_password')) = 0 THEN
+        RAISE EXCEPTION 'FATAL: Password for "algions_admin" cannot be empty. Aborting role provisioning.';
+    END IF;
+    IF length(trim(:'app_password')) = 0 THEN
+        RAISE EXCEPTION 'FATAL: Password for "algions_app" cannot be empty. Aborting role provisioning.';
+    END IF;
+    IF length(trim(:'backup_password')) = 0 THEN
+        RAISE EXCEPTION 'FATAL: Password for "algions_backup" cannot be empty. Aborting role provisioning.';
+    END IF;
+END $$;
 
 -- 2. Create separated roles if they do not exist
 DO $$
