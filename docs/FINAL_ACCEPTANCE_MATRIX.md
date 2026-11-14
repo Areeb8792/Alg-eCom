@@ -12,8 +12,8 @@
 **Security Hardened Commit**: `464b7dd` (Tag: `v1.0.1`)  
 **Least-Privilege Roles Commit**: `89f9421` (Tag: `v1.0.2`)  
 **Security Reconciliation Commit**: `de93112` (Tag: `v1.0.3`)  
-**Production Release Freeze Commit**: `e707648` (Tag: `v1.0.4`)  
-**CI Pipeline Runs**: [Run 42825887712](https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712) (v1.0.0), [Run 42832007351](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351) (v1.0.1), [Run 43620011522](https://github.com/Areeb8792/Alg-eCom/actions/runs/43620011522) (v1.0.2), [Run 43623107698](https://github.com/Areeb8792/Alg-eCom/actions/runs/43623107698) (v1.0.3), [Run 43629877319](https://github.com/Areeb8792/Alg-eCom/actions/runs/43629877319) (v1.0.4, 19/19 passed)  
+**Production Release Freeze Commit**: `e707648` (Tag: `v1.0.4`), Parity Verification Commit: `543d722`  
+**CI Pipeline Runs**: [Run 42825887712](https://github.com/Areeb8792/Alg-eCom/actions/runs/42825887712) (v1.0.0), [Run 42832007351](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832007351) (v1.0.1), [Run 43620011522](https://github.com/Areeb8792/Alg-eCom/actions/runs/43620011522) (v1.0.2), [Run 43623107698](https://github.com/Areeb8792/Alg-eCom/actions/runs/43623107698) (v1.0.3), [Run 43629877319](https://github.com/Areeb8792/Alg-eCom/actions/runs/43629877319) (v1.0.4 release, 19/19 passed) & [Run 43634296907](https://github.com/Areeb8792/Alg-eCom/actions/runs/43634296907) (v1.0.4 parity hardening, 19/19 passed)  
 **CD Release Runs**: [Run 42826623060](https://github.com/Areeb8792/Alg-eCom/actions/runs/42826623060) (v1.0.0), [Run 42832961461](https://github.com/Areeb8792/Alg-eCom/actions/runs/42832961461) (v1.0.1), [Run 43620482558](https://github.com/Areeb8792/Alg-eCom/actions/runs/43620482558) (v1.0.2), [Run 43623550814](https://github.com/Areeb8792/Alg-eCom/actions/runs/43623550814) (v1.0.3), [Run 43630261658](https://github.com/Areeb8792/Alg-eCom/actions/runs/43630261658) (v1.0.4, published to GHCR)  
 **Evaluation Standard**: DevOps & Cloud Engineering Assessment Brief  
 
