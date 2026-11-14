@@ -40,18 +40,24 @@
 \endif
 
 -- 3. Fail-closed empty password validation: Passwords cannot be empty strings or whitespace
-DO $$
-BEGIN
-    IF length(trim(:'admin_password')) = 0 THEN
-        RAISE EXCEPTION 'FATAL: Password for "algions_admin" cannot be empty. Aborting role provisioning.';
-    END IF;
-    IF length(trim(:'app_password')) = 0 THEN
-        RAISE EXCEPTION 'FATAL: Password for "algions_app" cannot be empty. Aborting role provisioning.';
-    END IF;
-    IF length(trim(:'backup_password')) = 0 THEN
-        RAISE EXCEPTION 'FATAL: Password for "algions_backup" cannot be empty. Aborting role provisioning.';
-    END IF;
-END $$;
+SELECT (length(trim(:'admin_password')) = 0) AS admin_pwd_is_empty,
+       (length(trim(:'app_password')) = 0) AS app_pwd_is_empty,
+       (length(trim(:'backup_password')) = 0) AS backup_pwd_is_empty \gset
+
+\if :admin_pwd_is_empty
+  \echo 'FATAL: Password for "algions_admin" cannot be empty. Aborting role provisioning.'
+  DO $$ BEGIN RAISE EXCEPTION 'FATAL: Password for "algions_admin" cannot be empty. Aborting role provisioning.'; END $$;
+\endif
+
+\if :app_pwd_is_empty
+  \echo 'FATAL: Password for "algions_app" cannot be empty. Aborting role provisioning.'
+  DO $$ BEGIN RAISE EXCEPTION 'FATAL: Password for "algions_app" cannot be empty. Aborting role provisioning.'; END $$;
+\endif
+
+\if :backup_pwd_is_empty
+  \echo 'FATAL: Password for "algions_backup" cannot be empty. Aborting role provisioning.'
+  DO $$ BEGIN RAISE EXCEPTION 'FATAL: Password for "algions_backup" cannot be empty. Aborting role provisioning.'; END $$;
+\endif
 
 -- 2. Create separated roles if they do not exist
 DO $$
