@@ -22,18 +22,43 @@ if [[ -f "${HISTORY_FILE}" ]]; then
 fi
 echo "Current active image tag: ${CURRENT_TAG}"
 
+# Source environment variables if .env exists
+if [[ -f "${ROOT_DIR}/.env" ]]; then
+    # shellcheck disable=SC1091
+    source "${ROOT_DIR}/.env" || true
+fi
+
+# Reject unchanged placeholder credentials
+if [[ -f "${ROOT_DIR}/.env" ]] && grep -q "REPLACE_WITH_" "${ROOT_DIR}/.env" 2>/dev/null; then
+    echo "❌ FATAL: Unchanged placeholder credentials detected in .env. Replace all 'REPLACE_WITH_' secrets before deploying."
+    exit 1
+fi
+
+DB_MIGRATION_USER="${DB_MIGRATION_USER:-algions_admin}"
+DB_NAME="${DB_NAME:-algions_db}"
+
 # 1. Pull / Prepare image
 echo "[1/4] Preparing image ${IMAGE_TAG}..."
 export API_IMAGE="${API_IMAGE_NAME:-algions-api}:${IMAGE_TAG}"
 export WEB_IMAGE="${WEB_IMAGE_NAME:-algions-web}:${IMAGE_TAG}"
 
-# 2. Run Database Migrations safely before updating API
-echo "[2/4] Executing backward-compatible database migrations..."
-if docker compose ps -q api &>/dev/null; then
-    if ! docker compose exec -T api node dist/database/migrate.js; then
+# 2. Run Database Migrations safely via one-shot container using algions_admin credentials
+echo "[2/4] Executing backward-compatible database migrations as '${DB_MIGRATION_USER}'..."
+if docker compose ps -q postgres &>/dev/null; then
+    if [[ -z "${DB_MIGRATION_PASSWORD:-}" ]]; then
+        echo "❌ FATAL: DB_MIGRATION_PASSWORD is not set. Migration credentials must be explicitly provided."
+        exit 1
+    fi
+
+    # Run migrations in a separate, isolated one-shot container so the long-running API container never receives migration credentials
+    if ! docker compose run --rm --no-deps \
+        -e NODE_ENV=production \
+        -e DATABASE_URL="postgresql://${DB_MIGRATION_USER}:${DB_MIGRATION_PASSWORD}@postgres:5432/${DB_NAME}" \
+        api node dist/database/migrate.js; then
         echo "❌ FATAL: Database migration failed. Halting deployment to prevent schema inconsistency."
         exit 1
     fi
+    echo "✓ Migrations executed successfully via dedicated one-shot migration runner."
 fi
 
 # 3. Deploy New Container Instances

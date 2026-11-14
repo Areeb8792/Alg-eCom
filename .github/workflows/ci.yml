@@ -91,7 +91,15 @@ jobs:
           docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < apps/api/src/database/schema.sql
           echo "✓ Schema applied successfully."
 
-          # 2. Apply Least-Privilege Roles with dynamic variable password injection (no static credentials in SQL)
+          # 2a. Fail-closed verification: Ensure roles.sql FAILS when variables are absent
+          if docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql 2>&1 | grep -q "FATAL: Required psql variable"; then
+            echo "✓ Confirmed: roles.sql fails closed when required password variables are missing."
+          else
+            echo "::error title=FAIL_CLOSED_VIOLATION::roles.sql did not fail when password variables were absent!"
+            exit 1
+          fi
+
+          # 2b. Apply Least-Privilege Roles with validated dynamic variable password injection (no static credentials in SQL)
           docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" \
             -v ON_ERROR_STOP=1 \
             -v admin_password="$DB_MIGRATION_PASSWORD" \
@@ -100,7 +108,17 @@ jobs:
             < apps/api/src/database/roles.sql
           echo "✓ Roles and ownership transfer applied successfully."
 
-          # 3. Verify Table Ownership transferred to algions_admin
+          # 3. Authentication Verification: Confirm all three roles authenticate with assigned credentials
+          ADMIN_AUTH=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -A -c "SELECT current_user;")
+          APP_AUTH=$(docker exec -i -e PGPASSWORD="$DB_APP_PASSWORD" algions-ci-postgres psql -U "$DB_APP_USER" -d "$DB_NAME" -t -A -c "SELECT current_user;")
+          BACKUP_AUTH=$(docker exec -i -e PGPASSWORD="$DB_BACKUP_PASSWORD" algions-ci-postgres psql -U "$DB_BACKUP_USER" -d "$DB_NAME" -t -A -c "SELECT current_user;")
+          echo "✓ Verified role authentication: admin='${ADMIN_AUTH}', app='${APP_AUTH}', backup='${BACKUP_AUTH}'"
+          if [ "$ADMIN_AUTH" != "algions_admin" ] || [ "$APP_AUTH" != "algions_app" ] || [ "$BACKUP_AUTH" != "algions_backup" ]; then
+            echo "::error title=AUTH_VERIFICATION_FAILED::Role authentication probe failed!"
+            exit 1
+          fi
+
+          # 4. Verify Table Ownership transferred to algions_admin
           TABLE_OWNERS=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -c "SELECT DISTINCT tableowner FROM pg_tables WHERE schemaname = 'public';" | tr -d ' \r\n')
           echo "✓ Public table owner in PostgreSQL: ${TABLE_OWNERS}"
           if [ "$TABLE_OWNERS" != "algions_admin" ]; then
@@ -108,11 +126,11 @@ jobs:
             exit 1
           fi
 
-          # 4. Verify DDL Migration capability for algions_admin (Can execute ALTER TABLE migrations)
+          # 5. Verify DDL Migration capability for algions_admin (Can execute ALTER TABLE migrations)
           docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c "ALTER TABLE products ADD COLUMN ci_migration_test_col VARCHAR(32); ALTER TABLE products DROP COLUMN ci_migration_test_col;"
           echo "✓ Confirmed: algions_admin successfully executed DDL migration on existing table."
 
-          # 5. Live privilege boundary verification: Ensure runtime algions_app CANNOT execute DDL (CREATE TABLE)
+          # 6. Live privilege boundary verification: Ensure runtime algions_app CANNOT execute DDL (CREATE TABLE)
           if docker exec -i -e PGPASSWORD="$DB_APP_PASSWORD" algions-ci-postgres psql -U "$DB_APP_USER" -d "$DB_NAME" -c "CREATE TABLE unauthorized_privilege_test (id int);" 2>&1 | grep -q "permission denied"; then
             echo "✓ Confirmed: algions_app role cannot create tables (least-privilege boundary verified)."
           else
@@ -120,7 +138,7 @@ jobs:
             exit 1
           fi
 
-          # 6. Live privilege boundary verification: Ensure runtime algions_app CANNOT modify audit_events
+          # 7. Live privilege boundary verification: Ensure runtime algions_app CANNOT modify audit_events
           if docker exec -i -e PGPASSWORD="$DB_APP_PASSWORD" algions-ci-postgres psql -U "$DB_APP_USER" -d "$DB_NAME" -c "UPDATE audit_events SET action = 'tampered';" 2>&1 | grep -qE "permission denied|Security Policy Violation"; then
             echo "✓ Confirmed: algions_app role cannot update audit_events (immutability boundary verified)."
           else
@@ -128,13 +146,50 @@ jobs:
             exit 1
           fi
 
-          # 7. Verify algions_backup role can execute pg_dump successfully
-          docker exec -i -e PGPASSWORD="$DB_BACKUP_PASSWORD" algions-ci-postgres pg_dump -U "$DB_BACKUP_USER" -d "$DB_NAME" --schema-only > /dev/null
-          echo "✓ Confirmed: algions_backup role successfully executed pg_dump."
+          # 8. Verify algions_backup role is strictly read-only and CANNOT write data
+          if docker exec -i -e PGPASSWORD="$DB_BACKUP_PASSWORD" algions-ci-postgres psql -U "$DB_BACKUP_USER" -d "$DB_NAME" -c "INSERT INTO products (name) VALUES ('fail');" 2>&1 | grep -q "permission denied"; then
+            echo "✓ Confirmed: algions_backup role is strictly read-only and cannot write data."
+          else
+            echo "::error title=BACKUP_WRITE_VIOLATION::algions_backup was unexpectedly able to write data!"
+            exit 1
+          fi
 
-          # 8. Seed Database using algions_admin credentials
+          # 9. Seed Database using algions_admin credentials
           DATABASE_URL="postgresql://${DB_MIGRATION_USER}:${DB_MIGRATION_PASSWORD}@127.0.0.1:5432/${DB_NAME}" npx tsx apps/api/src/database/seed.ts
           echo "✓ Seed completed successfully using algions_admin credentials."
+
+          # 10. Full Backup & Restore Drill: Execute pg_dump -Fc with table data as algions_backup, restore into disposable DB
+          echo "=== Executing Full Disaster-Recovery Backup Drill via algions_backup ==="
+          docker exec -i -e PGPASSWORD="$DB_BACKUP_PASSWORD" algions-ci-postgres pg_dump -U "$DB_BACKUP_USER" -d "$DB_NAME" -Fc > /tmp/ci_full_backup.dump
+          BACKUP_SIZE=$(wc -c < /tmp/ci_full_backup.dump | tr -d ' ')
+          echo "✓ Backup archive created (${BACKUP_SIZE} bytes)."
+          if [ "$BACKUP_SIZE" -lt 1000 ]; then
+            echo "::error title=BACKUP_TOO_SMALL::Backup archive is smaller than expected 1KB (${BACKUP_SIZE} bytes)!"
+            exit 1
+          fi
+
+          # Create disposable test database (never modifying active algions_db)
+          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS algions_ci_disposable_restore_db; CREATE DATABASE algions_ci_disposable_restore_db;"
+          echo "✓ Created disposable restoration target database: algions_ci_disposable_restore_db."
+
+          # Restore using algions_admin into disposable database
+          docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db < /tmp/ci_full_backup.dump
+          echo "✓ Restored backup archive into disposable database."
+
+          # Verify restored records and queries in disposable database
+          RESTORED_PRODUCTS=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM products;")
+          RESTORED_ADMINS=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM admin_users;")
+          RESTORED_AUDIT=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM audit_events;")
+          SAMPLE_PROD=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT name FROM products WHERE slug = 'statement-puffer';")
+          echo "✓ Verified restored records in disposable DB: products=${RESTORED_PRODUCTS}, admins=${RESTORED_ADMINS}, audit_events=${RESTORED_AUDIT}, sample='${SAMPLE_PROD}'"
+          if [ "$RESTORED_PRODUCTS" -lt 3 ] || [ "$SAMPLE_PROD" != "Statement Puffer" ]; then
+            echo "::error title=RESTORE_DATA_MISMATCH::Restored database records did not match expected seed data!"
+            exit 1
+          fi
+
+          # Clean up disposable database
+          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "DROP DATABASE algions_ci_disposable_restore_db;"
+          echo "✓ Disposable test database dropped cleanly. Active database '${DB_NAME}' remains persistent and untouched."
 
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
         run: npm test

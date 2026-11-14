@@ -32,7 +32,7 @@ if [[ ! -f ".env" ]]; then
     if [[ -f ".env.example" ]]; then
         echo "Creating .env from .env.example..."
         cp .env.example .env
-        echo "✓ Created .env file. Please review and update secrets for production."
+        echo "✓ Created .env file. Please review and replace placeholder secrets for production."
     else
         echo "❌ Error: Neither .env nor .env.example found."
         exit 1
@@ -40,6 +40,19 @@ if [[ ! -f ".env" ]]; then
 else
     echo "✓ Existing .env file detected."
 fi
+
+# Reject unchanged placeholder credentials
+if grep -q "REPLACE_WITH_" "${ROOT_DIR}/.env" 2>/dev/null; then
+    echo "❌ FATAL: Unchanged placeholder credentials detected in .env."
+    echo "Please edit .env and replace all 'REPLACE_WITH_' values with valid secure secrets."
+    exit 1
+fi
+
+# Source environment
+# shellcheck disable=SC1091
+source "${ROOT_DIR}/.env" || true
+DB_MIGRATION_USER="${DB_MIGRATION_USER:-algions_admin}"
+DB_NAME="${DB_NAME:-algions_db}"
 
 # 3. TLS Certificates
 echo "[3/6] Generating TLS certificates for Nginx reverse proxy..."
@@ -71,9 +84,19 @@ done
 
 if [[ "${HEALTHY}" == "true" ]]; then
     echo "✓ Services are ready!"
-    echo "Applying migrations and database seeds..."
-    docker compose exec -T api node dist/database/migrate.js || true
-    docker compose exec -T api node dist/database/seed.js || true
+    echo "Applying database migrations and seeds as '${DB_MIGRATION_USER}'..."
+    if [[ -n "${DB_MIGRATION_PASSWORD:-}" ]]; then
+        docker compose run --rm --no-deps \
+            -e NODE_ENV=production \
+            -e DATABASE_URL="postgresql://${DB_MIGRATION_USER}:${DB_MIGRATION_PASSWORD}@postgres:5432/${DB_NAME}" \
+            api node dist/database/migrate.js
+        docker compose run --rm --no-deps \
+            -e NODE_ENV=production \
+            -e DATABASE_URL="postgresql://${DB_MIGRATION_USER}:${DB_MIGRATION_PASSWORD}@postgres:5432/${DB_NAME}" \
+            api node dist/database/seed.js
+    else
+        echo "⚠️ Notice: DB_MIGRATION_PASSWORD not set; skipping automated migration/seed execution."
+    fi
     echo ""
     echo "================================================================="
     echo "✓ Platform successfully initialized!"

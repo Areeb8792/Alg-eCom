@@ -19,6 +19,8 @@ export const envSchema = z
       .union([z.string(), z.number()])
       .default('5432')
       .transform((v) => (typeof v === 'number' ? v : parseInt(v, 10))),
+    POSTGRES_USER: z.string().optional(),
+    POSTGRES_PASSWORD: z.string().optional(),
     DB_USER: z.string().default('algions_user'),
     DB_PASSWORD: z.string().default('algions_password'),
     DB_NAME: z.string().default('algions_db'),
@@ -78,6 +80,25 @@ export const envSchema = z
         });
       }
     }
+
+    // 3. Reject Unchanged Placeholder Credentials
+    const placeholderChecks: Array<{ key: string; val: unknown }> = [
+      { key: 'JWT_SECRET', val: data.JWT_SECRET },
+      { key: 'ADMIN_PASSWORD', val: data.ADMIN_PASSWORD },
+      { key: 'DB_APP_PASSWORD', val: data.DB_APP_PASSWORD },
+      { key: 'DB_MIGRATION_PASSWORD', val: data.DB_MIGRATION_PASSWORD },
+      { key: 'DB_BACKUP_PASSWORD', val: data.DB_BACKUP_PASSWORD },
+      { key: 'POSTGRES_PASSWORD', val: data.POSTGRES_PASSWORD },
+    ];
+    for (const check of placeholderChecks) {
+      if (typeof check.val === 'string' && check.val.startsWith('REPLACE_WITH_')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [check.key],
+          message: `FATAL: Placeholder credential in "${check.key}" must be replaced with a real secure secret.`,
+        });
+      }
+    }
   });
 
 export type Config = {
@@ -130,8 +151,13 @@ export function parseConfig(rawEnv: Record<string, unknown> = process.env): Conf
 
   const corsOrigin = data.CORS_ORIGIN && data.CORS_ORIGIN.trim() !== '' ? data.CORS_ORIGIN : defaultCors;
 
+  const dbUser = data.DB_USER || data.POSTGRES_USER || 'algions_user';
+  const dbPassword = data.DB_PASSWORD || data.POSTGRES_PASSWORD || 'algions_password';
+
   return {
     ...data,
+    DB_USER: dbUser,
+    DB_PASSWORD: dbPassword,
     JWT_SECRET: jwtSecret,
     CORS_ORIGIN: corsOrigin,
   };

@@ -175,14 +175,14 @@ describe('Phase 1 Security: Order Lookup Authentication & Privacy Protection', (
     expect(res.body.data.customer_name).toContain('***');
   });
 
-  it('9. Customer IDOR attempt: mismatched verification email returns HTTP 403 ORDER_ACCESS_DENIED', async () => {
+  it('9. Customer IDOR attempt: mismatched verification email returns HTTP 404 NOT_FOUND (resolves 403/404 existence oracle)', async () => {
     setupOrderMock();
     const res = await request(app)
       .get(`/api/v1/orders/${mockOrder.id}?email=attacker@malicious.com`);
 
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe('ORDER_ACCESS_DENIED');
-    expect(res.body.error.message).toContain('does not match');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('NOT_FOUND');
+    expect(res.body.error.message).toContain('not found or verification mismatch');
   });
 
   it('10. Order reference enumeration protection: rate limiter trips after maxRequests', async () => {
@@ -222,9 +222,9 @@ describe('Phase 1 Security: Order Lookup Authentication & Privacy Protection', (
     expect(emptyRes.body.data.is_privacy_masked).toBe(true);
     expect(emptyRes.body.data.customer_email).toContain('****');
 
-    // 11c: Mismatched email parameter returns 403 Forbidden
+    // 11c: Mismatched email parameter returns 404 NOT_FOUND (preventing enumeration)
     const mismatchRes = await request(app).get(`/api/v1/orders/${mockOrder.id}?email=wrong@example.com`);
-    expect(mismatchRes.status).toBe(403);
-    expect(mismatchRes.body.error.code).toBe('ORDER_ACCESS_DENIED');
+    expect(mismatchRes.status).toBe(404);
+    expect(mismatchRes.body.error.code).toBe('NOT_FOUND');
   });
 });

@@ -150,13 +150,14 @@ export class OrderController {
       }
 
       // 2. Customer Access Verification: If verification email is supplied, enforce exact match
+      // Resolves the 403-versus-404 existence oracle by returning 404 NOT_FOUND on verification mismatch,
+      // ensuring an external attacker cannot enumerate valid order references via status code differences.
       if (verifyEmail) {
         if (order.customer_email.toLowerCase() !== verifyEmail) {
-          // Email mismatch: Customer attempting to access another customer's order
-          res.status(403).json({
+          res.status(404).json({
             error: {
-              code: 'ORDER_ACCESS_DENIED',
-              message: 'The verification email provided does not match the order record.'
+              code: 'NOT_FOUND',
+              message: `Order "${id}" was not found or verification mismatch.`
             }
           });
           return;

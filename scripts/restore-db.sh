@@ -53,9 +53,14 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
     source "${ROOT_DIR}/.env" || true
 fi
 
-DB_USER="${DB_MIGRATION_USER:-${DB_USER:-algions_admin}}"
-DB_PASSWORD="${DB_MIGRATION_PASSWORD:-${DB_PASSWORD:-algions_admin_password}}"
+DB_USER="${DB_MIGRATION_USER:-${POSTGRES_USER:-${DB_USER:-algions_admin}}}"
+DB_PASSWORD="${DB_MIGRATION_PASSWORD:-${POSTGRES_PASSWORD:-${DB_PASSWORD:-}}}"
 DB_NAME="${TARGET_DB:-${3:-${DB_NAME:-algions_db}}}"
+
+if [[ -z "${DB_PASSWORD}" ]]; then
+    echo "❌ FATAL: Database credentials (DB_MIGRATION_PASSWORD or POSTGRES_PASSWORD) are not set. Explicit credentials required."
+    exit 1
+fi
 
 # [2/4] Perform pg_restore
 echo "[2/4] Restoring PostgreSQL database from archive (-Fc) as migration admin '${DB_USER}'..."

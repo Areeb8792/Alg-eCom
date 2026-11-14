@@ -10,6 +10,10 @@ services:
     image: ${API_IMAGE:-ghcr.io/areeb8792/alg-ecom/api:${IMAGE_TAG:-v1.0.0}}
     pull_policy: if_not_present
 
+  migration:
+    image: ${API_IMAGE:-ghcr.io/areeb8792/alg-ecom/api:${IMAGE_TAG:-v1.0.0}}
+    pull_policy: if_not_present
+
   nginx:
     image: ${WEB_IMAGE:-ghcr.io/areeb8792/alg-ecom/web:${IMAGE_TAG:-v1.0.0}}
     pull_policy: if_not_present

@@ -11,8 +11,8 @@ services:
     container_name: algions-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_BOOTSTRAP_USER:-${DB_USER:-algions_user}}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+      POSTGRES_USER: ${POSTGRES_USER:-${DB_USER:-algions_user}}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-${DB_PASSWORD:?POSTGRES_PASSWORD or DB_PASSWORD must be set in .env}}
       POSTGRES_DB: ${DB_NAME:-algions_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -20,7 +20,7 @@ services:
       - internal_network
     # IMPORTANT: Port 5432 is strictly kept internal to prevent public internet exposure
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_BOOTSTRAP_USER:-${DB_USER:-algions_user}} -d ${DB_NAME:-algions_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-${DB_USER:-algions_user}} -d ${DB_NAME:-algions_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,7 +31,7 @@ services:
           cpus: '1.0'
           memory: 512M
 
-  # 2. Product and Order API Service (Node.js LTS / TypeScript)
+  # 2. Product and Order API Service (Node.js LTS / TypeScript - Runtime algions_app with Least Privilege)
   api:
     build:
       context: .
@@ -43,16 +43,11 @@ services:
       NODE_ENV: production
       PORT: 4000
       HOST: 0.0.0.0
-      DATABASE_URL: postgresql://${DB_APP_USER:-algions_app}:${DB_APP_PASSWORD:-algions_app_password}@postgres:5432/${DB_NAME:-algions_db}
+      DATABASE_URL: postgresql://${DB_APP_USER:-algions_app}:${DB_APP_PASSWORD:?DB_APP_PASSWORD must be set in .env}@postgres:5432/${DB_NAME:-algions_db}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-algions_db}
       DB_APP_USER: ${DB_APP_USER:-algions_app}
-      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-algions_app_password}
-      DB_MIGRATION_USER: ${DB_MIGRATION_USER:-algions_admin}
-      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:-algions_admin_password}
-      DB_BACKUP_USER: ${DB_BACKUP_USER:-algions_backup}
-      DB_BACKUP_PASSWORD: ${DB_BACKUP_PASSWORD:-algions_backup_password}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin@algions.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}
@@ -73,6 +68,36 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  # Dedicated One-Shot Database Migration Service (Runs exclusively with algions_admin DDL credentials)
+  migration:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: ${API_IMAGE:-algions-api:local}
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_MIGRATION_USER:-algions_admin}:${DB_MIGRATION_PASSWORD:?DB_MIGRATION_PASSWORD must be set in .env}@postgres:5432/${DB_NAME:-algions_db}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-algions_db}
+      DB_USER: ${DB_MIGRATION_USER:-algions_admin}
+      DB_PASSWORD: ${DB_MIGRATION_PASSWORD:?DB_MIGRATION_PASSWORD must be set in .env}
+    command: ["node", "dist/database/migrate.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal_network
+    profiles:
+      - tools
+      - migration
     deploy:
       resources:
         limits:

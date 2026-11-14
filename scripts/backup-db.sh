@@ -24,8 +24,12 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
 fi
 
 DB_BACKUP_USER="${DB_BACKUP_USER:-algions_backup}"
-DB_BACKUP_PASSWORD="${DB_BACKUP_PASSWORD:-algions_backup_password}"
 DB_NAME="${DB_NAME:-algions_db}"
+
+if [[ -z "${DB_BACKUP_PASSWORD:-}" ]]; then
+    echo "❌ FATAL: DB_BACKUP_PASSWORD is not set. Backup credentials must be explicitly provided in environment or .env."
+    exit 1
+fi
 
 echo "[1/4] Executing pg_dump in compressed custom archive format (-Fc) as role '${DB_BACKUP_USER}'..."
 

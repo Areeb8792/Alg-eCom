@@ -23,18 +23,23 @@ describe('Database Security & Least-Privilege Role Architecture', () => {
     expect(rolesSql).toContain('CREATE ROLE algions_backup');
   });
 
-  it('removes static hardcoded credentials from roles.sql and injects passwords dynamically', () => {
+  it('enforces fail-closed validation and dynamic password injection in roles.sql', () => {
     // Passwords must not be hardcoded in the SQL file
     expect(rolesSql).not.toContain("'algions_admin_password'");
     expect(rolesSql).not.toContain("'algions_app_password'");
     expect(rolesSql).not.toContain("'algions_backup_password'");
 
-    // Must use psql variable injection
-    expect(rolesSql).toContain('\\if :{?admin_password}');
+    // Must enforce fail-closed checks on required psql variables
+    expect(rolesSql).toContain('\\if !:{?admin_password}');
+    expect(rolesSql).toContain('RAISE EXCEPTION \'FATAL: Required psql variable "admin_password" is missing');
+    expect(rolesSql).toContain('\\if !:{?app_password}');
+    expect(rolesSql).toContain('RAISE EXCEPTION \'FATAL: Required psql variable "app_password" is missing');
+    expect(rolesSql).toContain('\\if !:{?backup_password}');
+    expect(rolesSql).toContain('RAISE EXCEPTION \'FATAL: Required psql variable "backup_password" is missing');
+
+    // Sets passwords from validated psql variables
     expect(rolesSql).toContain("ALTER ROLE algions_admin WITH PASSWORD :'admin_password';");
-    expect(rolesSql).toContain('\\if :{?app_password}');
     expect(rolesSql).toContain("ALTER ROLE algions_app WITH PASSWORD :'app_password';");
-    expect(rolesSql).toContain('\\if :{?backup_password}');
     expect(rolesSql).toContain("ALTER ROLE algions_backup WITH PASSWORD :'backup_password';");
   });
 
