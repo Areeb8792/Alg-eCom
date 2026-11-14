@@ -4,17 +4,20 @@
 -- ==============================================================================
 
 -- 1. Fail-closed credential validation: All three role passwords MUST be supplied via psql variables
-\if NOT :{?admin_password}
+\if :{?admin_password}
+\else
   \echo 'FATAL: Required psql variable "admin_password" is missing. Aborting role provisioning.'
   DO $$ BEGIN RAISE EXCEPTION 'FATAL: Required psql variable "admin_password" is missing. Aborting role provisioning.'; END $$;
 \endif
 
-\if NOT :{?app_password}
+\if :{?app_password}
+\else
   \echo 'FATAL: Required psql variable "app_password" is missing. Aborting role provisioning.'
   DO $$ BEGIN RAISE EXCEPTION 'FATAL: Required psql variable "app_password" is missing. Aborting role provisioning.'; END $$;
 \endif
 
-\if NOT :{?backup_password}
+\if :{?backup_password}
+\else
   \echo 'FATAL: Required psql variable "backup_password" is missing. Aborting role provisioning.'
   DO $$ BEGIN RAISE EXCEPTION 'FATAL: Required psql variable "backup_password" is missing. Aborting role provisioning.'; END $$;
 \endif

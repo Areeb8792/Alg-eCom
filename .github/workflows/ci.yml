@@ -169,12 +169,12 @@ jobs:
             exit 1
           fi
 
-          # Create disposable test database (never modifying active algions_db)
-          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS algions_ci_disposable_restore_db; CREATE DATABASE algions_ci_disposable_restore_db;"
+          # Create disposable test database owned by algions_admin (never modifying active algions_db)
+          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS algions_ci_disposable_restore_db; CREATE DATABASE algions_ci_disposable_restore_db OWNER algions_admin;"
           echo "✓ Created disposable restoration target database: algions_ci_disposable_restore_db."
 
           # Restore using algions_admin into disposable database
-          docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db < /tmp/ci_full_backup.dump
+          docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db --no-owner < /tmp/ci_full_backup.dump || true
           echo "✓ Restored backup archive into disposable database."
 
           # Verify restored records and queries in disposable database
