@@ -13,7 +13,7 @@ export const envSchema = z
       .default('4000')
       .transform((v) => (typeof v === 'number' ? v : parseInt(v, 10))),
     HOST: z.string().default('0.0.0.0'),
-    DATABASE_URL: z.string().default('postgresql://algions_user:algions_password@127.0.0.1:5432/algions_db'),
+    DATABASE_URL: z.string().default('postgresql://algions_app:algions_app_password@127.0.0.1:5432/algions_db'),
     DB_HOST: z.string().default('127.0.0.1'),
     DB_PORT: z
       .union([z.string(), z.number()])
@@ -22,6 +22,12 @@ export const envSchema = z
     DB_USER: z.string().default('algions_user'),
     DB_PASSWORD: z.string().default('algions_password'),
     DB_NAME: z.string().default('algions_db'),
+    DB_APP_USER: z.string().default('algions_app'),
+    DB_APP_PASSWORD: z.string().default('algions_app_password'),
+    DB_MIGRATION_USER: z.string().default('algions_admin'),
+    DB_MIGRATION_PASSWORD: z.string().default('algions_admin_password'),
+    DB_BACKUP_USER: z.string().default('algions_backup'),
+    DB_BACKUP_PASSWORD: z.string().default('algions_backup_password'),
     DB_POOL_MIN: z
       .union([z.string(), z.number()])
       .default('2')
@@ -84,6 +90,12 @@ export type Config = {
   DB_USER: string;
   DB_PASSWORD: string;
   DB_NAME: string;
+  DB_APP_USER: string;
+  DB_APP_PASSWORD: string;
+  DB_MIGRATION_USER: string;
+  DB_MIGRATION_PASSWORD: string;
+  DB_BACKUP_USER: string;
+  DB_BACKUP_PASSWORD: string;
   DB_POOL_MIN: number;
   DB_POOL_MAX: number;
   JWT_SECRET: string;
@@ -140,5 +152,7 @@ export function getDatabaseConnectionString(): string {
   if (config.DATABASE_URL) {
     return config.DATABASE_URL;
   }
-  return `postgresql://${config.DB_USER}:${encodeURIComponent(config.DB_PASSWORD)}@${config.DB_HOST}:${config.DB_PORT}/${config.DB_NAME}`;
+  const user = config.DB_APP_USER || config.DB_USER;
+  const pass = config.DB_APP_PASSWORD || config.DB_PASSWORD;
+  return `postgresql://${user}:${encodeURIComponent(pass)}@${config.DB_HOST}:${config.DB_PORT}/${config.DB_NAME}`;
 }

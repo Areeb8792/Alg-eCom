@@ -53,15 +53,16 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
     source "${ROOT_DIR}/.env" || true
 fi
 
-DB_USER="${DB_USER:-algions_user}"
+DB_USER="${DB_MIGRATION_USER:-${DB_USER:-algions_admin}}"
+DB_PASSWORD="${DB_MIGRATION_PASSWORD:-${DB_PASSWORD:-algions_admin_password}}"
 DB_NAME="${TARGET_DB:-${3:-${DB_NAME:-algions_db}}}"
 
 # [2/4] Perform pg_restore
-echo "[2/4] Restoring PostgreSQL database from archive (-Fc)..."
+echo "[2/4] Restoring PostgreSQL database from archive (-Fc) as migration admin '${DB_USER}'..."
 if docker compose ps -q postgres &>/dev/null; then
-    docker compose exec -T postgres pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error < "${BACKUP_FILE}"
+    docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error < "${BACKUP_FILE}"
 elif command -v pg_restore &>/dev/null; then
-    pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error "${BACKUP_FILE}"
+    PGPASSWORD="${DB_PASSWORD}" pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error "${BACKUP_FILE}"
 else
     echo "❌ Error: Neither active PostgreSQL container nor host 'pg_restore' utility found."
     echo "To execute native PostgreSQL restores, start the container stack with 'docker compose up -d' or install PostgreSQL client tools."
@@ -72,15 +73,15 @@ echo "✓ Archive restored."
 # [3/4] Verify database contents post-restore
 echo "[3/4] Executing post-restore data and schema integrity verification checks..."
 if docker compose ps -q postgres &>/dev/null; then
-    TABLE_COUNT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
-    PRODUCT_COUNT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')
-    ORDER_COUNT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' \r\n')
-    SAMPLE_PRODUCT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT name FROM products WHERE is_active = true LIMIT 1;" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//')
+    TABLE_COUNT=$(docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
+    PRODUCT_COUNT=$(docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')
+    ORDER_COUNT=$(docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' \r\n')
+    SAMPLE_PRODUCT=$(docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT name FROM products WHERE is_active = true LIMIT 1;" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//')
 else
-    TABLE_COUNT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
-    PRODUCT_COUNT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')
-    ORDER_COUNT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' \r\n')
-    SAMPLE_PRODUCT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT name FROM products WHERE is_active = true LIMIT 1;" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//')
+    TABLE_COUNT=$(PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
+    PRODUCT_COUNT=$(PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')
+    ORDER_COUNT=$(PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' \r\n')
+    SAMPLE_PRODUCT=$(PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT name FROM products WHERE is_active = true LIMIT 1;" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//')
 fi
 
 if [[ -z "${TABLE_COUNT}" || "${TABLE_COUNT}" -lt 4 ]]; then

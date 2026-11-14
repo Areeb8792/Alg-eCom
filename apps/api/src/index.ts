@@ -5,7 +5,7 @@ import { closePool } from './database/connection.js';
 
 const app = createApp();
 
-const server = app.listen(config.PORT, config.HOST, () => {
+const server = app.listen(config.PORT, config.HOST, async () => {
   logger.info(
     {
       port: config.PORT,
@@ -14,6 +14,22 @@ const server = app.listen(config.PORT, config.HOST, () => {
     },
     `🚀 Algions Product & Order API service started successfully`
   );
+
+  try {
+    const { pool } = await import('./database/connection.js');
+    const res = await pool.query<{ current_user: string; current_database: string }>(
+      'SELECT current_user, current_database();'
+    );
+    logger.info(
+      {
+        currentUser: res.rows[0]?.current_user,
+        database: res.rows[0]?.current_database
+      },
+      'PostgreSQL least-privilege connection verified'
+    );
+  } catch (err) {
+    logger.warn({ err }, 'Initial database connection probe failed or deferred');
+  }
 });
 
 // Graceful shutdown

@@ -160,12 +160,12 @@ This acceptance ledger documents the explicit, reproducible verification of the 
 - **Primary Status**: **VERIFIED**
 
 #### Gate 13: Database Least-Privilege Role Separation (`roles.sql`)
-- **Assessment Requirement**: Granular PostgreSQL role privileges separating DDL, runtime DML, and read-only backups.
-- **Job Description Competency**: Database security hardening, principle of least privilege.
-- **Implementation Location**: [`apps/api/src/database/roles.sql`](file:///d:/My%20personal/algions/apps/api/src/database/roles.sql).
-- **Actual Test Performed**: Streamed `roles.sql` into running PostgreSQL container; audited table privileges via `\z audit_events`.
-- **Command Used**: `cat apps/api/src/database/roles.sql | docker compose exec -T postgres psql -U algions_user -d algions_db`.
-- **Observed Result**: Created `algions_admin` (DDL), `algions_app` (DML only, append-only on `audit_events` with `SELECT, INSERT`), and `algions_backup` (read-only `SELECT`).
+- **Assessment Requirement**: Granular PostgreSQL role privileges separating DDL migrations, runtime DML, and read-only backups.
+- **Job Description Competency**: Database security hardening, principle of least privilege, zero hardcoded credentials.
+- **Implementation Location**: [`apps/api/src/database/roles.sql`](file:///d:/My%20personal/algions/apps/api/src/database/roles.sql), [`docker-compose.yml`](file:///d:/My%20personal/algions/docker-compose.yml), [`scripts/backup-db.sh`](file:///d:/My%20personal/algions/scripts/backup-db.sh).
+- **Actual Test Performed**: Verified `roles.sql` applies dynamic credentials via `psql` variables without hardcoded secrets; transferred table ownership to `algions_admin` enabling DDL migrations; wired `algions_app` for runtime Docker Compose API; verified `algions_backup` for `pg_dump`.
+- **Command Used**: `docker exec -i algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 -v admin_password=... -v app_password=... -v backup_password=... < apps/api/src/database/roles.sql`.
+- **Observed Result**: Created `algions_admin` (table owner with full DDL), `algions_app` (runtime DML only, append-only on `audit_events`, DDL rejected), and `algions_backup` (read-only `SELECT` for `pg_dump`).
 - **Evidence Path**: [`docs/evidence/devops/final/postgresql_native_backup_restore.txt`](file:///d:/My%20personal/algions/docs/evidence/devops/final/postgresql_native_backup_restore.txt).
 - **Primary Status**: **VERIFIED**
 

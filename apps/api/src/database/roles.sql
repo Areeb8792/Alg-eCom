@@ -7,45 +7,59 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'algions_admin') THEN
-        CREATE ROLE algions_admin WITH LOGIN PASSWORD 'algions_admin_password';
-    ELSE
-        ALTER ROLE algions_admin WITH LOGIN PASSWORD 'algions_admin_password';
+        CREATE ROLE algions_admin WITH LOGIN;
     END IF;
-END $$;
-
--- 2. Runtime Application Role (Least-Privilege DML Only, No DDL, No Role Administration, No Audit Tampering)
-DO $$
-BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'algions_app') THEN
-        CREATE ROLE algions_app WITH LOGIN PASSWORD 'algions_app_password' NOCREATEDB NOCREATEROLE NOINHERIT;
-    ELSE
-        ALTER ROLE algions_app WITH LOGIN PASSWORD 'algions_app_password' NOCREATEDB NOCREATEROLE NOINHERIT;
+        CREATE ROLE algions_app WITH LOGIN NOCREATEDB NOCREATEROLE NOINHERIT;
     END IF;
-END $$;
-
--- 3. Read-Only Backup Role (Dedicated to pg_dump routines, No DDL, No DML modification)
-DO $$
-BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'algions_backup') THEN
-        CREATE ROLE algions_backup WITH LOGIN PASSWORD 'algions_backup_password' NOCREATEDB NOCREATEROLE NOINHERIT;
-    ELSE
-        ALTER ROLE algions_backup WITH LOGIN PASSWORD 'algions_backup_password' NOCREATEDB NOCREATEROLE NOINHERIT;
+        CREATE ROLE algions_backup WITH LOGIN NOCREATEDB NOCREATEROLE NOINHERIT;
     END IF;
 END $$;
 
--- Revoke default public schema creation to enforce least-privilege boundary
+-- Dynamic password assignment via psql variables (-v admin_password=... -v app_password=... -v backup_password=...)
+-- Static credentials are removed from source control to maintain security hygiene.
+\if :{?admin_password}
+  ALTER ROLE algions_admin WITH PASSWORD :'admin_password';
+\endif
+
+\if :{?app_password}
+  ALTER ROLE algions_app WITH PASSWORD :'app_password';
+\endif
+
+\if :{?backup_password}
+  ALTER ROLE algions_backup WITH PASSWORD :'backup_password';
+\endif
+
+-- 2. Transfer table and sequence ownership in schema public to algions_admin
+-- In PostgreSQL, only the table OWNER (or superuser) can perform DDL operations (ALTER TABLE, ADD/DROP COLUMN).
+-- Transferring ownership enables algions_admin to execute automated schema migrations on existing objects.
+DO $$
+DECLARE
+    tbl text;
+    seq text;
+BEGIN
+    FOR tbl IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE format('ALTER TABLE public.%I OWNER TO algions_admin', tbl);
+    END LOOP;
+    FOR seq IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP
+        EXECUTE format('ALTER SEQUENCE public.%I OWNER TO algions_admin', seq);
+    END LOOP;
+END $$;
+
+-- 3. Revoke default public schema creation to enforce least-privilege boundary
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 
--- Grant Schema Usages
+-- 4. Grant Schema Usages
 GRANT USAGE ON SCHEMA public TO algions_admin, algions_app, algions_backup;
 GRANT CREATE, USAGE ON SCHEMA public TO algions_admin;
 
--- Privileges for algions_admin (Full DDL & Schema Management)
+-- 5. Privileges for algions_admin (Full DDL & Schema Management)
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO algions_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO algions_admin;
 
--- Privileges for runtime algions_app:
+-- 6. Privileges for runtime algions_app:
 -- Standard read/write on product, order, and idempotency tables
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE products, orders, order_items, idempotency_keys TO algions_app;
 GRANT SELECT ON TABLE admin_users TO algions_app;
@@ -60,11 +74,11 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO algions_app;
 -- Explicitly block algions_app from creating tables, types, or roles
 REVOKE CREATE ON SCHEMA public FROM algions_app;
 
--- Privileges for algions_backup: Read-only access to all public tables and sequences for pg_dump
+-- 7. Privileges for algions_backup: Read-only access to all public tables and sequences for pg_dump
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO algions_backup;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO algions_backup;
 
--- Set Default Privileges for future tables created by algions_admin
+-- 8. Set Default Privileges for future tables created by algions_admin
 ALTER DEFAULT PRIVILEGES FOR ROLE algions_admin IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO algions_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE algions_admin IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO algions_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE algions_admin IN SCHEMA public GRANT SELECT ON TABLES TO algions_backup;

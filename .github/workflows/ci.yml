@@ -20,7 +20,13 @@ jobs:
       DB_USER: algions_user
       DB_PASSWORD: algions_password
       DB_NAME: algions_db
-      DATABASE_URL: postgresql://algions_user:algions_password@127.0.0.1:5432/algions_db
+      DB_APP_USER: algions_app
+      DB_APP_PASSWORD: algions_app_ci_password_secure
+      DB_MIGRATION_USER: algions_admin
+      DB_MIGRATION_PASSWORD: algions_admin_ci_password_secure
+      DB_BACKUP_USER: algions_backup
+      DB_BACKUP_PASSWORD: algions_backup_ci_password_secure
+      DATABASE_URL: postgresql://algions_app:algions_app_ci_password_secure@127.0.0.1:5432/algions_db
       JWT_SECRET: super_secure_ci_jwt_secret_at_least_32_characters_long
       CORS_ORIGIN: 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:80,http://127.0.0.1:80,http://localhost:4000,http://127.0.0.1:4000,https://localhost,https://127.0.0.1,https://algions.com'
       PORT: '4000'
@@ -80,36 +86,55 @@ jobs:
 
       - name: Initialize Database Schema & Seed
         run: |
-          set +e
-          echo "=== Step 10: Initialize Database Schema & Seed ==="
-          DB_PSQL_OUT=$(docker exec -i -e PGPASSWORD=algions_password algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/schema.sql 2>&1)
-          PSQL_EXIT=$?
-          if [ $PSQL_EXIT -ne 0 ]; then
-            echo "::error title=PSQL_FAILED::psql failed with exit $PSQL_EXIT: $DB_PSQL_OUT"
-            echo "PSQL_FAILED: $DB_PSQL_OUT"
-            exit $PSQL_EXIT
+          echo "=== Step 10: Initialize Database Schema, Least-Privilege Roles & Verify Security Boundary ==="
+          # 1. Apply Schema via bootstrap superuser
+          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 < apps/api/src/database/schema.sql
+          echo "✓ Schema applied successfully."
+
+          # 2. Apply Least-Privilege Roles with dynamic variable password injection (no static credentials in SQL)
+          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d "$DB_NAME" \
+            -v ON_ERROR_STOP=1 \
+            -v admin_password="$DB_MIGRATION_PASSWORD" \
+            -v app_password="$DB_APP_PASSWORD" \
+            -v backup_password="$DB_BACKUP_PASSWORD" \
+            < apps/api/src/database/roles.sql
+          echo "✓ Roles and ownership transfer applied successfully."
+
+          # 3. Verify Table Ownership transferred to algions_admin
+          TABLE_OWNERS=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -t -c "SELECT DISTINCT tableowner FROM pg_tables WHERE schemaname = 'public';" | tr -d ' \r\n')
+          echo "✓ Public table owner in PostgreSQL: ${TABLE_OWNERS}"
+          if [ "$TABLE_OWNERS" != "algions_admin" ]; then
+            echo "::error title=OWNERSHIP_MISMATCH::Expected public table owner to be algions_admin, got '$TABLE_OWNERS'"
+            exit 1
           fi
-          echo "Schema applied successfully."
 
-          docker exec -i -e PGPASSWORD=algions_password algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql
-          echo "Roles applied successfully."
+          # 4. Verify DDL Migration capability for algions_admin (Can execute ALTER TABLE migrations)
+          docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c "ALTER TABLE products ADD COLUMN ci_migration_test_col VARCHAR(32); ALTER TABLE products DROP COLUMN ci_migration_test_col;"
+          echo "✓ Confirmed: algions_admin successfully executed DDL migration on existing table."
 
-          # Live privilege verification: Ensure runtime algions_app cannot CREATE TABLE
-          if docker exec -i -e PGPASSWORD=algions_app_password algions-ci-postgres psql -U algions_app -d algions_db -c "CREATE TABLE unauthorized_privilege_test (id int);" 2>&1 | grep -q "permission denied"; then
+          # 5. Live privilege boundary verification: Ensure runtime algions_app CANNOT execute DDL (CREATE TABLE)
+          if docker exec -i -e PGPASSWORD="$DB_APP_PASSWORD" algions-ci-postgres psql -U "$DB_APP_USER" -d "$DB_NAME" -c "CREATE TABLE unauthorized_privilege_test (id int);" 2>&1 | grep -q "permission denied"; then
             echo "✓ Confirmed: algions_app role cannot create tables (least-privilege boundary verified)."
           else
             echo "::error title=LEAST_PRIVILEGE_VIOLATION::algions_app was unexpectedly able to create tables!"
             exit 1
           fi
 
-          SEED_OUT=$(DATABASE_URL="postgresql://algions_admin:algions_admin_password@127.0.0.1:5432/algions_db" npx tsx apps/api/src/database/seed.ts 2>&1)
-          SEED_EXIT=$?
-          if [ $SEED_EXIT -ne 0 ]; then
-            echo "::error title=SEED_FAILED::seed failed with exit $SEED_EXIT: $SEED_OUT"
-            echo "SEED_FAILED: $SEED_OUT"
-            exit $SEED_EXIT
+          # 6. Live privilege boundary verification: Ensure runtime algions_app CANNOT modify audit_events
+          if docker exec -i -e PGPASSWORD="$DB_APP_PASSWORD" algions-ci-postgres psql -U "$DB_APP_USER" -d "$DB_NAME" -c "UPDATE audit_events SET action = 'tampered';" 2>&1 | grep -qE "permission denied|Security Policy Violation"; then
+            echo "✓ Confirmed: algions_app role cannot update audit_events (immutability boundary verified)."
+          else
+            echo "::error title=AUDIT_TAMPERING_VIOLATION::algions_app was unexpectedly able to update audit_events!"
+            exit 1
           fi
-          echo "Seed completed successfully using algions_admin credentials."
+
+          # 7. Verify algions_backup role can execute pg_dump successfully
+          docker exec -i -e PGPASSWORD="$DB_BACKUP_PASSWORD" algions-ci-postgres pg_dump -U "$DB_BACKUP_USER" -d "$DB_NAME" --schema-only > /dev/null
+          echo "✓ Confirmed: algions_backup role successfully executed pg_dump."
+
+          # 8. Seed Database using algions_admin credentials
+          DATABASE_URL="postgresql://${DB_MIGRATION_USER}:${DB_MIGRATION_PASSWORD}@127.0.0.1:5432/${DB_NAME}" npx tsx apps/api/src/database/seed.ts
+          echo "✓ Seed completed successfully using algions_admin credentials."
 
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
         run: npm test

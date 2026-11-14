@@ -10,6 +10,7 @@ export interface HealthStatus {
     database: {
       status: 'healthy' | 'unhealthy';
       responseTimeMs?: number;
+      user?: string;
       error?: string;
     };
   };
@@ -31,12 +32,14 @@ export class HealthService {
     const start = Date.now();
     let dbStatus: 'healthy' | 'unhealthy' = 'unhealthy';
     let responseTimeMs: number | undefined;
+    let currentUser: string | undefined;
     let errorMessage: string | undefined;
 
     try {
-      // Direct query check with 3-second timeout
-      await pool.query('SELECT 1;');
+      // Direct query check with 3-second timeout and identity inspection
+      const result = await pool.query<{ current_user?: string }>('SELECT current_user, 1;');
       responseTimeMs = Date.now() - start;
+      currentUser = result.rows[0]?.current_user;
       dbStatus = 'healthy';
     } catch (err: unknown) {
       errorMessage = err instanceof Error ? err.message : 'Database ping failed';
@@ -54,6 +57,7 @@ export class HealthService {
         database: {
           status: dbStatus,
           responseTimeMs,
+          user: currentUser,
           error: errorMessage
         }
       }

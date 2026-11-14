@@ -161,15 +161,18 @@ describe('Phase 1 Security: Order Lookup Authentication & Privacy Protection', (
     expect(res.body.data.customer_name).toBe('Sophia Laurent');
   });
 
-  it('8. Customer lookup with matching verification email: returns full unmasked order', async () => {
+  it('8. Customer lookup with matching verification email: returns privacy-masked customer data (full PII reserved for admin)', async () => {
     setupOrderMock();
     const res = await request(app)
       .get(`/api/v1/orders/${mockOrder.id}?email=sophia.laurent@example.com`);
 
     expect(res.status).toBe(200);
-    expect(res.body.data.customer_email).toBe('sophia.laurent@example.com');
-    expect(res.body.data.customer_name).toBe('Sophia Laurent');
-    expect(res.body.data.is_privacy_masked).toBeUndefined();
+    expect(res.body.data.is_privacy_masked).toBe(true);
+    expect(res.body.data.customer_email).not.toBe('sophia.laurent@example.com');
+    expect(res.body.data.customer_email).toContain('****');
+    expect(res.body.data.customer_email).toContain('@example.com');
+    expect(res.body.data.customer_name).not.toBe('Sophia Laurent');
+    expect(res.body.data.customer_name).toContain('***');
   });
 
   it('9. Customer IDOR attempt: mismatched verification email returns HTTP 403 ORDER_ACCESS_DENIED', async () => {
@@ -202,5 +205,26 @@ describe('Phase 1 Security: Order Lookup Authentication & Privacy Protection', (
 
     expect(blockedRes.status).toBe(429);
     expect(blockedRes.body.error.code).toBe('RATE_LIMIT_EXCEEDED');
+  });
+
+  it('11. Missing or invalid verification parameters cannot reveal full order PII', async () => {
+    setupOrderMock();
+    // 11a: Missing verification parameter completely returns privacy masked
+    const anonRes = await request(app).get(`/api/v1/orders/${mockOrder.id}`);
+    expect(anonRes.status).toBe(200);
+    expect(anonRes.body.data.is_privacy_masked).toBe(true);
+    expect(anonRes.body.data.customer_email).toContain('****');
+    expect(anonRes.body.data.customer_name).toContain('***');
+
+    // 11b: Empty string email parameter returns privacy masked
+    const emptyRes = await request(app).get(`/api/v1/orders/${mockOrder.id}?email=`);
+    expect(emptyRes.status).toBe(200);
+    expect(emptyRes.body.data.is_privacy_masked).toBe(true);
+    expect(emptyRes.body.data.customer_email).toContain('****');
+
+    // 11c: Mismatched email parameter returns 403 Forbidden
+    const mismatchRes = await request(app).get(`/api/v1/orders/${mockOrder.id}?email=wrong@example.com`);
+    expect(mismatchRes.status).toBe(403);
+    expect(mismatchRes.body.error.code).toBe('ORDER_ACCESS_DENIED');
   });
 });

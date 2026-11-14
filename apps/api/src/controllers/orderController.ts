@@ -149,24 +149,23 @@ export class OrderController {
         return;
       }
 
-      // 2. Customer Access Verification: Match against order customer_email
+      // 2. Customer Access Verification: If verification email is supplied, enforce exact match
       if (verifyEmail) {
-        if (order.customer_email.toLowerCase() === verifyEmail) {
-          res.status(200).json({ data: order });
+        if (order.customer_email.toLowerCase() !== verifyEmail) {
+          // Email mismatch: Customer attempting to access another customer's order
+          res.status(403).json({
+            error: {
+              code: 'ORDER_ACCESS_DENIED',
+              message: 'The verification email provided does not match the order record.'
+            }
+          });
           return;
         }
-
-        // Email mismatch: Customer attempting to access another customer's order
-        res.status(403).json({
-          error: {
-            code: 'ORDER_ACCESS_DENIED',
-            message: 'The verification email provided does not match the order record.'
-          }
-        });
-        return;
       }
 
-      // 3. Unauthenticated Public Tracking: Mask sensitive PII (email, customer name)
+      // 3. Public Customer Lookups & Tracking: Strictly return privacy-masked data
+      // Knowing or matching an order reference/email does not grant access to full customer PII;
+      // full unmasked customer details are strictly reserved for authenticated administrators.
       const maskedEmail = order.customer_email.replace(/^(.)(.*)(@.*)$/, (_, first, middle, domain) => {
         return `${first}${'*'.repeat(Math.min(middle.length, 4))}${domain}`;
       });

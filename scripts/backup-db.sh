@@ -23,15 +23,16 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
     source "${ROOT_DIR}/.env" || true
 fi
 
-DB_USER="${DB_USER:-algions_user}"
+DB_BACKUP_USER="${DB_BACKUP_USER:-algions_backup}"
+DB_BACKUP_PASSWORD="${DB_BACKUP_PASSWORD:-algions_backup_password}"
 DB_NAME="${DB_NAME:-algions_db}"
 
-echo "[1/4] Executing pg_dump in compressed custom archive format (-Fc)..."
+echo "[1/4] Executing pg_dump in compressed custom archive format (-Fc) as role '${DB_BACKUP_USER}'..."
 
 if docker compose ps -q postgres &>/dev/null; then
-    docker compose exec -T postgres pg_dump -U "${DB_USER}" -d "${DB_NAME}" -Fc > "${BACKUP_FILE}"
+    docker compose exec -T -e PGPASSWORD="${DB_BACKUP_PASSWORD}" postgres pg_dump -U "${DB_BACKUP_USER}" -d "${DB_NAME}" -Fc > "${BACKUP_FILE}"
 elif command -v pg_dump &>/dev/null; then
-    pg_dump -U "${DB_USER}" -d "${DB_NAME}" -Fc -f "${BACKUP_FILE}"
+    PGPASSWORD="${DB_BACKUP_PASSWORD}" pg_dump -U "${DB_BACKUP_USER}" -d "${DB_NAME}" -Fc -f "${BACKUP_FILE}"
 else
     echo "❌ Error: Neither active PostgreSQL container nor host 'pg_dump' utility found."
     echo "To execute native PostgreSQL backups, start the container stack with 'docker compose up -d' or install PostgreSQL client tools."
