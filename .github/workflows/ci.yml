@@ -91,16 +91,25 @@ jobs:
           fi
           echo "Schema applied successfully."
 
-          docker exec -i -e PGPASSWORD=algions_password algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql || true
+          docker exec -i -e PGPASSWORD=algions_password algions-ci-postgres psql -U algions_user -d algions_db -v ON_ERROR_STOP=1 < apps/api/src/database/roles.sql
+          echo "Roles applied successfully."
 
-          SEED_OUT=$(npx tsx apps/api/src/database/seed.ts 2>&1)
+          # Live privilege verification: Ensure runtime algions_app cannot CREATE TABLE
+          if docker exec -i -e PGPASSWORD=algions_app_password algions-ci-postgres psql -U algions_app -d algions_db -c "CREATE TABLE unauthorized_privilege_test (id int);" 2>&1 | grep -q "permission denied"; then
+            echo "✓ Confirmed: algions_app role cannot create tables (least-privilege boundary verified)."
+          else
+            echo "::error title=LEAST_PRIVILEGE_VIOLATION::algions_app was unexpectedly able to create tables!"
+            exit 1
+          fi
+
+          SEED_OUT=$(DATABASE_URL="postgresql://algions_admin:algions_admin_password@127.0.0.1:5432/algions_db" npx tsx apps/api/src/database/seed.ts 2>&1)
           SEED_EXIT=$?
           if [ $SEED_EXIT -ne 0 ]; then
             echo "::error title=SEED_FAILED::seed failed with exit $SEED_EXIT: $SEED_OUT"
             echo "SEED_FAILED: $SEED_OUT"
             exit $SEED_EXIT
           fi
-          echo "Seed completed successfully."
+          echo "Seed completed successfully using algions_admin credentials."
 
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
         run: npm test

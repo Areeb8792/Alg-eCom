@@ -59,9 +59,9 @@ DB_NAME="${TARGET_DB:-${3:-${DB_NAME:-algions_db}}}"
 # [2/4] Perform pg_restore
 echo "[2/4] Restoring PostgreSQL database from archive (-Fc)..."
 if docker compose ps -q postgres &>/dev/null; then
-    docker compose exec -T postgres pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists < "${BACKUP_FILE}" || true
+    docker compose exec -T postgres pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error < "${BACKUP_FILE}"
 elif command -v pg_restore &>/dev/null; then
-    pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists "${BACKUP_FILE}" || true
+    pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error "${BACKUP_FILE}"
 else
     echo "❌ Error: Neither active PostgreSQL container nor host 'pg_restore' utility found."
     echo "To execute native PostgreSQL restores, start the container stack with 'docker compose up -d' or install PostgreSQL client tools."
@@ -70,18 +70,28 @@ fi
 echo "✓ Archive restored."
 
 # [3/4] Verify database contents post-restore
-echo "[3/4] Executing post-restore data verification checks..."
+echo "[3/4] Executing post-restore data and schema integrity verification checks..."
 if docker compose ps -q postgres &>/dev/null; then
-    PRODUCT_COUNT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' ')
-    ORDER_COUNT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' ')
+    TABLE_COUNT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
+    PRODUCT_COUNT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')
+    ORDER_COUNT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' \r\n')
+    SAMPLE_PRODUCT=$(docker compose exec -T postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT name FROM products WHERE is_active = true LIMIT 1;" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//')
 else
-    PRODUCT_COUNT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' ')
-    ORDER_COUNT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' ')
+    TABLE_COUNT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
+    PRODUCT_COUNT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')
+    ORDER_COUNT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' \r\n')
+    SAMPLE_PRODUCT=$(psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT name FROM products WHERE is_active = true LIMIT 1;" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//')
 fi
 
-echo "✓ Verified Database Records:"
-echo "  - Products in Catalog: ${PRODUCT_COUNT}"
-echo "  - Orders Recorded:     ${ORDER_COUNT}"
+if [[ -z "${TABLE_COUNT}" || "${TABLE_COUNT}" -lt 4 ]]; then
+    echo "❌ Post-restore verification failed: Expected schema tables not found (found ${TABLE_COUNT:-0})."
+    exit 1
+fi
+
+echo "✓ Verified Database Schema & Records:"
+echo "  - Schema Public Tables: ${TABLE_COUNT}"
+echo "  - Products in Catalog:  ${PRODUCT_COUNT} (Sample active product: '${SAMPLE_PRODUCT}')"
+echo "  - Orders Recorded:      ${ORDER_COUNT}"
 
 # [4/4] Verify API Readiness Probe
 echo "[4/4] Testing API readiness against restored database..."

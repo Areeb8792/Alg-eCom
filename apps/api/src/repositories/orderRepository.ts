@@ -114,7 +114,7 @@ export class OrderRepository {
       order.items = itemsRes.rows;
       return order;
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         const found = IN_MEMORY_ORDERS.get(orderId);
         return found || null;
       }
@@ -148,7 +148,7 @@ export class OrderRepository {
       order.items = itemsRes.rows;
       return order;
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         for (const o of IN_MEMORY_ORDERS.values()) {
           if (o.order_reference.toUpperCase() === reference.toUpperCase()) {
             return o;
@@ -172,9 +172,11 @@ export class OrderRepository {
     try {
       client = await pool.connect();
     } catch (err) {
-      if (config.NODE_ENV === 'test') throw err;
-      // In dev fallback mode when Postgres is not running:
-      return this.createOrderInMemory(params);
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
+        // In dev fallback mode when Postgres is not running:
+        return this.createOrderInMemory(params);
+      }
+      throw err;
     }
 
     try {

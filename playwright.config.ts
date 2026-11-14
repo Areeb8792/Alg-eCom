@@ -25,6 +25,10 @@ export default defineConfig({
       url: 'http://127.0.0.1:4000/api/v1/health/live',
       reuseExistingServer: true,
       timeout: 30000,
+      env: {
+        ALLOW_IN_MEMORY_FALLBACK: 'true',
+        NODE_ENV: 'development',
+      },
     },
     {
       command: 'npm run dev:web',

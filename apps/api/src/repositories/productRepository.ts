@@ -54,7 +54,7 @@ export class ProductRepository {
 
       return { products: listRes.rows, total };
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         let filtered = IN_MEMORY_PRODUCTS.filter((p) => p.is_active);
         if (params.category) {
           filtered = filtered.filter((p) => p.category.toUpperCase() === params.category?.toUpperCase());
@@ -84,7 +84,7 @@ export class ProductRepository {
       const res = client ? await client.query<Product>(sql, [idOrSlug]) : await query<Product>(sql, [idOrSlug]);
       return res.rows[0] || null;
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         const found = IN_MEMORY_PRODUCTS.find((p) => p.id === idOrSlug || p.slug === idOrSlug);
         return found || null;
       }
@@ -110,7 +110,7 @@ export class ProductRepository {
       const res = await client.query<Product>(sql, [quantity, productId]);
       return res.rows[0] || null;
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         const p = IN_MEMORY_PRODUCTS.find((item) => item.id === productId);
         if (p && p.stock >= quantity && p.is_active) {
           p.stock -= quantity;
@@ -168,7 +168,7 @@ export class ProductRepository {
       const res = client ? await client.query<Product>(sql, values) : await query<Product>(sql, values);
       return res.rows[0] || null;
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         const p = IN_MEMORY_PRODUCTS.find((item) => item.id === id);
         if (p) {
           Object.assign(p, updates, { updated_at: new Date().toISOString() });
@@ -193,7 +193,7 @@ export class ProductRepository {
       const res = client ? await client.query<Product>(sql, [adjustment, id]) : await query<Product>(sql, [adjustment, id]);
       return res.rows[0] || null;
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         const p = IN_MEMORY_PRODUCTS.find((item) => item.id === id);
         if (p && p.stock + adjustment >= 0) {
           p.stock += adjustment;

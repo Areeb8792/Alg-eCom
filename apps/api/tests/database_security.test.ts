@@ -41,4 +41,11 @@ describe('Database Security & Least-Privilege Role Architecture', () => {
     expect(rolesSql).not.toMatch(/CREATE ROLE algions_app.*SUPERUSER/i);
     expect(rolesSql).not.toMatch(/ALTER ROLE algions_app.*SUPERUSER/i);
   });
+
+  it('revokes schema creation and DDL permissions from algions_app', () => {
+    expect(rolesSql).toContain('REVOKE CREATE ON SCHEMA public FROM PUBLIC;');
+    expect(rolesSql).toContain('REVOKE CREATE ON SCHEMA public FROM algions_app;');
+    expect(rolesSql).not.toContain('GRANT CREATE ON SCHEMA public TO algions_app');
+    expect(rolesSql).not.toContain('GRANT ALL PRIVILEGES ON SCHEMA public TO algions_app');
+  });
 });

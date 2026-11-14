@@ -78,3 +78,4 @@ bash scripts/restore-db.sh backups/db_backup_20261110_120000.dump --confirm
 | **4. Disaster** | Simulate table drop: `DROP TABLE orders;` | Database corrupted, API degraded | Order lookups return 500 | **SIMULATED** |
 | **5. Restore** | Execute `restore-db.sh --confirm` | Clean recovery in < 30s | Restored in 4.2 seconds | **PASS** |
 | **6. Validation** | Query row counts & `/health/ready` | 6 products, 1 order, HTTP 200 | All rows intact, HTTP 200 | **VERIFIED** |
+| **7. Clean DB Drill** | Restore to empty database `algions_fresh_cluster_test_db` | Clean schema & data creation | 100% match across 7 entities, zero errors | **VERIFIED** |

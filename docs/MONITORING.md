@@ -78,6 +78,11 @@ log_format json_analytics escape=json '{'
 
 ## 3. Prometheus Metrics Instrumentation (`/api/v1/metrics`)
 
+Prometheus operates in pull mode with a 10s scrape interval configured in `infra/prometheus/prometheus.yml`. It scrapes two dedicated targets:
+- `algions-api` (`api:4000/api/v1/metrics`): Application runtime telemetry and business domain counters.
+- `prometheus` (`localhost:9090/metrics`): Prometheus server self-health and scrape statistics.
+*(Note: Prometheus monitors application and server telemetry via HTTP scrape endpoints; it does not scrape host sockets or uninstrumented containers).*
+
 The API exposes a Prometheus-compliant text format endpoint (`Content-Type: text/plain; version=0.0.4`) at `/api/v1/metrics`. Path variables are normalized (e.g. `/api/v1/products/:id`) to prevent metric cardinality explosion.
 
 | Metric Identifier | Metric Type | Description |
@@ -97,14 +102,16 @@ The API exposes a Prometheus-compliant text format endpoint (`Content-Type: text
 
 ## 4. Grafana Operational Dashboard
 
-The Grafana configuration (`infra/grafana/dashboards/algions_overview.json`) automatically provisions on startup with 6 real-time panels:
+The Grafana configuration (`infra/grafana/dashboards/algions_overview.json`) automatically provisions on startup with 8 real-time operational panels:
 
 1. **API Uptime Panel**: Stat visualizer querying `process_uptime_seconds` with color thresholds (green >= 60s, red otherwise).
 2. **PostgreSQL Connectivity Panel**: Stat indicator querying `database_up` mapping `1` to `HEALTHY` (green) and `0` to `DOWN` (red).
 3. **Total Orders Placed Panel**: Stat visualizer querying `orders_created_total`.
 4. **Idempotent Replays Prevented Panel**: Stat visualizer querying `orders_idempotent_replayed_total`.
-5. **HTTP Request Rate & Status Panel**: Timeseries graph plotting `rate(http_requests_total[1m])` grouped by endpoint and HTTP status code.
-6. **Memory Usage Panel**: Timeseries graph comparing `process_resident_memory_bytes` (RSS) against `process_heap_used_bytes`.
+5. **HTTP Request Rate by Endpoint & Status Panel**: Timeseries graph plotting `rate(http_requests_total[1m])` grouped by endpoint and HTTP status code.
+6. **Memory Usage (Resident RSS vs Heap) Panel**: Timeseries graph comparing `process_resident_memory_bytes` (RSS) against `process_heap_used_bytes`.
+7. **HTTP Latency Distribution (p95 & Average) Panel**: Timeseries graph calculating p95 latency via `histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))` alongside average request duration.
+8. **Administrative Stock Adjustments & Audit Volume Panel**: Timeseries graph plotting cumulative stock adjustment rate via `stock_adjustments_total`.
 
 Accessing Grafana:
 - Port: `3001` (mapped to internal container port 3000)

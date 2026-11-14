@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import { OrderService } from '../services/orderService.js';
 import { createOrderSchema } from '../validators/index.js';
 import { recordOrderCreated, recordOrderReplayed } from '../metrics/prometheus.js';
+import { config } from '../config/index.js';
+import { AdminJwtPayload } from '../middleware/auth.js';
 import {
   IdempotencyConflictError,
   IdempotencyInProgressError,
@@ -84,7 +87,7 @@ export class OrderController {
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      const verifyEmail = (req.query.email as string || '').toLowerCase().trim();
+      const verifyEmail = ((req.query.email as string) || '').toLowerCase().trim();
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
       const order = isUUID
@@ -101,21 +104,76 @@ export class OrderController {
         return;
       }
 
-      // Check privacy: If client provides matching email or has admin header, reveal full PII
-      const hasEmailMatch = verifyEmail && order.customer_email.toLowerCase() === verifyEmail;
+      // 1. Strict Administrator Authentication Verification
+      let isAdmin = false;
       const authHeader = req.headers.authorization;
-      const isAdmin = authHeader && authHeader.startsWith('Bearer ');
 
-      if (hasEmailMatch || isAdmin) {
+      if (authHeader) {
+        if (!authHeader.startsWith('Bearer ')) {
+          res.status(401).json({
+            error: {
+              code: 'UNAUTHORIZED',
+              message: 'Authentication required. Malformed Bearer token.'
+            }
+          });
+          return;
+        }
+
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, config.JWT_SECRET) as AdminJwtPayload;
+          if (decoded.role !== 'ADMIN') {
+            res.status(403).json({
+              error: {
+                code: 'FORBIDDEN',
+                message: 'Insufficient permissions. Admin role required.'
+              }
+            });
+            return;
+          }
+          isAdmin = true;
+        } catch {
+          res.status(401).json({
+            error: {
+              code: 'INVALID_TOKEN',
+              message: 'Invalid, malformed, or expired authentication token.'
+            }
+          });
+          return;
+        }
+      }
+
+      // If verified as administrator via valid JWT, return full unmasked order
+      if (isAdmin) {
         res.status(200).json({ data: order });
         return;
       }
 
-      // Mask PII for public unverified lookup to protect customer privacy
+      // 2. Customer Access Verification: Match against order customer_email
+      if (verifyEmail) {
+        if (order.customer_email.toLowerCase() === verifyEmail) {
+          res.status(200).json({ data: order });
+          return;
+        }
+
+        // Email mismatch: Customer attempting to access another customer's order
+        res.status(403).json({
+          error: {
+            code: 'ORDER_ACCESS_DENIED',
+            message: 'The verification email provided does not match the order record.'
+          }
+        });
+        return;
+      }
+
+      // 3. Unauthenticated Public Tracking: Mask sensitive PII (email, customer name)
       const maskedEmail = order.customer_email.replace(/^(.)(.*)(@.*)$/, (_, first, middle, domain) => {
         return `${first}${'*'.repeat(Math.min(middle.length, 4))}${domain}`;
       });
-      const maskedName = order.customer_name.split(' ').map((n) => `${n[0]}***`).join(' ');
+      const maskedName = order.customer_name
+        .split(' ')
+        .map((n) => (n.length > 1 ? `${n[0]}***` : n))
+        .join(' ');
 
       res.status(200).json({
         data: {

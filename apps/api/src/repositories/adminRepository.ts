@@ -35,7 +35,7 @@ export class AdminRepository {
       );
       return res.rows[0] || null;
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         if (username === config.ADMIN_USERNAME) {
           const salt = bcrypt.genSaltSync(10);
           return {
@@ -80,7 +80,7 @@ export class AdminRepository {
       );
       return res.rows[0];
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         const item: AuditEvent = {
           id: `audit-${Date.now()}`,
           actor_id: event.actorId || null,
@@ -111,7 +111,7 @@ export class AdminRepository {
       );
       return res.rows;
     } catch (err) {
-      if (config.NODE_ENV !== 'test') {
+      if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' && config.NODE_ENV === 'development') {
         return IN_MEMORY_AUDIT_EVENTS.slice(0, limit);
       }
       throw err;

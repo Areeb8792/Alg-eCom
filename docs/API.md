@@ -165,8 +165,14 @@ Creates a transactional order, deducts stock atomically, freezes product snapsho
   - `409 Conflict`: `IDEMPOTENCY_CONFLICT` (reused key with different payload) or `IDEMPOTENCY_IN_PROGRESS`
 
 #### `GET /api/v1/orders/:id`
-Retrieves an order by internal UUID or public order reference (e.g. `HW-2024-X8F2K1`).
-- **Response**: `200 OK` or `404 Not Found`
+Retrieves an order by internal UUID or public order reference (e.g. `HW-2026-X8F2K1`).
+- **Access & Privacy Controls**:
+  - **Administrator** (`Authorization: Bearer <admin_jwt>`): Full order details including complete customer PII (`customer_email`, `customer_name`).
+  - **Customer Self-Service** (`?email=<customer_email>`): If the query parameter matches the order's customer email, full order details are returned.
+  - **Unauthenticated Public Lookup**: If no auth or email is provided, order details are returned with customer PII masked (e.g., `s****@example.com`, `S*** L***`) to protect customer privacy against IDOR.
+  - **Mismatched Email**: If `?email` does not match the order, returns `403 Forbidden` (`FORBIDDEN_ORDER_ACCESS`).
+  - **Rate Limiting**: Strictly throttled via sliding-window limiter (`30 requests per minute per IP`) returning `429 Too Many Requests` on abuse.
+- **Response**: `200 OK`, `403 Forbidden`, `404 Not Found`, or `429 Too Many Requests`
 
 ---
 

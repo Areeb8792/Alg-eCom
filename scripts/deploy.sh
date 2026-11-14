@@ -30,7 +30,10 @@ export WEB_IMAGE="${WEB_IMAGE_NAME:-algions-web}:${IMAGE_TAG}"
 # 2. Run Database Migrations safely before updating API
 echo "[2/4] Executing backward-compatible database migrations..."
 if docker compose ps -q api &>/dev/null; then
-    docker compose exec -T api node dist/database/migrate.js || true
+    if ! docker compose exec -T api node dist/database/migrate.js; then
+        echo "❌ FATAL: Database migration failed. Halting deployment to prevent schema inconsistency."
+        exit 1
+    fi
 fi
 
 # 3. Deploy New Container Instances
