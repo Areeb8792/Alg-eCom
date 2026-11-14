@@ -161,8 +161,8 @@ jobs:
 
           # 10. Full Backup & Restore Drill: Execute pg_dump -Fc with table data as algions_backup, restore into disposable DB
           echo "=== Executing Full Disaster-Recovery Backup Drill via algions_backup ==="
-          docker exec -i -e PGPASSWORD="$DB_BACKUP_PASSWORD" algions-ci-postgres pg_dump -U "$DB_BACKUP_USER" -d "$DB_NAME" -Fc > /tmp/ci_full_backup.dump
-          BACKUP_SIZE=$(wc -c < /tmp/ci_full_backup.dump | tr -d ' ')
+          docker exec -e PGPASSWORD="$DB_BACKUP_PASSWORD" algions-ci-postgres pg_dump -U "$DB_BACKUP_USER" -d "$DB_NAME" -Fc -f /tmp/ci_full_backup.dump
+          BACKUP_SIZE=$(docker exec algions-ci-postgres wc -c /tmp/ci_full_backup.dump | awk '{print $1}')
           echo "✓ Backup archive created (${BACKUP_SIZE} bytes)."
           if [ "$BACKUP_SIZE" -lt 1000 ]; then
             echo "::error title=BACKUP_TOO_SMALL::Backup archive is smaller than expected 1KB (${BACKUP_SIZE} bytes)!"
@@ -170,26 +170,27 @@ jobs:
           fi
 
           # Create disposable test database owned by algions_admin (never modifying active algions_db)
-          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS algions_ci_disposable_restore_db; CREATE DATABASE algions_ci_disposable_restore_db OWNER algions_admin;"
+          docker exec -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS algions_ci_disposable_restore_db; CREATE DATABASE algions_ci_disposable_restore_db OWNER algions_admin;"
           echo "✓ Created disposable restoration target database: algions_ci_disposable_restore_db."
 
           # Restore using algions_admin into disposable database
-          docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db --no-owner < /tmp/ci_full_backup.dump || true
+          docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres pg_restore -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db --no-owner /tmp/ci_full_backup.dump
           echo "✓ Restored backup archive into disposable database."
 
           # Verify restored records and queries in disposable database
-          RESTORED_PRODUCTS=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM products;")
-          RESTORED_ADMINS=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM admin_users;")
-          RESTORED_AUDIT=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM audit_events;")
-          SAMPLE_PROD=$(docker exec -i -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT name FROM products WHERE slug = 'statement-puffer';")
+          RESTORED_PRODUCTS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM products;")
+          RESTORED_ADMINS=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM admin_users;")
+          RESTORED_AUDIT=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT COUNT(*) FROM audit_events;")
+          SAMPLE_PROD=$(docker exec -e PGPASSWORD="$DB_MIGRATION_PASSWORD" algions-ci-postgres psql -U "$DB_MIGRATION_USER" -d algions_ci_disposable_restore_db -t -A -c "SELECT name FROM products WHERE slug = 'statement-puffer';")
           echo "✓ Verified restored records in disposable DB: products=${RESTORED_PRODUCTS}, admins=${RESTORED_ADMINS}, audit_events=${RESTORED_AUDIT}, sample='${SAMPLE_PROD}'"
           if [ "$RESTORED_PRODUCTS" -lt 3 ] || [ "$SAMPLE_PROD" != "Statement Puffer" ]; then
             echo "::error title=RESTORE_DATA_MISMATCH::Restored database records did not match expected seed data!"
             exit 1
           fi
 
-          # Clean up disposable database
-          docker exec -i -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "DROP DATABASE algions_ci_disposable_restore_db;"
+          # Clean up disposable database and container backup artifact
+          docker exec -e PGPASSWORD="$DB_PASSWORD" algions-ci-postgres psql -U "$DB_USER" -d postgres -c "DROP DATABASE algions_ci_disposable_restore_db;"
+          docker exec algions-ci-postgres rm -f /tmp/ci_full_backup.dump
           echo "✓ Disposable test database dropped cleanly. Active database '${DB_NAME}' remains persistent and untouched."
 
       - name: Execute Automated Test Suite (Unit, Idempotency, Concurrency)
