@@ -5,6 +5,8 @@ import { createOrderSchema } from '../validators/index.js';
 import { recordOrderCreated, recordOrderReplayed } from '../metrics/prometheus.js';
 import { config } from '../config/index.js';
 import { AdminJwtPayload } from '../middleware/auth.js';
+import { emailService } from '../services/emailService.js';
+import { logger } from '../logging/logger.js';
 import {
   IdempotencyConflictError,
   IdempotencyInProgressError,
@@ -30,6 +32,19 @@ export class OrderController {
       }
 
       recordOrderCreated();
+
+      // Dispatch order confirmation email via configured EmailService (non-blocking)
+      emailService.sendOrderConfirmationEmail(
+        result.order.customer_email,
+        result.order.customer_name,
+        {
+          reference: result.order.order_reference,
+          totalCents: result.order.subtotal_cents,
+          currency: result.order.currency
+        }
+      ).catch((err) => {
+        logger.error({ err, orderId: result.order.id }, 'Order confirmation email dispatch failed');
+      });
 
       res.status(201).json({
         data: {

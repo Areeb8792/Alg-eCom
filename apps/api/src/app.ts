@@ -1,9 +1,11 @@
 import express, { Express } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { requestCorrelationMiddleware } from './middleware/requestLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiRouter } from './routes/index.js';
 import { config, Config } from './config/index.js';
+import { getDevEmails, getDevEmailById } from './services/emailService.js';
 
 export function createApp(appConfig: Config = config): Express {
   const app = express();
@@ -47,11 +49,40 @@ export function createApp(appConfig: Config = config): Express {
   };
 
   app.use(cors({ origin: corsOrigin, credentials: true }));
+  app.use(cookieParser());
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
   // Correlation & structured request logging
   app.use(requestCorrelationMiddleware);
+
+  // Development Email Preview Routes (Restricted strictly to non-production environments)
+  if (appConfig.NODE_ENV !== 'production') {
+    app.get('/dev/emails', (_req, res) => {
+      res.status(200).json({
+        data: getDevEmails()
+      });
+    });
+
+    app.get('/dev/emails/:id', (req, res) => {
+      const email = getDevEmailById(req.params.id);
+      if (!email) {
+        res.status(404).json({
+          error: {
+            code: 'EMAIL_NOT_FOUND',
+            message: `No development preview email with ID "${req.params.id}" found.`
+          }
+        });
+        return;
+      }
+      if (req.accepts('html')) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.status(200).send(email.html);
+      } else {
+        res.status(200).json({ data: email });
+      }
+    });
+  }
 
   // Mount API endpoints
   app.use('/api/v1', apiRouter);

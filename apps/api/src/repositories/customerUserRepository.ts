@@ -81,7 +81,7 @@ export class CustomerUserRepository {
 
   private isDbDirectFallback(): boolean {
     return (
-      (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' || config.NODE_ENV === 'test') &&
+      (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true' || config.NODE_ENV === 'test' || config.NODE_ENV === 'development') &&
       CustomerUserRepository.isDbAvailable === false
     );
   }

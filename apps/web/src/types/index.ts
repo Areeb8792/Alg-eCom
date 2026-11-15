@@ -1,3 +1,49 @@
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  sku: string;
+  size: string;
+  color: string;
+  color_hex: string;
+  price_cents?: number | null;
+  stock: number;
+  is_active: boolean;
+}
+
+export interface ProductImage {
+  id: string;
+  product_id: string;
+  variant_id?: string | null;
+  image_url: string;
+  alt_text?: string;
+  is_primary: boolean;
+  sort_order: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id?: string | null;
+  description?: string;
+  image_url?: string;
+  sort_order: number;
+  is_active: boolean;
+  children?: Category[];
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  slug: string;
+  tagline?: string;
+  description?: string;
+  editorial_banner_url?: string;
+  is_featured: boolean;
+  sort_order: number;
+  product_count?: number;
+}
+
 export interface Product {
   id: string;
   sku: string;
@@ -5,13 +51,41 @@ export interface Product {
   name: string;
   description: string;
   category: string;
+  category_id?: string | null;
+  collection_id?: string | null;
+  collection_name?: string | null;
+  collection_slug?: string | null;
+  fit_type?: string;
+  fabric_weight?: string;
+  composition?: string;
+  country_of_origin?: string;
+  care_instructions?: string;
+  rating_avg?: number;
+  rating_count?: number;
   price_cents: number;
   currency: string;
   stock: number;
   is_active: boolean;
   image_url: string;
+  variants?: ProductVariant[];
+  images?: ProductImage[];
   created_at: string;
   updated_at: string;
+}
+
+export interface ProductFilterParams {
+  category?: string;
+  collection?: string;
+  size?: string;
+  color?: string;
+  fit?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
+  search?: string;
+  sort?: 'newest' | 'price_asc' | 'price_desc' | 'popularity' | 'rating';
+  page?: number;
+  limit?: number;
 }
 
 export interface CartItem {

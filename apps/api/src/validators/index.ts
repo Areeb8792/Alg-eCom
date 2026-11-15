@@ -15,7 +15,16 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 
 export const productQuerySchema = z.object({
   category: z.string().optional(),
+  collection: z.string().optional(),
+  size: z.string().optional(),
+  color: z.string().optional(),
+  fit: z.string().optional(),
+  minPrice: z.string().optional().transform((v) => (v ? parseInt(v, 10) : undefined)),
+  maxPrice: z.string().optional().transform((v) => (v ? parseInt(v, 10) : undefined)),
+  inStockOnly: z.string().optional().transform((v) => v === 'true' || v === '1'),
   search: z.string().optional(),
+  q: z.string().optional(),
+  sort: z.enum(['newest', 'price_asc', 'price_desc', 'popularity', 'rating']).optional(),
   page: z.string().optional().transform((v) => (v ? Math.max(1, parseInt(v, 10)) : 1)),
   limit: z.string().optional().transform((v) => (v ? Math.min(100, Math.max(1, parseInt(v, 10))) : 20))
 });

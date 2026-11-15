@@ -8,9 +8,19 @@ export class ProductController {
   getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const validatedQuery = productQuerySchema.parse(req.query);
+      const search = validatedQuery.search || validatedQuery.q;
+
       const result = await this.service.getProducts({
         category: validatedQuery.category,
-        search: validatedQuery.search,
+        collection: validatedQuery.collection,
+        size: validatedQuery.size,
+        color: validatedQuery.color,
+        fit: validatedQuery.fit,
+        minPrice: validatedQuery.minPrice,
+        maxPrice: validatedQuery.maxPrice,
+        inStockOnly: validatedQuery.inStockOnly,
+        search,
+        sort: validatedQuery.sort,
         page: validatedQuery.page,
         limit: validatedQuery.limit
       });
@@ -41,6 +51,40 @@ export class ProductController {
 
       res.status(200).json({
         data: product
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getCategories = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const categories = await this.service.getCategories();
+      res.status(200).json({
+        data: categories
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getCollections = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const collections = await this.service.getCollections();
+      res.status(200).json({
+        data: collections
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getRecommendations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.customerUser?.userId;
+      const recommendations = await this.service.getRecommendations(userId);
+      res.status(200).json({
+        data: recommendations
       });
     } catch (error) {
       next(error);

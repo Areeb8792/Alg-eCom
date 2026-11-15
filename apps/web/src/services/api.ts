@@ -1,6 +1,25 @@
-import { Product, Order, AuditEvent, HealthCheckResponse, CustomerUser, CustomerPreferences, CustomerAddress, CustomerAuthResponse } from '../types/index.js';
+import {
+  Product,
+  Category,
+  Collection,
+  ProductFilterParams,
+  Order,
+  AuditEvent,
+  HealthCheckResponse,
+  CustomerUser,
+  CustomerPreferences,
+  CustomerAddress,
+  CustomerAuthResponse
+} from '../types/index.js';
 
 const API_BASE = '/api/v1';
+
+// CSRF double-submit token retrieval from client cookie
+export function getCsrfTokenFromCookie(): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  const match = document.cookie.match(new RegExp('(^|;\\s*)algions_csrf_token=([^;]*)'));
+  return match ? decodeURIComponent(match[2]) : undefined;
+}
 
 // Customer Identity & Onboarding APIs (Season 04)
 export async function registerCustomer(data: {
@@ -11,6 +30,7 @@ export async function registerCustomer(data: {
 }): Promise<CustomerAuthResponse> {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
@@ -27,6 +47,7 @@ export async function loginCustomer(data: {
 }): Promise<CustomerAuthResponse> {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
@@ -37,14 +58,41 @@ export async function loginCustomer(data: {
   return json.data;
 }
 
+export async function refreshCustomerSession(): Promise<CustomerAuthResponse> {
+  const csrf = getCsrfTokenFromCookie();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
+  }
+
+  const res = await fetch(`${API_BASE}/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: JSON.stringify({})
+  });
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.error?.message || 'Session refresh failed');
+  }
+  return json.data;
+}
+
 export async function logoutCustomer(token?: string, refreshToken?: string): Promise<void> {
   if (!token) return;
+  const csrf = getCsrfTokenFromCookie();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  };
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
+  }
+
   await fetch(`${API_BASE}/auth/logout`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
+    credentials: 'include',
+    headers,
     body: JSON.stringify({ refreshToken })
   }).catch(() => {});
 }
@@ -210,15 +258,66 @@ export async function deleteCustomerAddress(token: string, addressId: string): P
 }
 
 
-export async function fetchProducts(category?: string, search?: string): Promise<{ products: Product[]; total: number }> {
-  const params = new URLSearchParams();
-  if (category && category !== 'ALL') params.append('category', category);
-  if (search) params.append('search', search);
+export async function fetchCategories(): Promise<Category[]> {
+  const res = await fetch(`${API_BASE}/categories`);
+  if (!res.ok) throw new Error(`Failed to load categories: ${res.statusText}`);
+  const json = await res.json();
+  return json.data;
+}
 
-  const res = await fetch(`${API_BASE}/products?${params.toString()}`);
+export async function fetchCollections(): Promise<Collection[]> {
+  const res = await fetch(`${API_BASE}/collections`);
+  if (!res.ok) throw new Error(`Failed to load collections: ${res.statusText}`);
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchRecommendations(token?: string): Promise<Product[]> {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const res = await fetch(`${API_BASE}/recommendations`, { headers });
+  if (!res.ok) throw new Error(`Failed to load recommendations: ${res.statusText}`);
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchProducts(
+  filterOrCategory?: string | ProductFilterParams,
+  search?: string
+): Promise<{ products: Product[]; total: number; totalPages?: number }> {
+  const params = new URLSearchParams();
+
+  if (typeof filterOrCategory === 'object' && filterOrCategory !== null) {
+    const filters = filterOrCategory;
+    if (filters.category && filters.category !== 'ALL') params.append('category', filters.category);
+    if (filters.collection) params.append('collection', filters.collection);
+    if (filters.size) params.append('size', filters.size);
+    if (filters.color) params.append('color', filters.color);
+    if (filters.fit) params.append('fit', filters.fit);
+    if (filters.minPrice !== undefined) params.append('minPrice', String(filters.minPrice));
+    if (filters.maxPrice !== undefined) params.append('maxPrice', String(filters.maxPrice));
+    if (filters.inStockOnly) params.append('inStockOnly', 'true');
+    if (filters.search) params.append('search', filters.search);
+    if (filters.sort) params.append('sort', filters.sort);
+    if (filters.page) params.append('page', String(filters.page));
+    if (filters.limit) params.append('limit', String(filters.limit));
+  } else {
+    if (filterOrCategory && filterOrCategory !== 'ALL') params.append('category', filterOrCategory);
+    if (search) params.append('search', search);
+  }
+
+  const queryStr = params.toString();
+  const url = queryStr ? `${API_BASE}/products?${queryStr}` : `${API_BASE}/products`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to load products: ${res.statusText}`);
   const json = await res.json();
-  return { products: json.data, total: json.pagination?.total || json.data.length };
+  return {
+    products: json.data,
+    total: json.pagination?.total || json.data.length,
+    totalPages: json.pagination?.totalPages || 1
+  };
 }
 
 export async function fetchProduct(id: string): Promise<Product> {

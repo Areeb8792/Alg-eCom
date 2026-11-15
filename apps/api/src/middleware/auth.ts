@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
 import { logger } from '../logging/logger.js';
+import { CustomerUserRepository } from '../repositories/customerUserRepository.js';
 
 export interface AdminJwtPayload {
   userId: string;
@@ -120,4 +121,35 @@ export function optionalCustomerAuth(req: Request, _res: Response, next: NextFun
     // Optional token - continue as unauthenticated guest
   }
   next();
+}
+
+export async function requireVerifiedCustomerAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  requireCustomerAuth(req, res, async () => {
+    if (!req.customerUser) return;
+    try {
+      const userRepo = new CustomerUserRepository();
+      const user = await userRepo.findById(req.customerUser.userId);
+      if (!user) {
+        res.status(401).json({
+          error: {
+            code: 'ACCOUNT_NOT_FOUND',
+            message: 'Customer account was not found.'
+          }
+        });
+        return;
+      }
+      if (!user.is_verified) {
+        res.status(403).json({
+          error: {
+            code: 'EMAIL_VERIFICATION_REQUIRED',
+            message: 'Email verification is mandatory to complete orders and protected checkout operations. Please verify your email via the link sent to your address or request a new verification email.'
+          }
+        });
+        return;
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
 }

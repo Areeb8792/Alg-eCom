@@ -5,7 +5,7 @@ import { OrderController } from '../controllers/orderController.js';
 import { AdminController } from '../controllers/adminController.js';
 import { CustomerAuthController } from '../controllers/customerAuthController.js';
 import { CustomerUserController } from '../controllers/customerUserController.js';
-import { requireAdminAuth, requireCustomerAuth } from '../middleware/auth.js';
+import { requireAdminAuth, requireCustomerAuth, optionalCustomerAuth } from '../middleware/auth.js';
 import { orderLookupLimiter } from '../middleware/rateLimiter.js';
 
 export const apiRouter = Router();
@@ -42,7 +42,10 @@ apiRouter.post('/user/addresses', requireCustomerAuth, customerUserController.ad
 apiRouter.patch('/user/addresses/:id', requireCustomerAuth, customerUserController.updateAddress);
 apiRouter.delete('/user/addresses/:id', requireCustomerAuth, customerUserController.deleteAddress);
 
-// Catalog / Products
+// Catalog / Products, Categories & Collections
+apiRouter.get('/categories', productController.getCategories);
+apiRouter.get('/collections', productController.getCollections);
+apiRouter.get('/recommendations', optionalCustomerAuth, productController.getRecommendations);
 apiRouter.get('/products', productController.getAll);
 apiRouter.get('/products/:id', productController.getById);
 

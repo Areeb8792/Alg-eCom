@@ -31,8 +31,27 @@ export interface DispatchedEmailRecord {
   previewLabel: string;
 }
 
+// Security: HTML-escape user-controlled values before embedding in email templates
+export function escapeHtml(unsafe: string | null | undefined): string {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Development preview store (accessible in dev/test for inspection)
 export const IN_MEMORY_DEV_EMAILS: DispatchedEmailRecord[] = [];
+
+export function getDevEmails(): DispatchedEmailRecord[] {
+  return [...IN_MEMORY_DEV_EMAILS];
+}
+
+export function getDevEmailById(id: string): DispatchedEmailRecord | undefined {
+  return IN_MEMORY_DEV_EMAILS.find((e) => e.id === id);
+}
 
 export class EmailService {
   private transporter: Transporter | null = null;
@@ -90,22 +109,48 @@ export class EmailService {
           html,
         });
 
-        const isAccepted = Array.isArray(info.accepted) && info.accepted.length > 0;
-        const isQueued = Array.isArray(info.pending) && info.pending.length > 0;
-        const deliveryStatus: EmailDeliveryStatus = isQueued
-          ? 'queued'
-          : isAccepted || info.messageId
-          ? 'sent'
-          : 'failed';
+        const accepted = Array.isArray(info.accepted) ? info.accepted.map(String) : [];
+        const rejected = Array.isArray(info.rejected) ? info.rejected.map(String) : [];
+        const pending = Array.isArray(info.pending) ? info.pending.map(String) : [];
+        const normalizedTo = to.toLowerCase();
+
+        // Exact SMTP Delivery Classification
+        const isExplicitlyRejected = rejected.some((r) => r.toLowerCase().includes(normalizedTo)) || rejected.length > 0;
+        const isQueued =
+          pending.some((p) => p.toLowerCase().includes(normalizedTo)) ||
+          (pending.length > 0 && typeof info.response === 'string' && /queued/i.test(info.response));
+        const isExplicitlyAccepted =
+          accepted.some((a) => a.toLowerCase().includes(normalizedTo)) ||
+          accepted.length > 0 ||
+          (Boolean(info.messageId) && !isExplicitlyRejected && !isQueued);
+
+        let deliveryStatus: EmailDeliveryStatus;
+        if (isExplicitlyRejected) {
+          deliveryStatus = 'failed';
+        } else if (isQueued) {
+          deliveryStatus = 'queued';
+        } else if (isExplicitlyAccepted) {
+          deliveryStatus = 'sent';
+        } else {
+          deliveryStatus = 'failed';
+        }
 
         logger.info(
-          { recipient: to, subject, messageId: info.messageId, response: info.response },
-          'Email dispatched via verified SMTP transport'
+          {
+            recipient: to,
+            subject,
+            messageId: info.messageId,
+            status: deliveryStatus,
+            acceptedCount: accepted.length,
+            rejectedCount: rejected.length,
+            response: info.response,
+          },
+          'Email processed by SMTP transport provider'
         );
 
         return {
           status: deliveryStatus,
-          success: deliveryStatus !== 'failed',
+          success: deliveryStatus === 'sent' || deliveryStatus === 'queued',
           mode: 'PRODUCTION_SMTP',
           provider: 'SMTP',
           messageId: info.messageId,
@@ -183,14 +228,17 @@ export class EmailService {
       subject,
       dispatchedAt,
       devTokenHint: tokenHint,
-      previewUrl: `http://localhost:4000/dev/emails/${emailRecord.id}`,
+      previewUrl: `/dev/emails/${emailRecord.id}`,
     };
   }
 
-  // --- Specific Email Flows with Brutalist Season 04 Styling ---
+  // --- Specific Email Flows with Brutalist Season 04 Styling & Sanitization ---
 
   async sendVerificationEmail(to: string, name: string, token: string): Promise<EmailDispatchResult> {
+    const safeName = escapeHtml(name);
+    const safeToken = escapeHtml(token);
     const subject = 'HEAVYWEIGHT // Verify Customer Identity';
+
     const text = [
       `HEAVYWEIGHT — SEASON 04`,
       `=======================`,
@@ -210,7 +258,7 @@ export class EmailService {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>${subject}</title>
+        <title>${escapeHtml(subject)}</title>
       </head>
       <body style="margin: 0; padding: 24px; background-color: #E3E2DE; font-family: 'JetBrains Mono', monospace, Courier, sans-serif; color: #1B0E0D;">
         <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border: 2px solid #1B0E0D; padding: 32px;">
@@ -220,12 +268,12 @@ export class EmailService {
           </div>
 
           <h1 style="font-size: 18px; font-weight: 800; text-transform: uppercase; margin: 0 0 16px 0; letter-spacing: 0.5px;">Customer Dossier Verification</h1>
-          <p style="font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">Greetings <strong>${name}</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">Greetings <strong>${safeName}</strong>,</p>
           <p style="font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">Please authenticate your communication address to finalize your bespoke fashion profile.</p>
 
           <div style="background: #1B0E0D; color: #31EF07; border: 1px solid #1B0E0D; padding: 16px; text-align: center; margin: 24px 0;">
             <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #E3E2DE; margin-bottom: 8px;">Single-Use Verification Cipher</div>
-            <div style="font-size: 20px; font-weight: 700; letter-spacing: 3px; word-break: break-all;">${token}</div>
+            <div style="font-size: 20px; font-weight: 700; letter-spacing: 3px; word-break: break-all;">${safeToken}</div>
           </div>
 
           <div style="border-top: 1px solid #D9D9D9; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #666666; line-height: 1.5;">
@@ -241,7 +289,10 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(to: string, name: string, token: string): Promise<EmailDispatchResult> {
+    const safeName = escapeHtml(name);
+    const safeToken = escapeHtml(token);
     const subject = 'HEAVYWEIGHT // Cryptographic Password Reset Cipher';
+
     const text = [
       `HEAVYWEIGHT — SEASON 04`,
       `=======================`,
@@ -261,7 +312,7 @@ export class EmailService {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>${subject}</title>
+        <title>${escapeHtml(subject)}</title>
       </head>
       <body style="margin: 0; padding: 24px; background-color: #E3E2DE; font-family: 'JetBrains Mono', monospace, Courier, sans-serif; color: #1B0E0D;">
         <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border: 2px solid #C72A09; padding: 32px;">
@@ -271,12 +322,12 @@ export class EmailService {
           </div>
 
           <h1 style="font-size: 18px; font-weight: 800; text-transform: uppercase; margin: 0 0 16px 0; color: #C72A09;">Credential Rotation Protocol</h1>
-          <p style="font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">Greetings <strong>${name}</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">Greetings <strong>${safeName}</strong>,</p>
           <p style="font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">A password reset request was initiated for your dossier. Enter the cipher below in the reset dialog to establish new credentials:</p>
 
           <div style="background: #1B0E0D; color: #FFFFFF; border: 2px solid #C72A09; padding: 16px; text-align: center; margin: 24px 0;">
             <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #C72A09; margin-bottom: 8px;">60-Minute Recovery Token</div>
-            <div style="font-size: 20px; font-weight: 700; letter-spacing: 3px; word-break: break-all; color: #FFFFFF;">${token}</div>
+            <div style="font-size: 20px; font-weight: 700; letter-spacing: 3px; word-break: break-all; color: #FFFFFF;">${safeToken}</div>
           </div>
 
           <div style="border-top: 1px solid #D9D9D9; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #666666; line-height: 1.5;">
@@ -296,11 +347,14 @@ export class EmailService {
     name: string,
     order: { reference: string; totalCents: number; currency: string }
   ): Promise<EmailDispatchResult> {
+    const safeName = escapeHtml(name);
+    const safeReference = escapeHtml(order.reference);
     const totalFormatted = (order.totalCents / 100).toLocaleString('en-IN', {
       style: 'currency',
       currency: order.currency || 'INR',
     });
     const subject = `HEAVYWEIGHT // Order Confirmed: ${order.reference}`;
+
     const text = [
       `HEAVYWEIGHT — SEASON 04`,
       `=======================`,
@@ -327,8 +381,9 @@ export class EmailService {
             <span style="font-size: 20px; font-weight: 900; text-transform: uppercase;">HEAVYWEIGHT</span>
             <span style="font-size: 11px; font-weight: bold; background: #31EF07; color: #1B0E0D; padding: 4px 8px; margin-left: 8px;">ORDER CONFIRMED</span>
           </div>
-          <p>Order Reference: <strong>${order.reference}</strong></p>
-          <p>Total Paid: <strong>${totalFormatted}</strong></p>
+          <p>Greetings <strong>${safeName}</strong>,</p>
+          <p>Order Reference: <strong>${safeReference}</strong></p>
+          <p>Total Paid: <strong>${escapeHtml(totalFormatted)}</strong></p>
           <p style="color: #31EF07; font-weight: bold; background: #1B0E0D; padding: 8px 12px; display: inline-block;">STATUS: ALLOCATED // IN PREPARATION</p>
         </div>
       </body>
@@ -343,7 +398,12 @@ export class EmailService {
     name: string,
     tracking: { orderReference: string; carrier: string; trackingNumber: string }
   ): Promise<EmailDispatchResult> {
+    const safeName = escapeHtml(name);
+    const safeRef = escapeHtml(tracking.orderReference);
+    const safeCarrier = escapeHtml(tracking.carrier);
+    const safeTracking = escapeHtml(tracking.trackingNumber);
     const subject = `HEAVYWEIGHT // Dispatched: ${tracking.orderReference}`;
+
     const text = [
       `HEAVYWEIGHT — SEASON 04`,
       `=======================`,
@@ -366,9 +426,10 @@ export class EmailService {
       <body style="margin: 0; padding: 24px; background-color: #E3E2DE; font-family: monospace; color: #1B0E0D;">
         <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border: 2px solid #1B0E0D; padding: 32px;">
           <h2>HEAVYWEIGHT // Consignment En Route</h2>
-          <p>Order Reference: <strong>${tracking.orderReference}</strong></p>
-          <p>Carrier: <strong>${tracking.carrier}</strong></p>
-          <p>Tracking / Waybill: <strong>${tracking.trackingNumber}</strong></p>
+          <p>Greetings <strong>${safeName}</strong>,</p>
+          <p>Order Reference: <strong>${safeRef}</strong></p>
+          <p>Carrier: <strong>${safeCarrier}</strong></p>
+          <p>Tracking / Waybill: <strong>${safeTracking}</strong></p>
         </div>
       </body>
       </html>
@@ -382,13 +443,20 @@ export class EmailService {
     name: string,
     returnInfo: { returnId: string; status: string; reason: string }
   ): Promise<EmailDispatchResult> {
+    const safeName = escapeHtml(name);
+    const safeId = escapeHtml(returnInfo.returnId);
+    const safeStatus = escapeHtml(returnInfo.status);
+    const safeReason = escapeHtml(returnInfo.reason);
     const subject = `HEAVYWEIGHT // Return Request Update: ${returnInfo.returnId}`;
+
     const text = `Greetings ${name},\n\nYour return request ${returnInfo.returnId} status is: ${returnInfo.status}.\nReason: ${returnInfo.reason}`;
     const html = `
       <div style="font-family: monospace; background: #E3E2DE; color: #1B0E0D; padding: 24px; border: 2px solid #1B0E0D;">
         <h2>HEAVYWEIGHT // Return Status Update</h2>
-        <p>Return ID: <strong>${returnInfo.returnId}</strong></p>
-        <p>Current Status: <strong>${returnInfo.status}</strong></p>
+        <p>Greetings <strong>${safeName}</strong>,</p>
+        <p>Return ID: <strong>${safeId}</strong></p>
+        <p>Current Status: <strong>${safeStatus}</strong></p>
+        <p>Reason: <strong>${safeReason}</strong></p>
       </div>
     `;
     return this.dispatch(to, subject, text, html);
@@ -399,18 +467,23 @@ export class EmailService {
     name: string,
     refundInfo: { refundId: string; amountCents: number; currency: string; status: string }
   ): Promise<EmailDispatchResult> {
+    const safeName = escapeHtml(name);
+    const safeId = escapeHtml(refundInfo.refundId);
+    const safeStatus = escapeHtml(refundInfo.status);
     const amountFormatted = (refundInfo.amountCents / 100).toLocaleString('en-IN', {
       style: 'currency',
       currency: refundInfo.currency || 'INR',
     });
     const subject = `HEAVYWEIGHT // Settlement Notification: ${refundInfo.refundId}`;
+
     const text = `Greetings ${name},\n\nSettlement ${refundInfo.refundId} of ${amountFormatted} status: ${refundInfo.status}.`;
     const html = `
       <div style="font-family: monospace; background: #E3E2DE; color: #1B0E0D; padding: 24px; border: 2px solid #1B0E0D;">
         <h2>HEAVYWEIGHT // Financial Settlement</h2>
-        <p>Refund ID: <strong>${refundInfo.refundId}</strong></p>
-        <p>Settled Amount: <strong>${amountFormatted}</strong></p>
-        <p>Status: <strong>${refundInfo.status}</strong></p>
+        <p>Greetings <strong>${safeName}</strong>,</p>
+        <p>Refund ID: <strong>${safeId}</strong></p>
+        <p>Settled Amount: <strong>${escapeHtml(amountFormatted)}</strong></p>
+        <p>Status: <strong>${safeStatus}</strong></p>
       </div>
     `;
     return this.dispatch(to, subject, text, html);

@@ -490,5 +490,50 @@ describe('Season 04 Customer Identity, Onboarding & Address Architecture', () =>
         .send({ refreshToken: rToken });
       expect(refreshAfterLogout.status).toBe(401);
     });
+
+    it('sets HTTP-only refresh cookie and anti-CSRF token on authentication', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: rotationEmail,
+          password: rotationPassword
+        });
+
+      expect(res.status).toBe(200);
+      const cookies = res.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+
+      const refreshCookie = cookies.find((c: string) => c.includes('algions_refresh_token'));
+      expect(refreshCookie).toBeDefined();
+      expect(refreshCookie).toContain('HttpOnly');
+      expect(refreshCookie).toContain('Path=/');
+
+      const csrfCookie = cookies.find((c: string) => c.includes('algions_csrf_token'));
+      expect(csrfCookie).toBeDefined();
+
+      // Extract cookies for refresh test
+      const refreshVal = refreshCookie.split(';')[0];
+      const csrfVal = csrfCookie.split(';')[0].split('=')[1];
+
+      // Refreshing using the HTTP-only cookie with matching CSRF header
+      const cookieRefreshRes = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', [refreshVal, `algions_csrf_token=${csrfVal}`])
+        .set('x-csrf-token', csrfVal)
+        .send({});
+
+      expect(cookieRefreshRes.status).toBe(200);
+      expect(cookieRefreshRes.body.data.token).toBeDefined();
+
+      // Reject refresh if CSRF token mismatch is detected
+      const forgedCsrfRes = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', [refreshVal, `algions_csrf_token=${csrfVal}`])
+        .set('x-csrf-token', 'tampered-csrf-token')
+        .send({});
+
+      expect(forgedCsrfRes.status).toBe(403);
+      expect(forgedCsrfRes.body.error.code).toBe('CSRF_VALIDATION_FAILED');
+    });
   });
 });

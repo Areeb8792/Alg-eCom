@@ -4,6 +4,7 @@ import {
   loginCustomer,
   registerCustomer,
   logoutCustomer,
+  refreshCustomerSession,
   fetchCustomerProfile,
   fetchCustomerPreferences,
   updateCustomerPreferences
@@ -32,7 +33,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = 'algions_customer_token';
-// Note: Long-lived refresh tokens are stored strictly in memory state, NEVER in localStorage to prevent XSS credential exfiltration.
+// Note: Long-lived refresh tokens are stored strictly in HTTP-only cookies and in-memory state, NEVER in localStorage to prevent XSS credential exfiltration.
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
@@ -61,17 +62,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshProfile = useCallback(async () => {
-    if (!token) {
-      setIsLoading(false);
-      return;
+    // 1. If we have a local access token, probe profile
+    if (token) {
+      try {
+        const [userProfile, userPrefs] = await Promise.all([
+          fetchCustomerProfile(token),
+          fetchCustomerPreferences(token)
+        ]);
+        setUser(userProfile);
+        setPreferences(userPrefs);
+        setIsLoading(false);
+        return;
+      } catch {
+        // Access token might be expired; proceed to silent refresh via HTTP-only cookie
+      }
     }
+
+    // 2. Persistent session restoration: Silently rotate session using HTTP-only cookie
     try {
-      const [userProfile, userPrefs] = await Promise.all([
-        fetchCustomerProfile(token),
-        fetchCustomerPreferences(token)
-      ]);
-      setUser(userProfile);
-      setPreferences(userPrefs);
+      const refreshed = await refreshCustomerSession();
+      saveTokens(refreshed.token, refreshed.refreshToken);
+      if (refreshed.user) setUser(refreshed.user);
+      if (refreshed.preferences) {
+        setPreferences(refreshed.preferences);
+      } else {
+        const prefs = await fetchCustomerPreferences(refreshed.token).catch(() => null);
+        setPreferences(prefs);
+      }
     } catch {
       clearTokens();
     } finally {
