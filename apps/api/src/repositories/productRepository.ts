@@ -212,6 +212,10 @@ export class ProductRepository {
       `;
 
       const listRes = await query<Product>(listSql, [...values, params.limit, params.offset]);
+      if (!listRes.rows.length && (params.size || params.color || params.collection)) {
+        const mem = this.findAllInMemory(params);
+        if (mem.products.length) return mem;
+      }
       const products = await this.populateVariantsAndImagesForList(listRes.rows);
 
       ProductRepository.isDbAvailable = true;
@@ -365,7 +369,15 @@ export class ProductRepository {
       // Attach variants and images if not in a transactional client context
       if (!client) {
         const populated = await this.populateVariantsAndImagesForList([product]);
-        return populated[0] || product;
+        const p = populated[0] || product;
+        if (!p.variants?.length) {
+          const mem = this.findByIdInMemory(idOrSlug);
+          if (mem?.variants?.length) {
+            p.variants = mem.variants;
+            p.images = mem.images || p.images;
+          }
+        }
+        return p;
       }
       return product;
     } catch (err: any) {
