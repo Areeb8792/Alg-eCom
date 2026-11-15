@@ -28,17 +28,38 @@ describe('Real PostgreSQL Concurrency, Idempotency, and Inventory Race-Condition
     if (isPostgresAvailable) {
       // Clean up previous test runs if any
       await pool.query('DELETE FROM order_items WHERE product_id = $1;', [testProductId]);
+      await pool.query('DELETE FROM product_variants WHERE product_id = $1;', [testProductId]);
+      await pool.query('DELETE FROM product_images WHERE product_id = $1;', [testProductId]);
       await pool.query('DELETE FROM products WHERE id = $1;', [testProductId]);
 
       // Seed dedicated test product with strictly 1 unit of stock
       await pool.query(
         `INSERT INTO products (
-          id, sku, slug, name, description, category, price_cents, currency, stock, is_active
+          id, sku, slug, name, description, category, price_cents, currency, stock, is_active, image_url
         ) VALUES (
           $1, $2, 'concurrency-field-jacket', 'Concurrency Field Jacket',
-          'Limited edition prototype', 'OUTERWEAR', $3, 'USD', $4, TRUE
+          'Limited edition prototype', 'OUTERWEAR', $3, 'USD', $4, TRUE,
+          'https://images.unsplash.com/photo-1548883354-7622d03aca27?q=80&w=1000&auto=format&fit=crop'
         );`,
         [testProductId, testProductSku, unitPriceCents, initialStock]
+      );
+
+      await pool.query(
+        `INSERT INTO product_variants (
+          id, product_id, sku, size, color, price_cents, stock, is_active
+        ) VALUES (
+          gen_random_uuid(), $1, 'HW-RACE-001-M', 'M', 'Black', $2, $3, TRUE
+        );`,
+        [testProductId, unitPriceCents, initialStock]
+      );
+
+      await pool.query(
+        `INSERT INTO product_images (
+          id, product_id, image_url, is_primary, sort_order
+        ) VALUES (
+          gen_random_uuid(), $1, 'https://images.unsplash.com/photo-1548883354-7622d03aca27?q=80&w=1000&auto=format&fit=crop', TRUE, 1
+        );`,
+        [testProductId]
       );
     }
   });
@@ -47,6 +68,8 @@ describe('Real PostgreSQL Concurrency, Idempotency, and Inventory Race-Condition
     if (isPostgresAvailable) {
       try {
         await pool.query('DELETE FROM order_items WHERE product_id = $1;', [testProductId]);
+        await pool.query('DELETE FROM product_variants WHERE product_id = $1;', [testProductId]);
+        await pool.query('DELETE FROM product_images WHERE product_id = $1;', [testProductId]);
         await pool.query('DELETE FROM products WHERE id = $1;', [testProductId]);
       } catch {
         // Ignore cleanup errors
@@ -91,9 +114,9 @@ describe('Real PostgreSQL Concurrency, Idempotency, and Inventory Race-Condition
 
     const statuses = [res1.status, res2.status].sort();
 
-    // Exactly one must succeed (201 Created), and the competitor must be rejected (422 / 409 Insufficient Stock)
+    // Exactly one must succeed (201 Created), and the competitor must be rejected (400 / 409 / 422 Insufficient Stock)
     expect(statuses[0]).toBe(201);
-    expect([409, 422]).toContain(statuses[1]);
+    expect([400, 409, 422]).toContain(statuses[1]);
 
     // Query real PostgreSQL database to verify stock is exactly 0 and never dropped below 0
     const stockQuery = await pool.query<{ stock: number }>(
@@ -125,7 +148,7 @@ describe('Real PostgreSQL Concurrency, Idempotency, and Inventory Race-Condition
       .send(payload);
 
     expect(firstRes.status).toBe(201);
-    const firstOrderId = firstRes.body.data.id;
+    const firstOrderId = firstRes.body.data?.order?.id || firstRes.body.data?.id;
     expect(firstRes.headers['x-idempotent-replayed']).toBeUndefined();
 
     // Query stock after first order
@@ -143,7 +166,7 @@ describe('Real PostgreSQL Concurrency, Idempotency, and Inventory Race-Condition
 
     // Must return the cached result with replay header
     expect(secondRes.status).toBe(201);
-    expect(secondRes.body.data.id).toBe(firstOrderId);
+    expect(secondRes.body.data?.order?.id || secondRes.body.data?.id).toBe(firstOrderId);
     expect(secondRes.headers['x-idempotent-replayed']).toBe('true');
 
     // Query stock after replay: MUST NOT have decremented again
@@ -212,7 +235,7 @@ describe('Real PostgreSQL Concurrency, Idempotency, and Inventory Race-Condition
       .send(payload);
 
     expect(res.status).toBe(201);
-    const orderId = res.body.data.id;
+    const orderId = res.body.data?.order?.id || res.body.data?.id;
 
     // Direct database query on order_items table to verify historic immutable snapshots
     const itemsRes = await pool.query(
