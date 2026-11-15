@@ -12,7 +12,9 @@ import {
   Sparkles,
   Grid,
   ListFilter,
-  Check
+  Check,
+  ArrowRight,
+  ArrowUpRight
 } from 'lucide-react';
 
 interface CatalogPageProps {
@@ -180,43 +182,281 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
 
   return (
     <div className="min-h-screen relative flex flex-col bg-[#E3E2DE] text-[#1B0E0D]">
-      {/* 1. Hero Statement Section */}
-      <section className="relative min-h-[85vh] w-full flex overflow-hidden border-b-2 border-[#1B0E0D]">
-        <div className="w-full lg:w-[48%] h-full flex flex-col justify-end p-8 lg:p-16 pb-20 z-10 pt-32">
-          <div className="space-grotesk text-xs tracking-[0.3em] font-bold text-[#C72A09] uppercase mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 bg-[#C72A09] inline-block animate-pulse"></span>
-            SEASON 04 // INDUSTRIAL LUXURY
+      {/* 1. Hero Statement Section (Responsive Grid - Full Visibility at Desktop, Tablet 963px/768px, Mobile 390px) */}
+      <section className="relative w-full border-b-2 border-[#1B0E0D] bg-[#E3E2DE] overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-12 min-h-[64vh] lg:min-h-[76vh] items-stretch">
+          {/* Left Hero Statement */}
+          <div className="md:col-span-7 lg:col-span-6 flex flex-col justify-center p-8 sm:p-12 lg:p-16 z-10 pt-28 sm:pt-32">
+            <div className="space-grotesk text-xs tracking-[0.3em] font-bold text-[#C72A09] uppercase mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#C72A09] inline-block animate-pulse"></span>
+              SEASON 04 // INDUSTRIAL LUXURY
+            </div>
+            <h1 className="anton-heading text-[12vw] sm:text-[9vw] md:text-[6.2vw] lg:text-[5.4vw] leading-[0.88] mb-6 text-[#1B0E0D]">
+              COUTURE<br />STATEMENT
+            </h1>
+            <p className="space-grotesk text-xs sm:text-sm leading-relaxed max-w-[460px] text-[#1B0E0D]/80 mb-8">
+              High-density organic cottons, modular tactical outer garments, and architectural silhouettes engineered with cryptographic inventory consistency.
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <a
+                href="#catalog-browser"
+                className="px-6 py-3.5 bg-[#1B0E0D] text-white space-grotesk text-xs font-bold uppercase tracking-widest hover:bg-[#C72A09] transition-all border-2 border-[#1B0E0D] shadow-[3px_3px_0px_#C72A09]"
+              >
+                EXPLORE CATALOG ↓
+              </a>
+              <a
+                href="#new-arrivals"
+                className="px-5 py-3.5 bg-white text-[#1B0E0D] space-grotesk text-xs font-bold uppercase tracking-widest border-2 border-[#1B0E0D] hover:bg-[#1B0E0D] hover:text-white transition-all shadow-[3px_3px_0px_#1B0E0D]"
+              >
+                LATEST ARRIVALS →
+              </a>
+            </div>
           </div>
-          <h1 className="anton-heading text-[11vw] lg:text-[7.5vw] leading-[0.88] mb-6 text-[#1B0E0D]">
-            COUTURE<br />STATEMENT
-          </h1>
-          <p className="space-grotesk text-sm leading-relaxed max-w-[420px] text-[#1B0E0D]/80 mb-8">
-            High-density organic cottons, modular tactical outer garments, and architectural silhouettes engineered with cryptographic inventory consistency.
-          </p>
-          <div className="flex flex-wrap items-center gap-4">
-            <a
-              href="#catalog-browser"
-              className="px-6 py-3.5 bg-[#1B0E0D] text-white space-grotesk text-xs font-bold uppercase tracking-widest hover:bg-[#C72A09] transition-colors"
-            >
-              EXPLORE CATALOG ↓
-            </a>
-            {collections.length > 0 && (
-              <span className="space-grotesk text-xs text-[#1B0E0D]/60 tracking-wider">
-                {collections.length} ACTIVE COLLECTIONS AVAILABLE
-              </span>
-            )}
+
+          {/* Right Hero Fashion Campaign Image */}
+          <div className="md:col-span-5 lg:col-span-6 relative border-t-2 md:border-t-0 md:border-l-2 border-[#1B0E0D] overflow-hidden min-h-[380px] sm:min-h-[440px] md:min-h-[500px] bg-zinc-950 group">
+            <img
+              src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1600&auto=format&fit=crop"
+              alt="Algions Season 04 Brutalist Campaign"
+              className="w-full h-full object-cover object-center grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+            />
+            <div className="absolute top-4 right-4 bg-[#1B0E0D] text-white px-3 py-1 space-grotesk text-[10px] font-bold uppercase tracking-widest border border-white/20">
+              EDITORIAL CAMPAIGN // S04
+            </div>
+            <div className="absolute bottom-6 left-6 z-20 bg-[#1B0E0D]/90 backdrop-blur-sm text-white px-4 py-2 space-grotesk text-xs uppercase tracking-widest border border-white/10 shadow-[3px_3px_0px_#C72A09]">
+              NEW YORK RUNWAY ARCHIVE
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* A. Season 04 Ticker */}
+      <div className="bg-[#1B0E0D] text-white border-b-2 border-[#1B0E0D] py-3 overflow-hidden whitespace-nowrap select-none">
+        <div className="animate-ticker space-grotesk text-xs font-bold uppercase tracking-[0.25em]">
+          <span className="mx-6 text-zinc-300">FORM FOLLOWS FUNCTION</span>
+          <span className="text-[#31EF07]">//</span>
+          <span className="mx-6 text-white font-extrabold">SEASON 04</span>
+          <span className="text-[#C72A09]">//</span>
+          <span className="mx-6 text-zinc-300">BUILT FOR THE IN-BETWEEN</span>
+          <span className="text-[#31EF07]">//</span>
+          <span className="mx-6 text-zinc-400">NYC ATELIER ARCHIVE</span>
+          <span className="text-[#C72A09]">//</span>
+          <span className="mx-6 text-zinc-300">CRYPTOGRAPHIC STOCK RESERVATION</span>
+          <span className="text-[#31EF07]">//</span>
+          <span className="mx-6 text-zinc-300">FORM FOLLOWS FUNCTION</span>
+          <span className="text-[#31EF07]">//</span>
+          <span className="mx-6 text-white font-extrabold">SEASON 04</span>
+          <span className="text-[#C72A09]">//</span>
+          <span className="mx-6 text-zinc-300">BUILT FOR THE IN-BETWEEN</span>
+          <span className="text-[#31EF07]">//</span>
+          <span className="mx-6 text-zinc-400">NYC ATELIER ARCHIVE</span>
+          <span className="text-[#C72A09]">//</span>
+          <span className="mx-6 text-zinc-300">CRYPTOGRAPHIC STOCK RESERVATION</span>
+          <span className="text-[#31EF07]">//</span>
+        </div>
+      </div>
+
+      {/* B. New Drop / Latest Arrivals ("THE NEW FORM") */}
+      <section id="new-arrivals" className="py-16 px-6 sm:px-8 lg:px-16 border-b-2 border-[#1B0E0D] bg-[#E3E2DE]">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-4 border-b-2 border-[#1B0E0D]/20 gap-4">
+          <div>
+            <div className="space-grotesk text-[11px] tracking-[0.25em] font-bold text-[#C72A09] uppercase mb-2 flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#C72A09] inline-block"></span>
+              SEASON 04 — LATEST ARRIVALS
+            </div>
+            <h2 className="anton-heading text-4xl sm:text-5xl lg:text-6xl text-[#1B0E0D] uppercase tracking-tight">
+              THE NEW FORM
+            </h2>
+            <p className="space-grotesk text-xs sm:text-sm text-zinc-600 uppercase tracking-widest mt-1 max-w-xl">
+              Limited edition architectural silhouettes freshly released from the New York atelier.
+            </p>
+          </div>
+          <a
+            href="#catalog-browser"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase space-grotesk text-[#1B0E0D] hover:text-[#C72A09] transition-colors border-b-2 border-[#1B0E0D] pb-1 self-start md:self-auto"
+          >
+            VIEW FULL ARCHIVE ({catalogProducts.length} PIECES) <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
+
+        {/* 4 Featured Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          {catalogProducts.slice(0, 4).map((prod) => (
+            <ProductCard
+              key={`latest-${prod.id}`}
+              product={prod}
+              onQuickAdd={onQuickAdd}
+              onSelect={onSelectProduct}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* C. Shop by Form (Asymmetric Visual Category Bento Grid) */}
+      <section className="py-16 px-6 sm:px-8 lg:px-16 border-b-2 border-[#1B0E0D] bg-[#E3E2DE]">
+        <div className="mb-10 pb-4 border-b-2 border-[#1B0E0D]/20 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="space-grotesk text-[11px] tracking-[0.25em] font-bold text-[#C72A09] uppercase mb-2">
+              DISCOVERY TAXONOMY
+            </div>
+            <h2 className="anton-heading text-4xl sm:text-5xl lg:text-6xl text-[#1B0E0D] uppercase tracking-tight">
+              SHOP BY FORM
+            </h2>
+            <p className="space-grotesk text-xs sm:text-sm text-zinc-600 uppercase tracking-widest mt-1">
+              Architectural garments categorized by silhouette and functional intent.
+            </p>
           </div>
         </div>
 
-        {/* Right Hero Image */}
-        <div className="hidden lg:block absolute right-0 top-0 w-[54%] h-full overflow-hidden grayscale-hover group border-l-2 border-[#1B0E0D]">
-          <img
-            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
-            alt="Algions Brutalist Haute Couture"
-            className="w-full h-full object-cover object-left"
-          />
-          <div className="absolute bottom-8 left-8 z-20 bg-[#1B0E0D] text-white px-4 py-2 space-grotesk text-xs uppercase tracking-widest">
-            HW ARCHIVE // RUNWAY 04
+        {/* Asymmetric Category Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Tile 1: Menswear (Span 7 md / 6 lg) */}
+          <div
+            onClick={() => handleCategoryClick('MENSWEAR')}
+            className="md:col-span-7 lg:col-span-6 relative group overflow-hidden border-2 border-[#1B0E0D] bg-[#1B0E0D] cursor-pointer shadow-[4px_4px_0px_#1B0E0D] hover:shadow-[6px_6px_0px_#C72A09] transition-all min-h-[340px] sm:min-h-[420px]"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=1200&auto=format&fit=crop"
+              alt="Menswear Category"
+              className="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-75 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+            <div className="absolute top-4 left-4 bg-white text-[#1B0E0D] text-[10px] font-bold px-2.5 py-1 space-grotesk uppercase">
+              FORM 01 // MENSWEAR
+            </div>
+            <div className="absolute bottom-6 left-6 right-6 text-white space-grotesk">
+              <h3 className="anton-heading text-3xl sm:text-4xl uppercase mb-1">MENSWEAR</h3>
+              <p className="text-xs text-zinc-300 max-w-sm mb-4 leading-relaxed">
+                Heavyweight tailoring, dropped-shoulder selvedge jersey, and modular military utility.
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-[#31EF07] group-hover:text-white transition-colors">
+                EXPLORE FORM <ArrowUpRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+
+          {/* Tile 2: Womenswear (Span 5 md / 6 lg) */}
+          <div
+            onClick={() => handleCategoryClick('WOMENSWEAR')}
+            className="md:col-span-5 lg:col-span-6 relative group overflow-hidden border-2 border-[#1B0E0D] bg-[#1B0E0D] cursor-pointer shadow-[4px_4px_0px_#1B0E0D] hover:shadow-[6px_6px_0px_#C72A09] transition-all min-h-[340px] sm:min-h-[420px]"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop"
+              alt="Womenswear Category"
+              className="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-75 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+            <div className="absolute top-4 left-4 bg-white text-[#1B0E0D] text-[10px] font-bold px-2.5 py-1 space-grotesk uppercase">
+              FORM 02 // WOMENSWEAR
+            </div>
+            <div className="absolute bottom-6 left-6 right-6 text-white space-grotesk">
+              <h3 className="anton-heading text-3xl sm:text-4xl uppercase mb-1">WOMENSWEAR</h3>
+              <p className="text-xs text-zinc-300 max-w-sm mb-4 leading-relaxed">
+                Sculpted merino rib knitwear, columnar silk crepe drape, and cropped structural jackets.
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-[#31EF07] group-hover:text-white transition-colors">
+                EXPLORE FORM <ArrowUpRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+
+          {/* Tile 3: Outerwear (Span 6 md / 7 lg) */}
+          <div
+            onClick={() => handleCategoryClick('OUTERWEAR')}
+            className="md:col-span-6 lg:col-span-7 relative group overflow-hidden border-2 border-[#1B0E0D] bg-[#1B0E0D] cursor-pointer shadow-[4px_4px_0px_#1B0E0D] hover:shadow-[6px_6px_0px_#C72A09] transition-all min-h-[320px] sm:min-h-[380px]"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1548883354-7622d03aca27?q=80&w=1200&auto=format&fit=crop"
+              alt="Outerwear Category"
+              className="w-full h-full object-cover object-center grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-75 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+            <div className="absolute top-4 left-4 bg-white text-[#1B0E0D] text-[10px] font-bold px-2.5 py-1 space-grotesk uppercase">
+              FORM 03 // OUTERWEAR
+            </div>
+            <div className="absolute bottom-6 left-6 right-6 text-white space-grotesk">
+              <h3 className="anton-heading text-3xl sm:text-4xl uppercase mb-1">OUTERWEAR</h3>
+              <p className="text-xs text-zinc-300 max-w-sm mb-4 leading-relaxed">
+                Technical down puffers, 3-layer bonded storm shells, and floor-sweeping parkas.
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-[#31EF07] group-hover:text-white transition-colors">
+                EXPLORE FORM <ArrowUpRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+
+          {/* Tile 4: Accessories & Objects (Span 6 md / 5 lg) */}
+          <div
+            onClick={() => handleCategoryClick('ACCESSORIES')}
+            className="md:col-span-6 lg:col-span-5 relative group overflow-hidden border-2 border-[#1B0E0D] bg-[#1B0E0D] cursor-pointer shadow-[4px_4px_0px_#1B0E0D] hover:shadow-[6px_6px_0px_#C72A09] transition-all min-h-[320px] sm:min-h-[380px]"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=1200&auto=format&fit=crop"
+              alt="Accessories Category"
+              className="w-full h-full object-cover object-center grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-75 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+            <div className="absolute top-4 left-4 bg-white text-[#1B0E0D] text-[10px] font-bold px-2.5 py-1 space-grotesk uppercase">
+              FORM 04 // ACCESSORIES
+            </div>
+            <div className="absolute bottom-6 left-6 right-6 text-white space-grotesk">
+              <h3 className="anton-heading text-3xl sm:text-4xl uppercase mb-1">ACCESSORIES // OBJECTS</h3>
+              <p className="text-xs text-zinc-300 max-w-sm mb-4 leading-relaxed">
+                Vegetable-tanned saddle leather, aerospace CNC buckles, and archival monograph field notes.
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-[#31EF07] group-hover:text-white transition-colors">
+                EXPLORE FORM <ArrowUpRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* D. Editorial Campaign Section ("STRUCTURE IN MOTION") */}
+      <section className="border-b-2 border-[#1B0E0D] bg-[#1B0E0D] text-white overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px] items-stretch">
+          {/* Left Editorial Copy */}
+          <div className="lg:col-span-6 p-8 sm:p-12 lg:p-16 flex flex-col justify-center space-grotesk">
+            <div className="text-[11px] tracking-[0.3em] font-bold text-[#C72A09] uppercase mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#C72A09] inline-block animate-pulse"></span>
+              SEASON 04 EDITORIAL CAMPAIGN
+            </div>
+            <h2 className="anton-heading text-4xl sm:text-5xl lg:text-6xl uppercase tracking-tight text-white mb-6">
+              STRUCTURE IN MOTION
+            </h2>
+            <p className="text-sm sm:text-base text-zinc-300 leading-relaxed max-w-md mb-8">
+              Engineered proportions. Considered materials. Silhouettes built to outlast the season.
+            </p>
+            <div className="space-y-3 mb-8 border-l-2 border-[#C72A09] pl-4 text-xs tracking-wider text-zinc-400">
+              <p>// 01 ARCHITECTURAL PROPORTIONS & SCULPTED DRAPE</p>
+              <p>// 02 HEAVYWEIGHT NATURAL & BONDED TECHNICAL FIBERS (300–750 GSM)</p>
+              <p>// 03 POST-INDUSTRIAL HARDWARE ALLOCATION WITH ZERO OVERSOLD STOCK</p>
+            </div>
+            <div>
+              <button
+                onClick={() => {
+                  setSelectedCollection('season-04-brutalist');
+                  const el = document.getElementById('catalog-browser');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-3 px-8 py-4 bg-[#C72A09] text-white text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-[#1B0E0D] transition-all shadow-[4px_4px_0px_#31EF07]"
+              >
+                EXPLORE THE COLLECTION <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Right Campaign Image */}
+          <div className="lg:col-span-6 relative border-t-2 lg:border-t-0 lg:border-l-2 border-[#1B0E0D] min-h-[360px] sm:min-h-[440px] group bg-zinc-900">
+            <img
+              src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1400&auto=format&fit=crop"
+              alt="Structure in Motion Campaign"
+              className="w-full h-full object-cover object-center grayscale contrast-115 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+              loading="lazy"
+            />
+            <div className="absolute bottom-6 right-6 bg-[#1B0E0D]/90 backdrop-blur-sm text-white px-4 py-2 text-[11px] font-bold space-grotesk uppercase tracking-widest border border-white/20">
+              HEAVYWEIGHT LABS // SEASON 04
+            </div>
           </div>
         </div>
       </section>

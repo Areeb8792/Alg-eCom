@@ -62,6 +62,25 @@ body {
   scrollbar-width: none;
 }
 
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  display: inline-flex;
+  width: max-content;
+  animation: ticker 32s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
 .nav-link:hover {
   text-decoration: line-through;
   text-decoration-thickness: 2px;

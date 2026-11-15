@@ -267,6 +267,496 @@ export async function runSeeds(retries = 5): Promise<void> {
         variants: [
           { sku: 'HW-FC-006-OLV-M', size: 'M', color: 'Olive Drab', hex: '#4A5340', stock: 4 },
           { sku: 'HW-FC-006-OLV-L', size: 'L', color: 'Olive Drab', hex: '#4A5340', stock: 2 }
+        ],
+        galleryImages: [
+          { url: 'https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1000&auto=format&fit=crop', alt: 'Technical Field Coat Back Detail' }
+        ]
+      },
+      // 7. Modular Field Jacket
+      {
+        sku: 'HW-MJ-007',
+        slug: 'modular-field-jacket',
+        name: 'Modular Field Jacket',
+        description: 'Triple-layer bonded storm shell with detachable magnetic cargo compartments, articulated sleeves, and tactical storm collar.',
+        category: 'OUTERWEAR',
+        categorySlug: 'menswear-outerwear',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'OVERSIZED',
+        fabric_weight: '480 GSM Waterproof Matte Ripstop',
+        composition: '85% Technical Polyamide, 15% Elastane with PTFE Membrane',
+        country_of_origin: 'Japan',
+        care_instructions: 'Machine wash cold delicate cycle. Hang to dry in shade.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 34000, // $340.00
+        currency: 'USD',
+        stock: 14,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1548883354-7622d03aca27?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-MJ-007-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 4 },
+          { sku: 'HW-MJ-007-BLK-M', size: 'M', color: 'Ink Black', hex: '#1B0E0D', stock: 6 },
+          { sku: 'HW-MJ-007-BLK-L', size: 'L', color: 'Ink Black', hex: '#1B0E0D', stock: 4 }
+        ],
+        galleryImages: [
+          { url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1000&auto=format&fit=crop', alt: 'Modular Field Jacket Silhouette' }
+        ]
+      },
+      // 8. Technical Shell Parka
+      {
+        sku: 'HW-SP-008',
+        slug: 'technical-shell-parka',
+        name: 'Technical Shell Parka',
+        description: 'Floor-sweeping weatherproof parka engineered with articulated shoulder geometry, waterproof taped seams, and fishtail drawcord.',
+        category: 'OUTERWEAR',
+        categorySlug: 'menswear-outerwear',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'OVERSIZED',
+        fabric_weight: '420 GSM 3-Layer Technical Twill',
+        composition: '100% Recycled Nylon Shell, Sealed Breathable Membrane',
+        country_of_origin: 'Italy',
+        care_instructions: 'Specialist membrane clean only.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 38000, // $380.00
+        currency: 'USD',
+        stock: 12,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-SP-008-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 3 },
+          { sku: 'HW-SP-008-BLK-M', size: 'M', color: 'Ink Black', hex: '#1B0E0D', stock: 5 },
+          { sku: 'HW-SP-008-GRY-L', size: 'L', color: 'Ash Grey', hex: '#7D7D7D', stock: 4 }
+        ]
+      },
+      // 9. Utility Overshirt
+      {
+        sku: 'HW-UO-009',
+        slug: 'utility-overshirt',
+        name: 'Utility Overshirt',
+        description: 'Structured heavy cotton twill shirt jacket featuring concealed horn buttons, reinforced elbow patches, and dual drop-entry chest pockets.',
+        category: 'TOPS',
+        categorySlug: 'menswear-tops',
+        collectionSlug: 'core-minimalist',
+        fit_type: 'BOXY',
+        fabric_weight: '360 GSM Heavy Milled Twill',
+        composition: '100% Combed Compact Cotton',
+        country_of_origin: 'Portugal',
+        care_instructions: 'Machine wash cold 30°C. Warm iron on reverse.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 16500, // $165.00
+        currency: 'USD',
+        stock: 20,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-UO-009-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 5 },
+          { sku: 'HW-UO-009-BLK-M', size: 'M', color: 'Ink Black', hex: '#1B0E0D', stock: 8 },
+          { sku: 'HW-UO-009-OLV-L', size: 'L', color: 'Olive Drab', hex: '#4A5340', stock: 7 }
+        ]
+      },
+      // 10. Heavyweight Long Sleeve Tee
+      {
+        sku: 'HW-LS-010',
+        slug: 'heavyweight-long-sleeve-tee',
+        name: 'Heavyweight Long Sleeve Tee',
+        description: 'Dense double-jersey knit with ribbed mock cuffs, pronounced dropped shoulders, and seamless tubular torso construction.',
+        category: 'TOPS',
+        categorySlug: 'menswear-tops',
+        collectionSlug: 'core-minimalist',
+        fit_type: 'BOXY',
+        fabric_weight: '380 GSM Heavyweight Carded Cotton',
+        composition: '100% Organic Ring-Spun Cotton',
+        country_of_origin: 'Portugal',
+        care_instructions: 'Machine wash 30°C. Reshape while damp.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 8500, // $85.00
+        currency: 'USD',
+        stock: 26,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-LS-010-BNE-S', size: 'S', color: 'Concrete Bone', hex: '#E3E2DE', stock: 6 },
+          { sku: 'HW-LS-010-BNE-M', size: 'M', color: 'Concrete Bone', hex: '#E3E2DE', stock: 10 },
+          { sku: 'HW-LS-010-BLK-L', size: 'L', color: 'Ink Black', hex: '#1B0E0D', stock: 10 }
+        ]
+      },
+      // 11. Mock-Neck Jersey
+      {
+        sku: 'HW-MN-011',
+        slug: 'mock-neck-jersey',
+        name: 'Mock-Neck Jersey',
+        description: 'Sculptural raised mock collar silhouette constructed from double-mercerised interlock knit with subtle industrial luster.',
+        category: 'TOPS',
+        categorySlug: 'menswear-tops',
+        collectionSlug: 'core-minimalist',
+        fit_type: 'RELAXED',
+        fabric_weight: '340 GSM Mercerised Interlock Jersey',
+        composition: '95% Compact Cotton, 5% Elastane',
+        country_of_origin: 'Portugal',
+        care_instructions: 'Gentle cold cycle. Dry flat.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 9500, // $95.00
+        currency: 'USD',
+        stock: 18,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-MN-011-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 5 },
+          { sku: 'HW-MN-011-BLK-M', size: 'M', color: 'Ink Black', hex: '#1B0E0D', stock: 8 },
+          { sku: 'HW-MN-011-GRY-L', size: 'L', color: 'Ash Grey', hex: '#7D7D7D', stock: 5 }
+        ]
+      },
+      // 12. Double-Pleat Wide Trousers
+      {
+        sku: 'HW-WT-012',
+        slug: 'double-pleat-wide-trousers',
+        name: 'Double-Pleat Wide Trousers',
+        description: 'High-rise architectural trousers featuring prominent double front pleats, voluminous wide-leg drape, and blind tailored hems.',
+        category: 'TAILORING',
+        categorySlug: 'menswear-tailoring',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'OVERSIZED',
+        fabric_weight: '380 GSM High-Twist Tropical Wool',
+        composition: '100% Virgin Worsted Wool',
+        country_of_origin: 'Italy',
+        care_instructions: 'Dry clean only. Press with damp cloth.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 22000, // $220.00
+        currency: 'USD',
+        stock: 16,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-WT-012-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 4 },
+          { sku: 'HW-WT-012-BLK-M', size: 'M', color: 'Ink Black', hex: '#1B0E0D', stock: 7 },
+          { sku: 'HW-WT-012-BNE-L', size: 'L', color: 'Concrete Bone', hex: '#E3E2DE', stock: 5 }
+        ]
+      },
+      // 13. Panelled Cargo Trousers
+      {
+        sku: 'HW-PC-013',
+        slug: 'panelled-cargo-trousers',
+        name: 'Panelled Cargo Trousers',
+        description: 'Ergonomic panelled leg construction with expandable bellows cargo pockets, integrated ankle cinch straps, and articulated knee darts.',
+        category: 'TAILORING',
+        categorySlug: 'menswear-tailoring',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'BOXY',
+        fabric_weight: '400 GSM Technical Cotton Ripstop',
+        composition: '70% Cotton, 30% Polyamide Ripstop',
+        country_of_origin: 'Japan',
+        care_instructions: 'Machine wash cold inside out. Line dry.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 24000, // $240.00
+        currency: 'USD',
+        stock: 15,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-PC-013-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 4 },
+          { sku: 'HW-PC-013-BLK-M', size: 'M', color: 'Ink Black', hex: '#1B0E0D', stock: 6 },
+          { sku: 'HW-PC-013-OLV-L', size: 'L', color: 'Olive Drab', hex: '#4A5340', stock: 5 }
+        ]
+      },
+      // 14. Sculpted Wool Blazer
+      {
+        sku: 'HW-WB-014',
+        slug: 'sculpted-wool-blazer',
+        name: 'Sculpted Wool Blazer',
+        description: 'Single-breasted architectural jacket with sharp padded shoulders, elongated notch lapels, and concealed horn button placket.',
+        category: 'TAILORING',
+        categorySlug: 'menswear-tailoring',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'TAILORED',
+        fabric_weight: '450 GSM Heavy Melton Wool',
+        composition: '90% Melton Wool, 10% Cashmere; 100% Cupro Lining',
+        country_of_origin: 'Italy',
+        care_instructions: 'Specialist dry clean only. Store on wide wooden hanger.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 46000, // $460.00
+        currency: 'USD',
+        stock: 10,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-WB-014-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 3 },
+          { sku: 'HW-WB-014-BLK-M', size: 'M', color: 'Ink Black', hex: '#1B0E0D', stock: 4 },
+          { sku: 'HW-WB-014-BLK-L', size: 'L', color: 'Ink Black', hex: '#1B0E0D', stock: 3 }
+        ]
+      },
+      // 15. Sculpted Rib Knit Top
+      {
+        sku: 'HW-RK-015',
+        slug: 'sculpted-rib-knit-top',
+        name: 'Sculpted Rib Knit Top',
+        description: 'Engineered rib gradient that contours the torso with a sculpted funnel neckline, elongated sleeves, and integrated thumbhole cuffs.',
+        category: 'KNITWEAR',
+        categorySlug: 'womenswear-knitwear',
+        collectionSlug: 'core-minimalist',
+        fit_type: 'TAILORED',
+        fabric_weight: '290 GSM Compact Ribbed Knit',
+        composition: '75% Extra-Fine Merino Wool, 25% Mulberry Silk',
+        country_of_origin: 'Italy',
+        care_instructions: 'Hand wash cold with wool detergent. Dry flat.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 14000, // $140.00
+        currency: 'USD',
+        stock: 15,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-RK-015-BLK-XS', size: 'XS', color: 'Ink Black', hex: '#1B0E0D', stock: 3 },
+          { sku: 'HW-RK-015-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 5 },
+          { sku: 'HW-RK-015-BNE-M', size: 'M', color: 'Concrete Bone', hex: '#E3E2DE', stock: 4 },
+          { sku: 'HW-RK-015-BLK-L', size: 'L', color: 'Ink Black', hex: '#1B0E0D', stock: 3 }
+        ]
+      },
+      // 16. Draped Column Dress
+      {
+        sku: 'HW-CD-016',
+        slug: 'draped-column-dress',
+        name: 'Draped Column Dress',
+        description: 'Maxi-length columnar silhouette featuring asymmetrical shoulder gathers, weighted fluid drape, and clean raw-edge blind hemline.',
+        category: 'DRESSES',
+        categorySlug: 'womenswear-dresses',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'RELAXED',
+        fabric_weight: '310 GSM Fluid Crepe Silk',
+        composition: '100% Heavy Silk Crepe de Chine',
+        country_of_origin: 'France',
+        care_instructions: 'Dry clean only.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 32000, // $320.00
+        currency: 'USD',
+        stock: 12,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-CD-016-BLK-XS', size: 'XS', color: 'Ink Black', hex: '#1B0E0D', stock: 3 },
+          { sku: 'HW-CD-016-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 4 },
+          { sku: 'HW-CD-016-RED-M', size: 'M', color: 'Burnt Red', hex: '#C72A09', stock: 3 },
+          { sku: 'HW-CD-016-BLK-L', size: 'L', color: 'Ink Black', hex: '#1B0E0D', stock: 2 }
+        ]
+      },
+      // 17. Cropped Structural Jacket
+      {
+        sku: 'HW-CJ-017',
+        slug: 'cropped-structural-jacket',
+        name: 'Cropped Structural Jacket',
+        description: 'Sharp cropped waistline balanced by broad boxy shoulders, industrial matte black snap hardware, and stand collar.',
+        category: 'OUTERWEAR',
+        categorySlug: 'womenswear-knitwear',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'BOXY',
+        fabric_weight: '420 GSM Bonded Twill Canvas',
+        composition: '80% Virgin Wool, 20% Technical Polyamide',
+        country_of_origin: 'Italy',
+        care_instructions: 'Specialist dry clean only.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 29000, // $290.00
+        currency: 'USD',
+        stock: 10,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-CJ-017-BLK-XS', size: 'XS', color: 'Ink Black', hex: '#1B0E0D', stock: 2 },
+          { sku: 'HW-CJ-017-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 4 },
+          { sku: 'HW-CJ-017-GRY-M', size: 'M', color: 'Ash Grey', hex: '#7D7D7D', stock: 4 }
+        ]
+      },
+      // 18. Wide-Leg Tailored Trousers
+      {
+        sku: 'HW-WT-018',
+        slug: 'womens-wide-leg-trousers',
+        name: 'Wide-Leg Tailored Trousers',
+        description: 'Floor-skimming high-waisted trousers cut with deep knife pleats, side slash pockets, and clean waistband with concealed hook closure.',
+        category: 'TAILORING',
+        categorySlug: 'womenswear-dresses',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'OVERSIZED',
+        fabric_weight: '360 GSM Wool Gabardine',
+        composition: '100% Virgin Wool Gabardine',
+        country_of_origin: 'Italy',
+        care_instructions: 'Dry clean only. Cool iron.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 21000, // $210.00
+        currency: 'USD',
+        stock: 14,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-WT-018-BLK-XS', size: 'XS', color: 'Ink Black', hex: '#1B0E0D', stock: 3 },
+          { sku: 'HW-WT-018-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 5 },
+          { sku: 'HW-WT-018-BNE-M', size: 'M', color: 'Concrete Bone', hex: '#E3E2DE', stock: 4 },
+          { sku: 'HW-WT-018-BLK-L', size: 'L', color: 'Ink Black', hex: '#1B0E0D', stock: 2 }
+        ]
+      },
+      // 19. Longline Knit Dress
+      {
+        sku: 'HW-LK-019',
+        slug: 'longline-knit-dress',
+        name: 'Longline Knit Dress',
+        description: 'Full-length tubular knit dress with subtle right side slit and clean crew neckline crafted from tactile boiled merino wool.',
+        category: 'DRESSES',
+        categorySlug: 'womenswear-dresses',
+        collectionSlug: 'core-minimalist',
+        fit_type: 'TAILORED',
+        fabric_weight: '350 GSM Fine Gauge Boiled Wool',
+        composition: '100% Ultrafine Australian Merino Wool',
+        country_of_origin: 'Italy',
+        care_instructions: 'Hand wash cold. Dry flat on towel.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 26000, // $260.00
+        currency: 'USD',
+        stock: 12,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-LK-019-BLK-XS', size: 'XS', color: 'Ink Black', hex: '#1B0E0D', stock: 3 },
+          { sku: 'HW-LK-019-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 4 },
+          { sku: 'HW-LK-019-GRY-M', size: 'M', color: 'Ash Grey', hex: '#7D7D7D', stock: 3 },
+          { sku: 'HW-LK-019-BLK-L', size: 'L', color: 'Ink Black', hex: '#1B0E0D', stock: 2 }
+        ]
+      },
+      // 20. Structured Leather Tote
+      {
+        sku: 'HW-LT-020',
+        slug: 'structured-leather-tote',
+        name: 'Structured Leather Tote',
+        description: 'Full-grain vegetable-tanned bovine leather tote featuring architectural raw-edge panels and interior laptop compartment.',
+        category: 'ACCESSORIES',
+        categorySlug: 'accessories',
+        collectionSlug: 'industrial-hardware',
+        fit_type: 'BOXY',
+        fabric_weight: '3.2 mm Saddle-Grade Bridle Leather',
+        composition: '100% Vegetable-Tanned Calfskin, Brushed Stainless Hardware',
+        country_of_origin: 'Italy',
+        care_instructions: 'Condition annually with neutral leather balm.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 48000, // $480.00
+        currency: 'USD',
+        stock: 8,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-LT-020-BLK-OS', size: 'ONE SIZE', color: 'Ink Black', hex: '#1B0E0D', stock: 8 }
+        ]
+      },
+      // 21. Technical Crossbody Bag
+      {
+        sku: 'HW-CB-021',
+        slug: 'technical-crossbody-bag',
+        name: 'Technical Crossbody Bag',
+        description: 'Compact modular sling with Fidlock V-buckle magnetic closure, weather-resistant zip compartments, and mil-spec webbing.',
+        category: 'ACCESSORIES',
+        categorySlug: 'accessories',
+        collectionSlug: 'industrial-hardware',
+        fit_type: 'BOXY',
+        fabric_weight: '1000D Cordura Ballistic Nylon',
+        composition: '100% High-Tenacity Cordura, Anodized Aluminum Buckle',
+        country_of_origin: 'Japan',
+        care_instructions: 'Spot clean with damp cloth.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 14000, // $140.00
+        currency: 'USD',
+        stock: 18,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-CB-021-BLK-OS', size: 'ONE SIZE', color: 'Ink Black', hex: '#1B0E0D', stock: 12 },
+          { sku: 'HW-CB-021-OLV-OS', size: 'ONE SIZE', color: 'Olive Drab', hex: '#4A5340', stock: 6 }
+        ]
+      },
+      // 22. Industrial Buckle Belt
+      {
+        sku: 'HW-IB-022',
+        slug: 'industrial-buckle-belt',
+        name: 'Industrial Buckle Belt',
+        description: '38mm high-density jacquard webbing paired with a quick-release CNC-machined aerospace alloy buckle with laser-etched serial code.',
+        category: 'ACCESSORIES',
+        categorySlug: 'accessories',
+        collectionSlug: 'industrial-hardware',
+        fit_type: 'TAILORED',
+        fabric_weight: 'Heavy Duty Mil-Spec Jacquard Webbing',
+        composition: '100% Polyamide Webbing, 7075 Anodized Aluminum Hardware',
+        country_of_origin: 'Austria',
+        care_instructions: 'Wipe metal with dry microfibre cloth.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 11000, // $110.00
+        currency: 'USD',
+        stock: 22,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1624222247344-550fb60583dc?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-IB-022-BLK-S', size: 'S', color: 'Ink Black', hex: '#1B0E0D', stock: 7 },
+          { sku: 'HW-IB-022-BLK-M', size: 'M', color: 'Ink Black', hex: '#1B0E0D', stock: 8 },
+          { sku: 'HW-IB-022-RED-L', size: 'L', color: 'Burnt Red', hex: '#C72A09', stock: 7 }
+        ]
+      },
+      // 23. Merino Wrap Scarf
+      {
+        sku: 'HW-MS-023',
+        slug: 'merino-wrap-scarf',
+        name: 'Merino Wrap Scarf',
+        description: 'Substantial 220cm architectural blanket scarf in ribbed virgin wool with clean selvedge border finish and woven label.',
+        category: 'ACCESSORIES',
+        categorySlug: 'accessories',
+        collectionSlug: 'core-minimalist',
+        fit_type: 'OVERSIZED',
+        fabric_weight: '480 GSM Double-Rib Heavyweight Knit',
+        composition: '100% Extra-Fine Virgin Merino Wool',
+        country_of_origin: 'Scotland',
+        care_instructions: 'Dry clean or gentle hand wash cold.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 13000, // $130.00
+        currency: 'USD',
+        stock: 16,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-MS-023-GRY-OS', size: 'ONE SIZE', color: 'Ash Grey', hex: '#7D7D7D', stock: 8 },
+          { sku: 'HW-MS-023-BLK-OS', size: 'ONE SIZE', color: 'Ink Black', hex: '#1B0E0D', stock: 8 }
+        ]
+      },
+      // 24. Season 04 Archive Object / Field Notes
+      {
+        sku: 'HW-FN-024',
+        slug: 'season-04-archive-field-notes',
+        name: 'Season 04 Archive Field Notes',
+        description: 'Numbered edition archival monograph containing brutalist technical line drawings, typography specimens, and raw fabric swatches.',
+        category: 'OBJECTS',
+        categorySlug: 'objects-archive',
+        collectionSlug: 'season-04-brutalist',
+        fit_type: 'BOXY',
+        fabric_weight: '300 GSM Uncoated Heavyweight Board',
+        composition: 'FSC Certified Heavy Cotton Paper, Stainless Steel Screw Binding',
+        country_of_origin: 'Germany',
+        care_instructions: 'Store in moisture-controlled archive environment.',
+        rating_avg: null,
+        rating_count: 0,
+        price_cents: 4500, // $45.00
+        currency: 'USD',
+        stock: 35,
+        is_active: true,
+        image_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000&auto=format&fit=crop',
+        variants: [
+          { sku: 'HW-FN-024-STD-OS', size: 'ONE SIZE', color: 'Concrete Bone', hex: '#E3E2DE', stock: 35 }
         ]
       }
     ];
@@ -336,6 +826,19 @@ export async function runSeeds(retries = 5): Promise<void> {
          ON CONFLICT DO NOTHING;`,
         [productId, p.image_url, p.name]
       );
+
+      // Seed Additional Gallery Images
+      if ('galleryImages' in p && Array.isArray((p as any).galleryImages)) {
+        let sortIdx = 2;
+        for (const g of (p as any).galleryImages) {
+          await client.query(
+            `INSERT INTO product_images (product_id, image_url, alt_text, is_primary, sort_order)
+             VALUES ($1, $2, $3, FALSE, $4)
+             ON CONFLICT DO NOTHING;`,
+            [productId, g.url, g.alt, sortIdx++]
+          );
+        }
+      }
     }
     logger.info(`Seeded ${products.length} products with variants and gallery images`);
 
