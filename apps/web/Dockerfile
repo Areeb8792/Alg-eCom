@@ -26,6 +26,9 @@ RUN npm run build --workspace=@algions/web
 # Stage 2: Production Nginx Server (Maintained Stable Release)
 FROM nginx:1.30.6-alpine AS runner
 
+# Install OpenSSL and Bash for runtime cert management
+RUN apk add --no-cache openssl bash
+
 # Remove default boilerplate configuration
 RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
 
@@ -35,13 +38,18 @@ COPY --from=builder /usr/src/app/apps/web/dist /usr/share/nginx/html
 # Copy reverse proxy and security configuration
 COPY infra/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY infra/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY infra/nginx/templates/default.conf.template /etc/nginx/templates/default.conf.template
 
-# Create directory for local SSL certificates
-RUN mkdir -p /etc/nginx/ssl
+# Create directories for SSL certificates and Let's Encrypt webroot
+RUN mkdir -p /etc/nginx/ssl/live /var/www/certbot
+
+COPY apps/web/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 80 443
 
 HEALTHCHECK --interval=20s --timeout=5s --start-period=5s --retries=3 \
   CMD wget -q --spider --no-check-certificate https://localhost/ || exit 1
 
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

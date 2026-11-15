@@ -24,8 +24,33 @@ export function createApp(appConfig: Config = config): Express {
     // Allow requests with no origin (e.g. mobile apps, curl, automated server probes, health checks)
     if (!requestOrigin) return callback(null, true);
 
-    // Exact match against explicit allowed origins
-    if (allowedOrigins.includes(requestOrigin)) {
+    // Match against explicit allowed origins or wildcard subdomain patterns (e.g. *.vercel.app)
+    const isAllowed = allowedOrigins.some((pattern) => {
+      if (pattern === requestOrigin) return true;
+      if (pattern.startsWith('*.')) {
+        const rootDomain = pattern.slice(2);
+        try {
+          const originHost = new URL(requestOrigin).hostname;
+          return originHost === rootDomain || originHost.endsWith('.' + rootDomain);
+        } catch {
+          return false;
+        }
+      }
+      if (pattern.startsWith('https://*.') || pattern.startsWith('http://*.')) {
+        const parts = pattern.split('://*.');
+        const scheme = parts[0];
+        const rootDomain = parts[1];
+        try {
+          const originUrl = new URL(requestOrigin);
+          return originUrl.protocol === `${scheme}:` && (originUrl.hostname === rootDomain || originUrl.hostname.endsWith('.' + rootDomain));
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    });
+
+    if (isAllowed) {
       return callback(null, true);
     }
 

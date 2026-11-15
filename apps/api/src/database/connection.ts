@@ -4,12 +4,26 @@ import { logger } from '../logging/logger.js';
 
 const { Pool } = pg;
 
+const dbUrl = getDatabaseConnectionString();
+const isLocalHost =
+  dbUrl.includes('localhost') ||
+  dbUrl.includes('127.0.0.1') ||
+  dbUrl.includes('@postgres:') ||
+  dbUrl.includes('@algions-postgres:');
+
+const isSsl =
+  process.env.DB_SSL === 'true' ||
+  dbUrl.includes('sslmode=require') ||
+  dbUrl.includes('neon.tech') ||
+  (config.NODE_ENV === 'production' && !isLocalHost);
+
 export const pool = new Pool({
-  connectionString: getDatabaseConnectionString(),
+  connectionString: dbUrl,
   min: config.DB_POOL_MIN,
   max: config.DB_POOL_MAX,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ...(isSsl ? { ssl: { rejectUnauthorized: false } } : {}),
 });
 
 pool.on('error', (err) => {

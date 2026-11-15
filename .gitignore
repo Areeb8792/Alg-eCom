@@ -63,3 +63,4 @@ crash.*.log
 .terraform/
 .terraform.lock.hcl
 
+.neon

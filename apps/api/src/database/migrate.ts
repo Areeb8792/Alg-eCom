@@ -9,7 +9,16 @@ const __dirname = path.dirname(__filename);
 
 export async function runMigrations(retries = 5): Promise<void> {
   logger.info('Starting database migrations...');
-  const schemaPath = path.join(__dirname, 'schema.sql');
+  const candidatePaths = [
+    path.join(__dirname, 'schema.sql'),
+    path.resolve(__dirname, '../../src/database/schema.sql'),
+    path.resolve(process.cwd(), 'apps/api/src/database/schema.sql'),
+    path.resolve(process.cwd(), 'src/database/schema.sql'),
+  ];
+  const schemaPath = candidatePaths.find((p) => fs.existsSync(p));
+  if (!schemaPath) {
+    throw new Error(`Migration failed: schema.sql not found in candidate paths: ${candidatePaths.join(', ')}`);
+  }
   const sql = fs.readFileSync(schemaPath, 'utf8');
 
   let client;

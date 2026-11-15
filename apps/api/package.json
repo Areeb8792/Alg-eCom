@@ -6,7 +6,7 @@
   "description": "Product and Order API service for Algions AI Labs assessment",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs = require('fs'), p = require('path'); fs.mkdirSync(p.resolve('dist/database'), { recursive: true }); fs.copyFileSync(p.resolve('src/database/schema.sql'), p.resolve('dist/database/schema.sql'));\"",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "test": "vitest run",
