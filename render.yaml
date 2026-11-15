@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm ci && npm run build --workspace=@algions/api
+    buildCommand: npm ci --include=dev && npm run build --workspace=@algions/api && npm prune --omit=dev
     startCommand: npm run start --workspace=@algions/api
     healthCheckPath: /api/v1/health/ready
     autoDeploy: true
