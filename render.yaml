@@ -2,8 +2,8 @@ services:
   - type: web
     name: algions-api
     runtime: node
-    plan: starter
-    region: oregon
+    plan: free
+    region: singapore
     buildCommand: npm ci && npm run build --workspace=@algions/api
     startCommand: npm run start --workspace=@algions/api
     healthCheckPath: /api/v1/health/ready

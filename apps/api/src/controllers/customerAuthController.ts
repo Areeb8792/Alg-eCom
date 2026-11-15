@@ -41,8 +41,19 @@ function setAuthCookies(res: Response, refreshToken?: string): string {
 }
 
 function clearAuthCookies(res: Response): void {
-  res.clearCookie(REFRESH_COOKIE_NAME, { path: '/' });
-  res.clearCookie(CSRF_COOKIE_NAME, { path: '/' });
+  const isProd = config.NODE_ENV === 'production';
+  res.clearCookie(REFRESH_COOKIE_NAME, {
+    path: '/',
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax'
+  });
+  res.clearCookie(CSRF_COOKIE_NAME, {
+    path: '/',
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax'
+  });
 }
 
 export class CustomerAuthController {
