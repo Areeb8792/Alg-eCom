@@ -112,3 +112,87 @@ export const IN_MEMORY_AUDIT_EVENTS: AuditEvent[] = [
     created_at: new Date().toISOString()
   }
 ];
+
+// Season 04 Customer In-Memory Storage
+export interface InMemoryCustomerUser {
+  id: string;
+  email: string;
+  password_hash: string;
+  full_name: string;
+  phone: string | null;
+  is_verified: boolean;
+  email_verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InMemoryUserSession {
+  id: string;
+  user_id: string;
+  refresh_token_hash: string;
+  user_agent: string | null;
+  ip_address: string | null;
+  expires_at: string;
+  revoked_at: string | null;
+  created_at: string;
+}
+
+export interface InMemoryVerificationToken {
+  id: string;
+  user_id: string;
+  token_hash: string;
+  expires_at: string;
+  used_at: string | null;
+  created_at: string;
+}
+
+export interface InMemoryPasswordResetToken {
+  id: string;
+  user_id: string;
+  token_hash: string;
+  expires_at: string;
+  used_at: string | null;
+  created_at: string;
+}
+
+export interface InMemoryCustomerPreferences {
+  user_id: string;
+  gender_presentation: string;
+  favorite_categories: string[];
+  preferred_styles: string[];
+  preferred_fits: string[];
+  preferred_sizes: string[];
+  preferred_colors: string[];
+  price_range_min_cents: number;
+  price_range_max_cents: number;
+  onboarding_completed: boolean;
+  newsletter_subscribed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InMemoryCustomerAddress {
+  id: string;
+  user_id: string;
+  label: string;
+  recipient_name: string;
+  phone: string;
+  address_line1: string;
+  address_line2: string | null;
+  city: string;
+  state_province: string;
+  postal_code: string;
+  country_code: string;
+  is_default_shipping: boolean;
+  is_default_billing: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const IN_MEMORY_USERS: Map<string, InMemoryCustomerUser> = new Map();
+export const IN_MEMORY_USER_SESSIONS: Map<string, InMemoryUserSession> = new Map();
+export const IN_MEMORY_VERIFICATION_TOKENS: Map<string, InMemoryVerificationToken> = new Map();
+export const IN_MEMORY_PASSWORD_RESET_TOKENS: Map<string, InMemoryPasswordResetToken> = new Map();
+export const IN_MEMORY_PREFERENCES: Map<string, InMemoryCustomerPreferences> = new Map();
+export const IN_MEMORY_ADDRESSES: Map<string, InMemoryCustomerAddress> = new Map();
+

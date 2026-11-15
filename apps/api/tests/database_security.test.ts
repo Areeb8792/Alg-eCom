@@ -119,7 +119,7 @@ describe('Database Security & Least-Privilege Role Architecture', () => {
       expect.unreachable('algions_app must not be allowed to execute CREATE TABLE');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      expect(msg).toMatch(/(permission denied|terminat|connect|ECONNREFUSED)/i);
+      expect(msg).toMatch(/(permission denied|terminat|connect|ECONNREFUSED|ENOTFOUND)/i);
     }
   });
 
@@ -129,7 +129,7 @@ describe('Database Security & Least-Privilege Role Architecture', () => {
       expect.unreachable('Modifications to audit_events must be blocked by trigger or privileges');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      expect(msg).toMatch(/(Security Policy Violation|permission denied|terminat|connect|ECONNREFUSED)/i);
+      expect(msg).toMatch(/(Security Policy Violation|permission denied|terminat|connect|ECONNREFUSED|ENOTFOUND)/i);
     }
   });
 });

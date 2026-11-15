@@ -9,10 +9,17 @@ export interface AdminJwtPayload {
   role: string;
 }
 
+export interface CustomerJwtPayload {
+  userId: string;
+  email: string;
+  role: 'CUSTOMER';
+}
+
 declare global {
   namespace Express {
     interface Request {
       adminUser?: AdminJwtPayload;
+      customerUser?: CustomerJwtPayload;
     }
   }
 }
@@ -47,7 +54,7 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
     req.adminUser = decoded;
     next();
   } catch (err) {
-    logger.warn({ err, correlationId: req.correlationId }, 'Invalid or expired JWT token');
+    logger.warn({ err, correlationId: req.correlationId }, 'Invalid or expired Admin JWT token');
     res.status(401).json({
       error: {
         code: 'INVALID_TOKEN',
@@ -55,4 +62,62 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
       }
     });
   }
+}
+
+export function requireCustomerAuth(req: Request, res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Customer authentication required. Missing or malformed Bearer token.'
+      }
+    });
+    return;
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    const decoded = jwt.verify(token, config.JWT_SECRET) as CustomerJwtPayload;
+    if (!decoded.userId || decoded.role !== 'CUSTOMER') {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Invalid token claims. Customer credentials required.'
+        }
+      });
+      return;
+    }
+
+    req.customerUser = decoded;
+    next();
+  } catch (err) {
+    logger.warn({ err, correlationId: req.correlationId }, 'Invalid or expired Customer JWT token');
+    res.status(401).json({
+      error: {
+        code: 'INVALID_TOKEN',
+        message: 'Invalid, malformed, or expired customer authentication token.'
+      }
+    });
+  }
+}
+
+export function optionalCustomerAuth(req: Request, _res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.substring(7);
+  try {
+    const decoded = jwt.verify(token, config.JWT_SECRET) as CustomerJwtPayload;
+    if (decoded.userId && decoded.role === 'CUSTOMER') {
+      req.customerUser = decoded;
+    }
+  } catch {
+    // Optional token - continue as unauthenticated guest
+  }
+  next();
 }

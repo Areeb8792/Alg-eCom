@@ -103,3 +103,96 @@ DROP TRIGGER IF EXISTS trg_audit_events_immutable ON audit_events;
 CREATE TRIGGER trg_audit_events_immutable
 BEFORE UPDATE OR DELETE ON audit_events
 FOR EACH ROW EXECUTE FUNCTION prevent_audit_tampering();
+
+-- ==============================================================================
+-- Season 04 — Customer Identity, Preferences, and Address Architecture
+-- ==============================================================================
+
+-- Table: users (Customer accounts)
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(32),
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    email_verified_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table: user_sessions (Refresh tokens & session revocation)
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    refresh_token_hash VARCHAR(255) NOT NULL UNIQUE,
+    user_agent TEXT,
+    ip_address VARCHAR(64),
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table: email_verification_tokens
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table: password_reset_tokens
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table: customer_preferences (Season 04 Editorial & Fit Dimensions)
+CREATE TABLE IF NOT EXISTS customer_preferences (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    gender_presentation VARCHAR(32) DEFAULT 'ALL',
+    favorite_categories TEXT[] DEFAULT '{}',
+    preferred_styles TEXT[] DEFAULT '{}',
+    preferred_fits TEXT[] DEFAULT '{}',
+    preferred_sizes TEXT[] DEFAULT '{}',
+    preferred_colors TEXT[] DEFAULT '{}',
+    price_range_min_cents INTEGER DEFAULT 0,
+    price_range_max_cents INTEGER DEFAULT 500000,
+    onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    newsletter_subscribed BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table: customer_addresses (Address Book)
+CREATE TABLE IF NOT EXISTS customer_addresses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    label VARCHAR(64) NOT NULL DEFAULT 'Home',
+    recipient_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(32) NOT NULL,
+    address_line1 VARCHAR(255) NOT NULL,
+    address_line2 VARCHAR(255),
+    city VARCHAR(128) NOT NULL,
+    state_province VARCHAR(128) NOT NULL,
+    postal_code VARCHAR(32) NOT NULL,
+    country_code VARCHAR(2) NOT NULL DEFAULT 'US',
+    is_default_shipping BOOLEAN NOT NULL DEFAULT FALSE,
+    is_default_billing BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Customer Indexes
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id ON email_verification_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_customer_addresses_user_id ON customer_addresses(user_id);
+

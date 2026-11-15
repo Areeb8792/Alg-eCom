@@ -41,6 +41,17 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     return;
   }
 
+  if (err && typeof err === 'object' && 'statusCode' in err) {
+    const customErr = err as { statusCode: number; code?: string; message: string };
+    res.status(customErr.statusCode).json({
+      error: {
+        code: customErr.code || 'REQUEST_ERROR',
+        message: customErr.message
+      }
+    });
+    return;
+  }
+
   logger.error(
     {
       err,

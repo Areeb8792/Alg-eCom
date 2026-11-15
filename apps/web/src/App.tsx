@@ -3,17 +3,21 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Product } from './types/index.js';
 import { fetchProducts } from './services/api.js';
 import { CartProvider, useCart } from './context/CartContext.js';
+import { AuthProvider } from './context/AuthContext.js';
 import { GrainOverlay } from './components/GrainOverlay.js';
 import { MainHeader } from './components/MainHeader.js';
 import { FloatingCartButton } from './components/FloatingCartButton.js';
 import { HealthSignal } from './components/HealthSignal.js';
 import { MainFooter } from './components/MainFooter.js';
+import { AuthModal } from './components/AuthModal.js';
+import { OnboardingModal } from './components/OnboardingModal.js';
 import { CatalogPage } from './pages/CatalogPage.js';
 import { ProductDetailPage } from './pages/ProductDetailPage.js';
 import { BagPage } from './pages/BagPage.js';
 import { CheckoutPage } from './pages/CheckoutPage.js';
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage.js';
 import { AdminPage } from './pages/AdminPage.js';
+import { AccountPage } from './pages/AccountPage.js';
 
 // Scroll to top helper on navigation
 const ScrollToTop: React.FC = () => {
@@ -113,6 +117,9 @@ const AppRoutes: React.FC = () => {
           {/* Order Status & Tracking Page */}
           <Route path="/track-order" element={<OrderConfirmationPage />} />
 
+          {/* Customer Account Dossier & Preferences (Season 04) */}
+          <Route path="/account" element={<AccountPage />} />
+
           {/* Administrative Control Dashboard & Login */}
           <Route
             path="/admin"
@@ -138,6 +145,10 @@ const AppRoutes: React.FC = () => {
         </Routes>
       </main>
 
+      {/* Global Modals */}
+      <AuthModal />
+      <OnboardingModal />
+
       {/* Real-time Health Check Signal */}
       <HealthSignal />
 
@@ -150,9 +161,11 @@ const AppRoutes: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <CartProvider>
-        <AppRoutes />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AppRoutes />
+        </CartProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 };
