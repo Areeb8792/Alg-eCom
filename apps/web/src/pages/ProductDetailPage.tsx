@@ -332,15 +332,15 @@ export const ProductDetailPage: React.FC = () => {
             <div className="bg-white border-2 border-[#1B0E0D] p-4 space-y-2 space-grotesk text-xs mb-6 shadow-[3px_3px_0px_#1B0E0D]">
               <div className="flex justify-between items-center pb-2 border-b border-zinc-200">
                 <span className="text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <PackageCheck className="w-3.5 h-3.5 text-[#1B0E0D]" /> INVENTORY STATUS
+                  <PackageCheck className="w-3.5 h-3.5 text-[#1B0E0D]" /> STOCK RESERVATION
                 </span>
                 <span className={`font-bold ${isSoldOut ? 'text-[#C72A09]' : 'text-emerald-700'}`}>
                   {isSoldOut ? 'ALLOCATION EXHAUSTED' : `${currentStock} UNITS CONFIRMED`}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-zinc-500 uppercase tracking-wider">CONCURRENCY SAFEGUARD</span>
-                <span className="font-bold text-[#1B0E0D]">ATOMIC ROW-LEVEL LOCKING</span>
+                <span className="text-zinc-500 uppercase tracking-wider">INTEGRITY MODEL</span>
+                <span className="font-bold text-[#1B0E0D]">POSTGRESQL ROW LOCKING</span>
               </div>
             </div>
 

@@ -187,7 +187,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
             SEASON 04 // INDUSTRIAL LUXURY
           </div>
           <h1 className="anton-heading text-[11vw] lg:text-[7.5vw] leading-[0.88] mb-6 text-[#1B0E0D]">
-            ARCHIVAL<br />STRUCTURE
+            COUTURE<br />STATEMENT
           </h1>
           <p className="space-grotesk text-sm leading-relaxed max-w-[420px] text-[#1B0E0D]/80 mb-8">
             High-density organic cottons, modular tactical outer garments, and architectural silhouettes engineered with cryptographic inventory consistency.
@@ -279,6 +279,15 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
 
       {/* 3. Main Discovery Workspace */}
       <section id="catalog-browser" className="py-12 px-6 lg:px-12 flex-1">
+        <div className="mb-6">
+          <h2 className="anton-heading text-4xl lg:text-5xl text-[#1B0E0D] uppercase tracking-wide">
+            ESSENTIALS
+          </h2>
+          <p className="space-grotesk text-xs text-zinc-600 uppercase tracking-widest mt-1">
+            REAL-TIME CATALOG SYNCHRONIZED WITH POSTGRESQL BACKEND
+          </p>
+        </div>
+
         {/* Top Control Bar: Search, Category Quick Tabs, Layout & Mobile Filter Trigger */}
         <div className="mb-8 space-y-4">
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
@@ -287,7 +296,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
               <input
                 type="text"
-                placeholder="SEARCH ARCHIVE (FABRIC, COLOR, SILHOUETTE, SKU)..."
+                placeholder="SEARCH ARCHIVE..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-white border-2 border-[#1B0E0D] text-xs font-medium px-10 py-3 space-grotesk outline-none focus:bg-white transition-all uppercase placeholder:text-zinc-500 shadow-[3px_3px_0px_#1B0E0D]"
