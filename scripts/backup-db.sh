@@ -31,10 +31,15 @@ if [[ -z "${DB_BACKUP_PASSWORD:-}" ]]; then
     exit 1
 fi
 
+DOCKER_BIN="docker"
+if ! docker ps &>/dev/null && command -v docker.exe &>/dev/null && docker.exe ps &>/dev/null; then
+    DOCKER_BIN="docker.exe"
+fi
+
 echo "[1/4] Executing pg_dump in compressed custom archive format (-Fc) as role '${DB_BACKUP_USER}'..."
 
-if docker compose ps -q postgres &>/dev/null; then
-    docker compose exec -T -e PGPASSWORD="${DB_BACKUP_PASSWORD}" postgres pg_dump -U "${DB_BACKUP_USER}" -d "${DB_NAME}" -Fc > "${BACKUP_FILE}"
+if ${DOCKER_BIN} compose ps -q postgres &>/dev/null; then
+    ${DOCKER_BIN} compose exec -T -e PGPASSWORD="${DB_BACKUP_PASSWORD}" postgres pg_dump -U "${DB_BACKUP_USER}" -d "${DB_NAME}" -Fc > "${BACKUP_FILE}"
 elif command -v pg_dump &>/dev/null; then
     PGPASSWORD="${DB_BACKUP_PASSWORD}" pg_dump -U "${DB_BACKUP_USER}" -d "${DB_NAME}" -Fc -f "${BACKUP_FILE}"
 else

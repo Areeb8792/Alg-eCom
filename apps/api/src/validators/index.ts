@@ -26,7 +26,7 @@ export const productQuerySchema = z.object({
   q: z.string().optional(),
   sort: z.enum(['newest', 'price_asc', 'price_desc', 'popularity', 'rating']).optional(),
   page: z.string().optional().transform((v) => (v ? Math.max(1, parseInt(v, 10)) : 1)),
-  limit: z.string().optional().transform((v) => (v ? Math.min(100, Math.max(1, parseInt(v, 10))) : 20))
+  limit: z.string().optional().transform((v) => (v ? Math.min(100, Math.max(1, parseInt(v, 10))) : 50))
 });
 
 export const updateProductSchema = z.object({

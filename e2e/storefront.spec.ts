@@ -4,6 +4,35 @@ import path from 'path';
 test.describe('Algions Luxury Fashion E-Commerce Comprehensive Acceptance Suite', () => {
   const evidenceDir = path.resolve('docs/evidence');
 
+  test.beforeEach(async ({ page }, testInfo) => {
+    page.on('console', (msg) => {
+      console.log(`[BROWSER CONSOLE ${msg.type().toUpperCase()}]: ${msg.text()}`);
+    });
+    page.on('pageerror', (err) => {
+      console.error(`[BROWSER UNCAUGHT PAGE ERROR]: ${err.stack || err.message}`);
+    });
+    page.on('requestfailed', (req) => {
+      console.error(`[REQUEST FAILED]: ${req.method()} ${req.url()} - ${req.failure()?.errorText}`);
+    });
+    page.on('response', (res) => {
+      if (res.status() >= 400) {
+        console.warn(`[HTTP ${res.status()}]: ${res.request().method()} ${res.url()}`);
+      }
+    });
+  });
+
+  test.afterEach(async ({ page }, testInfo) => {
+    if (testInfo.status !== testInfo.expectedStatus) {
+      console.error(`[TEST FAILED: ${testInfo.title}] Current URL: ${page.url()}`);
+      try {
+        const bodyHtml = await page.locator('body').innerHTML();
+        console.error(`[FAILING DOM BODY]:\n${bodyHtml.slice(0, 1000)}...`);
+      } catch (e) {
+        console.error('Could not capture DOM on failure');
+      }
+    }
+  });
+
   test('01: Homepage & Editorial Hero Presentation', async ({ page }) => {
     await page.goto('/');
 

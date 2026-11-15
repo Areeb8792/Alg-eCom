@@ -233,9 +233,8 @@ export const ProductDetailPage: React.FC = () => {
         <div className="lg:col-span-5 flex flex-col space-y-6">
           <div>
             <div className="space-grotesk text-xs tracking-[0.3em] uppercase text-zinc-600 mb-1 font-bold">
-              SKU: {selectedVariant ? selectedVariant.sku : product.sku}
+              SKU: {product.sku}{selectedVariant && selectedVariant.sku !== product.sku ? ` (${selectedVariant.sku})` : ''}
             </div>
-
             <h1 className="anton-heading text-4xl lg:text-5xl text-[#1B0E0D] leading-none mb-3">
               {product.name}
             </h1>
@@ -247,13 +246,13 @@ export const ProductDetailPage: React.FC = () => {
                   <Star
                     key={i}
                     className={`w-4 h-4 ${
-                      i < Math.round(product.rating_avg || 5.0) ? 'fill-[#1B0E0D] text-[#1B0E0D]' : 'text-zinc-300'
+                      i < Math.round(Number(product.rating_avg) || 5.0) ? 'fill-[#1B0E0D] text-[#1B0E0D]' : 'text-zinc-300'
                     }`}
                   />
                 ))}
               </div>
               <span className="space-grotesk text-xs font-bold text-zinc-700">
-                {(product.rating_avg || 5.0).toFixed(1)} / 5.0 ({product.rating_count || 12} EDITORIAL REVIEWS)
+                {(Number(product.rating_avg) || 5.0).toFixed(1)} / 5.0 ({product.rating_count || 12} EDITORIAL REVIEWS)
               </span>
             </div>
 

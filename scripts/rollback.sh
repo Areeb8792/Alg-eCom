@@ -34,8 +34,13 @@ echo "Target rollback image version: ${PREV_TAG}"
 export API_IMAGE="${API_IMAGE_NAME:-algions-api}:${PREV_TAG}"
 export WEB_IMAGE="${WEB_IMAGE_NAME:-algions-web}:${PREV_TAG}"
 
+DOCKER_BIN="docker"
+if ! docker ps &>/dev/null && command -v docker.exe &>/dev/null && docker.exe ps &>/dev/null; then
+    DOCKER_BIN="docker.exe"
+fi
+
 echo "Redeploying containers to version ${PREV_TAG}..."
-docker compose up -d --no-deps api nginx
+${DOCKER_BIN} compose up -d --no-deps api nginx
 
 # Verify rollback health
 echo "Verifying restored application health..."

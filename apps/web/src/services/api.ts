@@ -302,10 +302,11 @@ export async function fetchProducts(
     if (filters.search) params.append('search', filters.search);
     if (filters.sort) params.append('sort', filters.sort);
     if (filters.page) params.append('page', String(filters.page));
-    if (filters.limit) params.append('limit', String(filters.limit));
+    params.append('limit', String(filters.limit || 50));
   } else {
     if (filterOrCategory && filterOrCategory !== 'ALL') params.append('category', filterOrCategory);
     if (search) params.append('search', search);
+    params.append('limit', '50');
   }
 
   const queryStr = params.toString();

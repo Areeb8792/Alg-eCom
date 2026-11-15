@@ -53,8 +53,8 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
     source "${ROOT_DIR}/.env" || true
 fi
 
-DB_USER="${DB_MIGRATION_USER:-${POSTGRES_USER:-${DB_USER:-algions_admin}}}"
-DB_PASSWORD="${DB_MIGRATION_PASSWORD:-${POSTGRES_PASSWORD:-${DB_PASSWORD:-}}}"
+DB_USER="${POSTGRES_USER:-${DB_MIGRATION_USER:-algions_user}}"
+DB_PASSWORD="${POSTGRES_PASSWORD:-${DB_MIGRATION_PASSWORD:-${DB_PASSWORD:-}}}"
 DB_NAME="${TARGET_DB:-${3:-${DB_NAME:-algions_db}}}"
 
 if [[ -z "${DB_PASSWORD}" ]]; then
@@ -62,10 +62,15 @@ if [[ -z "${DB_PASSWORD}" ]]; then
     exit 1
 fi
 
+DOCKER_BIN="docker"
+if ! docker ps &>/dev/null && command -v docker.exe &>/dev/null && docker.exe ps &>/dev/null; then
+    DOCKER_BIN="docker.exe"
+fi
+
 # [2/4] Perform pg_restore
 echo "[2/4] Restoring PostgreSQL database from archive (-Fc) as migration admin '${DB_USER}'..."
-if docker compose ps -q postgres &>/dev/null; then
-    docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error < "${BACKUP_FILE}"
+if ${DOCKER_BIN} compose ps -q postgres &>/dev/null; then
+    ${DOCKER_BIN} compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error < "${BACKUP_FILE}"
 elif command -v pg_restore &>/dev/null; then
     PGPASSWORD="${DB_PASSWORD}" pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists --exit-on-error "${BACKUP_FILE}"
 else
@@ -77,11 +82,11 @@ echo "✓ Archive restored."
 
 # [3/4] Verify database contents post-restore
 echo "[3/4] Executing post-restore data and schema integrity verification checks..."
-if docker compose ps -q postgres &>/dev/null; then
-    TABLE_COUNT=$(docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
-    PRODUCT_COUNT=$(docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')
-    ORDER_COUNT=$(docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' \r\n')
-    SAMPLE_PRODUCT=$(docker compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT name FROM products WHERE is_active = true LIMIT 1;" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//')
+if ${DOCKER_BIN} compose ps -q postgres &>/dev/null; then
+    TABLE_COUNT=$(${DOCKER_BIN} compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
+    PRODUCT_COUNT=$(${DOCKER_BIN} compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')
+    ORDER_COUNT=$(${DOCKER_BIN} compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM orders;" | tr -d ' \r\n')
+    SAMPLE_PRODUCT=$(${DOCKER_BIN} compose exec -T -e PGPASSWORD="${DB_PASSWORD}" postgres psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT name FROM products WHERE is_active = true LIMIT 1;" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//')
 else
     TABLE_COUNT=$(PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" | tr -d ' \r\n')
     PRODUCT_COUNT=$(PGPASSWORD="${DB_PASSWORD}" psql -U "${DB_USER}" -d "${DB_NAME}" -t -c "SELECT COUNT(*) FROM products;" | tr -d ' \r\n')

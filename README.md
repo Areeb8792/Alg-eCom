@@ -2,7 +2,7 @@
 ### DevOps & Cloud Engineering Shortlisting Assessment
 
 [![CI Pipeline](https://github.com/Areeb8792/Alg-eCom/actions/workflows/ci.yml/badge.svg)](https://github.com/Areeb8792/Alg-eCom/actions/workflows/ci.yml)
-[![Tests Passing](https://img.shields.io/badge/backend%20tests-25%20passed-brightgreen.svg)](docs/TEST_PLAN.md)
+[![Tests Passing](https://img.shields.io/badge/backend%20tests-103%20passed-brightgreen.svg)](docs/TEST_PLAN.md)
 [![E2E Tests](https://img.shields.io/badge/playwright%20e2e-8%20passed-brightgreen.svg)](docs/TEST_PLAN.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-5--Service%20Stack-2496ED.svg)](https://www.docker.com/)

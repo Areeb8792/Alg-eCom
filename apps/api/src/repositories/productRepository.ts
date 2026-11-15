@@ -200,7 +200,7 @@ export class ProductRepository {
       const listSql = `
         SELECT p.id, p.sku, p.slug, p.name, p.description, p.category, p.category_id,
                p.collection_id, p.fit_type, p.fabric_weight, p.composition, p.country_of_origin,
-               p.care_instructions, p.rating_avg, p.rating_count, p.price_cents, p.currency,
+               p.care_instructions, p.rating_avg::float AS rating_avg, p.rating_count, p.price_cents, p.currency,
                p.stock, p.is_active, p.image_url, p.created_at, p.updated_at,
                c.name AS collection_name, c.slug AS collection_slug
         FROM products p
@@ -354,7 +354,7 @@ export class ProductRepository {
       const sql = `
         SELECT p.id, p.sku, p.slug, p.name, p.description, p.category, p.category_id,
                p.collection_id, p.fit_type, p.fabric_weight, p.composition, p.country_of_origin,
-               p.care_instructions, p.rating_avg, p.rating_count, p.price_cents, p.currency,
+               p.care_instructions, p.rating_avg::float AS rating_avg, p.rating_count, p.price_cents, p.currency,
                p.stock, p.is_active, p.image_url, p.created_at, p.updated_at,
                c.name AS collection_name, c.slug AS collection_slug
         FROM products p

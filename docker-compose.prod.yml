@@ -1,19 +1,19 @@
 # ==============================================================================
 # Algions AI Labs — Production / GHCR Release Compose Override
-# Usage: IMAGE_TAG=v1.0.0 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Usage: IMAGE_TAG=v1.0.5 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # Repository: https://github.com/Areeb8792/Alg-eCom
 # ==============================================================================
 name: algions-platform
 
 services:
   api:
-    image: ${API_IMAGE:-ghcr.io/areeb8792/alg-ecom/api:${IMAGE_TAG:-v1.0.0}}
-    pull_policy: if_not_present
+    image: ${API_IMAGE:-ghcr.io/areeb8792/alg-ecom/api:${IMAGE_TAG:-v1.0.5}}
+    pull_policy: always
 
   migration:
-    image: ${API_IMAGE:-ghcr.io/areeb8792/alg-ecom/api:${IMAGE_TAG:-v1.0.0}}
-    pull_policy: if_not_present
+    image: ${API_IMAGE:-ghcr.io/areeb8792/alg-ecom/api:${IMAGE_TAG:-v1.0.5}}
+    pull_policy: always
 
   nginx:
-    image: ${WEB_IMAGE:-ghcr.io/areeb8792/alg-ecom/web:${IMAGE_TAG:-v1.0.0}}
-    pull_policy: if_not_present
+    image: ${WEB_IMAGE:-ghcr.io/areeb8792/alg-ecom/web:${IMAGE_TAG:-v1.0.5}}
+    pull_policy: always
