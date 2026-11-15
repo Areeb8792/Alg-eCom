@@ -39,6 +39,7 @@ const COLOR_SWATCHES = [
 ];
 
 const FIT_OPTIONS = ['ALL', 'OVERSIZED', 'BOXY', 'TAILORED', 'RELAXED'];
+const QUICK_CATEGORIES = ['ALL', 'OUTERWEAR', 'TOPS', 'TAILORING', 'ACCESSORIES'];
 
 export const CatalogPage: React.FC<CatalogPageProps> = ({
   onQuickAdd,
@@ -352,7 +353,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
 
           {/* Category Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-[#1B0E0D]/20 pt-2">
-            {['ALL', ...(categories.length > 0 ? categories.map((c) => c.name.toUpperCase()) : ['OUTERWEAR', 'TOPS', 'TAILORING', 'ACCESSORIES'])].map((cat) => (
+            {QUICK_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => handleCategoryClick(cat)}
@@ -439,6 +440,35 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
                   RESET
                 </button>
               </div>
+
+              {/* Category Taxonomy Tree Filter */}
+              {categories.length > 0 && (
+                <div className="space-y-3">
+                  <span className="space-grotesk text-[11px] font-bold uppercase tracking-widest text-zinc-500 block">
+                    CATEGORY TAXONOMY
+                  </span>
+                  <div className="space-y-1.5">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() =>
+                          setSelectedCategory(selectedCategory === cat.name.toUpperCase() ? 'ALL' : cat.name.toUpperCase())
+                        }
+                        className={`w-full text-left px-3 py-2 text-xs space-grotesk font-bold uppercase border flex justify-between items-center ${
+                          selectedCategory === cat.name.toUpperCase()
+                            ? 'bg-[#1B0E0D] text-white border-[#1B0E0D]'
+                            : 'bg-zinc-50 text-zinc-800 border-zinc-300 hover:border-[#1B0E0D]'
+                        }`}
+                      >
+                        <span className="truncate">{cat.name}</span>
+                        {cat.children && cat.children.length > 0 && (
+                          <span className="text-[10px] opacity-70">[{cat.children.length} SUB]</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* 1. Curated Collections Filter */}
               {collections.length > 0 && (
