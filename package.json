@@ -16,7 +16,8 @@
     "dev:api": "npm run dev --workspace=@algions/api",
     "dev:web": "npm run dev --workspace=@algions/web",
     "db:migrate": "npm run db:migrate --workspace=@algions/api",
-    "db:seed": "npm run db:seed --workspace=@algions/api"
+    "db:seed": "npm run db:seed --workspace=@algions/api",
+    "db:provision:neon": "node scripts/provision-neon.js"
   },
   "keywords": [
     "devops",
