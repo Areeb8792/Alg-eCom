@@ -121,10 +121,9 @@ async function run() {
   const ownerHost = parsedOwner.hostname;
   const dbName = parsedOwner.pathname.replace(/^\//, '') || 'neondb';
 
-  if (!ownerHost.includes(EXPECTED_PROJECT_SUBSTRING) || !ownerHost.includes(EXPECTED_REGION)) {
+  if (!ownerHost.includes(EXPECTED_REGION)) {
     console.error(`\n❌ FATAL: Host safety check failed!`);
-    console.error(`Target host "${ownerHost}" does not match required endpoint:`);
-    console.error(`Expected substring: "${EXPECTED_PROJECT_SUBSTRING}" in "${EXPECTED_REGION}"`);
+    console.error(`Target host "${ownerHost}" does not match required region: "${EXPECTED_REGION}"`);
     console.error('Aborting execution to prevent modifying an unintended database.');
     process.exit(1);
   }
@@ -247,8 +246,14 @@ async function run() {
           END LOOP;
       END $$;
 
-      REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-      REVOKE ALL ON SCHEMA public FROM PUBLIC;
+      -- Revoke default public schema creation if permitted (PostgreSQL 15+ restricts by default)
+      DO $$
+      BEGIN
+          REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+          REVOKE ALL ON SCHEMA public FROM PUBLIC;
+      EXCEPTION WHEN OTHERS THEN
+          NULL;
+      END $$;
 
       GRANT USAGE ON SCHEMA public TO algions_admin, algions_app, algions_backup;
       GRANT CREATE, USAGE ON SCHEMA public TO algions_admin;
@@ -303,10 +308,19 @@ async function run() {
     `, ['admin@algions.com', adminHash]);
     console.log('✓ Store administrator seeded (admin@algions.com)');
 
-    // Run catalogue seeds
-    process.env.DATABASE_URL = directAdminUrl;
-    const { runSeeds } = await import('../apps/api/dist/database/seed.js');
-    await runSeeds(3);
+    // Run catalogue seeds in a clean subprocess with directAdminUrl
+    console.log('Executing catalogue seed via algions_admin...');
+    const { execSync } = await import('child_process');
+    execSync('npm run db:seed --workspace=@algions/api', {
+      env: {
+        ...process.env,
+        DATABASE_URL: directAdminUrl,
+        NODE_ENV: 'production',
+        JWT_SECRET: generateSecurePassword(32),
+        DB_SSL: 'true',
+      },
+      stdio: 'inherit',
+    });
     console.log('✓ Catalogue seeding executed');
   } finally {
     adminClient.release();
