@@ -6,7 +6,8 @@ import {
   verifyEmailSchema,
   resendVerificationSchema,
   forgotPasswordSchema,
-  resetPasswordSchema
+  resetPasswordSchema,
+  refreshTokenSchema
 } from '../validators/customerValidators.js';
 
 export class CustomerAuthController {
@@ -48,15 +49,30 @@ export class CustomerAuthController {
     }
   };
 
+  refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const rawToken = req.body?.refreshToken || req.headers['x-refresh-token'];
+      const parsed = refreshTokenSchema.parse({ refreshToken: rawToken });
+      const meta = {
+        userAgent: req.get('user-agent'),
+        ipAddress: req.ip
+      };
+      const result = await this.authService.rotateRefreshToken(parsed.refreshToken, meta);
+      res.status(200).json({
+        data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.customerUser?.userId;
+      const userId = req.customerUser!.userId;
       const refreshToken = req.body?.refreshToken;
-      if (userId) {
-        await this.authService.logout(userId, refreshToken);
-      }
+      const result = await this.authService.logout(userId, refreshToken);
       res.status(200).json({
-        data: { message: 'Successfully logged out.' }
+        data: result
       });
     } catch (err) {
       next(err);

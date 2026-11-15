@@ -107,8 +107,14 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO algions_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO algions_admin;
 
 -- 8. Privileges for runtime algions_app:
--- Standard read/write on product, order, customer, preferences, and idempotency tables
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE products, orders, order_items, idempotency_keys, users, user_sessions, email_verification_tokens, password_reset_tokens, customer_preferences, customer_addresses TO algions_app;
+-- Standard read/write on product, order, customer, preferences, and commerce lifecycle tables
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE 
+    products, orders, order_items, idempotency_keys, 
+    users, user_sessions, email_verification_tokens, password_reset_tokens, customer_preferences, customer_addresses,
+    categories, collections, product_variants, product_images,
+    carts, cart_items, wishlists, wishlist_items,
+    coupons, coupon_redemptions, payments, shipments, shipment_events, returns, refunds, reviews, notifications
+TO algions_app;
 GRANT SELECT ON TABLE admin_users TO algions_app;
 
 -- Critical Security Policy: Application role can ONLY INSERT into audit_events (strictly append-only: NO UPDATE, NO DELETE)

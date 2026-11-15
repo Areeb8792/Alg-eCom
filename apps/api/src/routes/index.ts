@@ -25,7 +25,8 @@ apiRouter.get('/metrics', healthController.metrics);
 // Customer Authentication & Identity (Season 04)
 apiRouter.post('/auth/register', customerAuthController.register);
 apiRouter.post('/auth/login', customerAuthController.login);
-apiRouter.post('/auth/logout', customerAuthController.logout);
+apiRouter.post('/auth/refresh', customerAuthController.refreshToken);
+apiRouter.post('/auth/logout', requireCustomerAuth, customerAuthController.logout);
 apiRouter.post('/auth/verify-email', customerAuthController.verifyEmail);
 apiRouter.post('/auth/resend-verification', customerAuthController.resendVerification);
 apiRouter.post('/auth/forgot-password', customerAuthController.forgotPassword);

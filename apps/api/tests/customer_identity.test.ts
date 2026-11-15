@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { Application } from 'express';
+import { config } from '../src/config/index.js';
 
 describe('Season 04 Customer Identity, Onboarding & Address Architecture', () => {
   let app: Application;
@@ -181,6 +182,33 @@ describe('Season 04 Customer Identity, Onboarding & Address Architecture', () =>
       expect(res.body.data.email_delivery).toBeDefined();
       expect(res.body.data.email_delivery.mode).toBe('DEVELOPMENT_SIMULATION');
       resetToken = res.body.data.resetToken;
+    });
+
+    it('strictly suppresses raw tokens in production environment (token non-disclosure policy)', async () => {
+      const originalEnv = config.NODE_ENV;
+      try {
+        (config as any).NODE_ENV = 'production';
+
+        const regRes = await request(app)
+          .post('/api/v1/auth/register')
+          .send({
+            email: `prod_token_leak_check_${Date.now()}@algions.com`,
+            password: testPassword,
+            full_name: 'Production Token Audit'
+          });
+
+        expect(regRes.status).toBe(201);
+        expect(regRes.body.data.verificationToken).toBeUndefined();
+
+        const forgotRes = await request(app)
+          .post('/api/v1/auth/forgot-password')
+          .send({ email: testEmail });
+
+        expect(forgotRes.status).toBe(200);
+        expect(forgotRes.body.data.resetToken).toBeUndefined();
+      } finally {
+        (config as any).NODE_ENV = originalEnv;
+      }
     });
 
     it('resets password successfully with valid token', async () => {
@@ -371,6 +399,96 @@ describe('Season 04 Customer Identity, Onboarding & Address Architecture', () =>
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(listRes.body.data.find((a: any) => a.id === addressId)).toBeUndefined();
+    });
+  });
+
+  describe('8. Refresh Token Rotation & Session Security', () => {
+    let rotationEmail: string;
+    let rotationPassword = 'SecureRotationPass123!';
+    let currentAuthToken: string;
+    let currentRefreshToken: string;
+
+    beforeAll(async () => {
+      rotationEmail = `rotation_${Date.now()}@algions-brutalist.com`;
+      const regRes = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          email: rotationEmail,
+          password: rotationPassword,
+          full_name: 'Rotation Tester'
+        });
+      currentAuthToken = regRes.body.data.token;
+      currentRefreshToken = regRes.body.data.refreshToken;
+    });
+
+    it('rotates refresh token and returns new token pair', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: currentRefreshToken });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.token).toBeDefined();
+      expect(res.body.data.refreshToken).toBeDefined();
+      expect(res.body.data.refreshToken).not.toBe(currentRefreshToken);
+
+      const oldSpentToken = currentRefreshToken;
+      currentAuthToken = res.body.data.token;
+      currentRefreshToken = res.body.data.refreshToken;
+
+      // Verify that the new access token can access protected routes
+      const profileRes = await request(app)
+        .get('/api/v1/user/profile')
+        .set('Authorization', `Bearer ${currentAuthToken}`);
+      expect(profileRes.status).toBe(200);
+
+      // Verify reuse detection: Replaying the old spent token triggers TOKEN_REUSE_DETECTED
+      const reuseRes = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: oldSpentToken });
+
+      expect(reuseRes.status).toBe(401);
+      expect(reuseRes.body.error.code).toBe('TOKEN_REUSE_DETECTED');
+
+      // Verify that all sessions for this user were revoked due to detected replay
+      const nextRefresh = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: currentRefreshToken });
+      expect(nextRefresh.status).toBe(401);
+    });
+
+    it('rejects refresh with invalid or malformed token', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: 'non-existent-or-tampered-token-value' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('INVALID_REFRESH_TOKEN');
+    });
+
+    it('authenticated logout revokes active session', async () => {
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: rotationEmail,
+          password: rotationPassword
+        });
+
+      const token = loginRes.body.data.token;
+      const rToken = loginRes.body.data.refreshToken;
+
+      const logoutRes = await request(app)
+        .post('/api/v1/auth/logout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ refreshToken: rToken });
+
+      expect(logoutRes.status).toBe(200);
+      expect(logoutRes.body.data.success).toBe(true);
+
+      // Attempting to refresh with the logged out token fails
+      const refreshAfterLogout = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: rToken });
+      expect(refreshAfterLogout.status).toBe(401);
     });
   });
 });

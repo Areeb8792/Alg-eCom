@@ -8,16 +8,9 @@ import {
   CustomerPreferencesInput,
   CustomerAddressInput
 } from '../validators/customerValidators.js';
+import { emailService, EmailDispatchResult } from './emailService.js';
 import { config } from '../config/index.js';
 import { logger } from '../logging/logger.js';
-
-export interface EmailDeliveryStatus {
-  mode: 'DEVELOPMENT_SIMULATION' | 'PRODUCTION_DISPATCH';
-  provider: 'CONSOLE_LOGGER' | 'SMTP_RELAY';
-  recipient: string;
-  dispatched_at: string;
-  token_preview?: string;
-}
 
 export interface CustomerAuthResult {
   user: {
@@ -32,7 +25,7 @@ export interface CustomerAuthResult {
   token: string;
   refreshToken: string;
   verificationToken?: string;
-  email_delivery?: EmailDeliveryStatus;
+  email_delivery?: EmailDispatchResult;
 }
 
 export class CustomerAuthService {
@@ -111,24 +104,11 @@ export class CustomerAuthService {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await this.userRepo.createVerificationToken(user.id, tokenHash, expiresAt);
 
-    const isProd = config.NODE_ENV === 'production';
-    const emailDelivery: EmailDeliveryStatus = {
-      mode: isProd ? 'PRODUCTION_DISPATCH' : 'DEVELOPMENT_SIMULATION',
-      provider: isProd ? 'SMTP_RELAY' : 'CONSOLE_LOGGER',
-      recipient: user.email,
-      dispatched_at: new Date().toISOString(),
-      token_preview: isProd ? undefined : rawVerificationToken
-    };
-
-    logger.info(
-      {
-        userId: user.id,
-        email: user.email,
-        emailDelivery
-      },
-      isProd
-        ? 'Production dispatch: Customer email verification link dispatched via SMTP relay'
-        : 'Development simulation: Customer email verification link logged to console'
+    // Deliver via configured email provider adapter
+    const emailResult = await emailService.sendVerificationEmail(
+      user.email,
+      user.full_name,
+      rawVerificationToken
     );
 
     // Create Session & Tokens
@@ -145,13 +125,16 @@ export class CustomerAuthService {
       ip_address: meta?.ipAddress
     });
 
+    const isProd = config.NODE_ENV === 'production';
+
     return {
       user: this.sanitizeUser(user),
       preferences,
       token: accessToken,
       refreshToken: rawRefreshToken,
-      verificationToken: rawVerificationToken,
-      email_delivery: emailDelivery
+      // Only include raw token preview in dev/test simulation
+      verificationToken: isProd ? undefined : rawVerificationToken,
+      email_delivery: emailResult
     };
   }
 
@@ -198,13 +181,90 @@ export class CustomerAuthService {
     };
   }
 
-  async logout(userId: string, refreshToken?: string): Promise<void> {
+  async logout(userId: string, refreshToken?: string): Promise<{ success: boolean; message: string }> {
     if (refreshToken) {
       const hash = this.hashToken(refreshToken);
-      await this.userRepo.revokeSessionByTokenHash(hash);
+      await this.userRepo.revokeSessionByTokenAndUser(userId, hash);
     } else {
       await this.userRepo.revokeAllUserSessions(userId);
     }
+    return {
+      success: true,
+      message: 'Active session revoked successfully.'
+    };
+  }
+
+  async rotateRefreshToken(
+    rawRefreshToken: string,
+    meta?: { userAgent?: string; ipAddress?: string }
+  ): Promise<{ token: string; refreshToken: string; user: any }> {
+    if (!rawRefreshToken || typeof rawRefreshToken !== 'string') {
+      const err: any = new Error('Refresh token is required.');
+      err.statusCode = 400;
+      err.code = 'MISSING_REFRESH_TOKEN';
+      throw err;
+    }
+
+    const oldHash = this.hashToken(rawRefreshToken);
+    const session = await this.userRepo.findSessionByTokenHash(oldHash);
+
+    if (!session) {
+      const err: any = new Error('Invalid or non-existent refresh token.');
+      err.statusCode = 401;
+      err.code = 'INVALID_REFRESH_TOKEN';
+      throw err;
+    }
+
+    // Reuse detection: If session was already revoked, someone is replaying a spent token!
+    if (session.revoked_at) {
+      logger.warn(
+        { userId: session.user_id, sessionId: session.id },
+        'SECURITY ALERT: Replay of revoked refresh token detected. Invaliding all user sessions immediately.'
+      );
+      await this.userRepo.revokeAllUserSessions(session.user_id);
+      const err: any = new Error('Security policy violation: Refresh token reuse detected. All sessions revoked.');
+      err.statusCode = 401;
+      err.code = 'TOKEN_REUSE_DETECTED';
+      throw err;
+    }
+
+    if (new Date(session.expires_at).getTime() < Date.now()) {
+      await this.userRepo.revokeSessionByTokenHash(oldHash);
+      const err: any = new Error('Refresh token has expired. Please authenticate again.');
+      err.statusCode = 401;
+      err.code = 'REFRESH_TOKEN_EXPIRED';
+      throw err;
+    }
+
+    const user = await this.userRepo.findById(session.user_id);
+    if (!user) {
+      const err: any = new Error('Customer account not found.');
+      err.statusCode = 401;
+      throw err;
+    }
+
+    // Invalidate old token (Single-use rotation)
+    await this.userRepo.revokeSessionByTokenHash(oldHash);
+
+    // Issue new token pair
+    const newAccessToken = this.generateAccessToken(user);
+    const newRawRefreshToken = crypto.randomBytes(40).toString('hex');
+    const newHash = this.hashToken(newRawRefreshToken);
+    const newSessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await this.userRepo.createSession({
+      user_id: user.id,
+      refresh_token_hash: newHash,
+      expires_at: newSessionExpiresAt,
+      user_agent: meta?.userAgent,
+      ip_address: meta?.ipAddress
+    });
+
+    return {
+      token: newAccessToken,
+      refreshToken: newRawRefreshToken,
+      user: this.sanitizeUser(user)
+    };
   }
 
   async verifyEmail(rawToken: string): Promise<{ success: boolean; message: string }> {
@@ -241,7 +301,7 @@ export class CustomerAuthService {
     };
   }
 
-  async resendVerification(email: string): Promise<{ success: boolean; message: string; verificationToken?: string; email_delivery?: EmailDeliveryStatus }> {
+  async resendVerification(email: string): Promise<{ success: boolean; message: string; verificationToken?: string; email_delivery?: EmailDispatchResult }> {
     const user = await this.userRepo.findByEmail(email);
     if (!user || user.is_verified) {
       return {
@@ -255,31 +315,18 @@ export class CustomerAuthService {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await this.userRepo.createVerificationToken(user.id, tokenHash, expiresAt);
 
+    const emailResult = await emailService.sendVerificationEmail(user.email, user.full_name, rawToken);
     const isProd = config.NODE_ENV === 'production';
-    const emailDelivery: EmailDeliveryStatus = {
-      mode: isProd ? 'PRODUCTION_DISPATCH' : 'DEVELOPMENT_SIMULATION',
-      provider: isProd ? 'SMTP_RELAY' : 'CONSOLE_LOGGER',
-      recipient: user.email,
-      dispatched_at: new Date().toISOString(),
-      token_preview: isProd ? undefined : rawToken
-    };
-
-    logger.info(
-      { userId: user.id, email: user.email, emailDelivery },
-      isProd
-        ? 'Production dispatch: Verification link dispatched via SMTP relay'
-        : 'Development simulation: Verification link logged to console'
-    );
 
     return {
       success: true,
       message: 'A new verification link has been dispatched to your email address.',
-      verificationToken: rawToken,
-      email_delivery: emailDelivery
+      verificationToken: isProd ? undefined : rawToken,
+      email_delivery: emailResult
     };
   }
 
-  async forgotPassword(email: string): Promise<{ success: boolean; message: string; resetToken?: string; email_delivery?: EmailDeliveryStatus }> {
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string; resetToken?: string; email_delivery?: EmailDispatchResult }> {
     const user = await this.userRepo.findByEmail(email);
     if (!user) {
       return {
@@ -293,27 +340,15 @@ export class CustomerAuthService {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await this.userRepo.createPasswordResetToken(user.id, tokenHash, expiresAt);
 
+    const emailResult = await emailService.sendPasswordResetEmail(user.email, user.full_name, rawToken);
     const isProd = config.NODE_ENV === 'production';
-    const emailDelivery: EmailDeliveryStatus = {
-      mode: isProd ? 'PRODUCTION_DISPATCH' : 'DEVELOPMENT_SIMULATION',
-      provider: isProd ? 'SMTP_RELAY' : 'CONSOLE_LOGGER',
-      recipient: user.email,
-      dispatched_at: new Date().toISOString(),
-      token_preview: isProd ? undefined : rawToken
-    };
-
-    logger.info(
-      { userId: user.id, email: user.email, emailDelivery },
-      isProd
-        ? 'Production dispatch: Password reset cipher dispatched via SMTP relay'
-        : 'Development simulation: Password reset cipher logged to console'
-    );
 
     return {
       success: true,
       message: 'If an account with that email exists, password reset instructions have been dispatched.',
-      resetToken: rawToken,
-      email_delivery: emailDelivery
+      // In production, resetToken is strictly omitted; in dev simulation it is provided for developer tests
+      resetToken: isProd ? undefined : rawToken,
+      email_delivery: emailResult
     };
   }
 

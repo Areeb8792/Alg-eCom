@@ -382,6 +382,76 @@ export class CustomerUserRepository {
     }
   }
 
+  async findSessionByTokenHash(refreshTokenHash: string): Promise<{
+    id: string;
+    user_id: string;
+    refresh_token_hash: string;
+    expires_at: string;
+    revoked_at: string | null;
+  } | null> {
+    if (this.isDbDirectFallback()) {
+      for (const s of IN_MEMORY_USER_SESSIONS.values()) {
+        if (s.refresh_token_hash === refreshTokenHash) return s;
+      }
+      return null;
+    }
+    try {
+      const sql = `
+        SELECT id, user_id, refresh_token_hash, expires_at, revoked_at
+        FROM user_sessions
+        WHERE refresh_token_hash = $1;
+      `;
+      const res = await query<{
+        id: string;
+        user_id: string;
+        refresh_token_hash: string;
+        expires_at: string;
+        revoked_at: string | null;
+      }>(sql, [refreshTokenHash]);
+      return res.rows[0] || null;
+    } catch (err: any) {
+      if (this.shouldUseMemoryFallback(err)) {
+        for (const s of IN_MEMORY_USER_SESSIONS.values()) {
+          if (s.refresh_token_hash === refreshTokenHash) return s;
+        }
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  async revokeSessionByTokenAndUser(userId: string, refreshTokenHash: string): Promise<boolean> {
+    if (this.isDbDirectFallback()) {
+      for (const session of IN_MEMORY_USER_SESSIONS.values()) {
+        if (session.refresh_token_hash === refreshTokenHash && session.user_id === userId) {
+          session.revoked_at = new Date().toISOString();
+          return true;
+        }
+      }
+      return false;
+    }
+    try {
+      const sql = `
+        UPDATE user_sessions
+        SET revoked_at = NOW()
+        WHERE refresh_token_hash = $1 AND user_id = $2;
+      `;
+      const res = await query(sql, [refreshTokenHash, userId]);
+      return (res.rowCount ?? 0) > 0;
+    } catch (err: any) {
+      if (this.shouldUseMemoryFallback(err)) {
+        for (const session of IN_MEMORY_USER_SESSIONS.values()) {
+          if (session.refresh_token_hash === refreshTokenHash && session.user_id === userId) {
+            session.revoked_at = new Date().toISOString();
+            return true;
+          }
+        }
+        return false;
+      }
+      throw err;
+    }
+  }
+
   async revokeAllUserSessions(userId: string): Promise<void> {
     if (this.isDbDirectFallback()) {
       for (const session of IN_MEMORY_USER_SESSIONS.values()) {

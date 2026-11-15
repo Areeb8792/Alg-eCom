@@ -44,6 +44,22 @@ export const envSchema = z
     CORS_ORIGIN: z.string().optional(),
     ADMIN_USERNAME: z.string().default('admin@algions.com'),
     ADMIN_PASSWORD: z.string().default('AdminSecretPassword123!'),
+    // Email / SMTP Adapter Configuration
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z
+      .union([z.string(), z.number()])
+      .default('587')
+      .transform((v) => (typeof v === 'number' ? v : parseInt(v, 10))),
+    SMTP_SECURE: z
+      .union([z.string(), z.boolean()])
+      .default(false)
+      .transform((v) => (typeof v === 'boolean' ? v : v === 'true')),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_FROM: z.string().default('HEAVYWEIGHT Protocol <noreply@algions.com>'),
+    // India-First Commerce Configuration
+    STORE_CURRENCY: z.string().default('INR'),
+    STORE_COUNTRY: z.string().default('IN'),
   })
   .superRefine((data, ctx) => {
     // 1. JWT_SECRET Validation
@@ -125,6 +141,14 @@ export type Config = {
   CORS_ORIGIN: string;
   ADMIN_USERNAME: string;
   ADMIN_PASSWORD: string;
+  SMTP_HOST?: string;
+  SMTP_PORT: number;
+  SMTP_SECURE: boolean;
+  SMTP_USER?: string;
+  SMTP_PASS?: string;
+  SMTP_FROM: string;
+  STORE_CURRENCY: string;
+  STORE_COUNTRY: string;
 };
 
 export function parseConfig(rawEnv: Record<string, unknown> = process.env): Config {

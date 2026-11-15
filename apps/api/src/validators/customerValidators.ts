@@ -43,6 +43,12 @@ export const resetPasswordSchema = z.object({
     .regex(/[0-9]/, { message: 'Password must contain at least one number' })
 });
 
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(10, { message: 'Refresh token is required' })
+});
+
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+
 export const updateCustomerProfileSchema = z.object({
   full_name: z.string().min(2).max(100).optional(),
   phone: z.string().max(32).optional().nullable()
